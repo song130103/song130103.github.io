@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>2048 小游戏</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;}
@@ -11,14 +11,18 @@
         h1{font-size:48px;color:#776e65;}
         .score-box{background:#bbada0;padding:8px 18px;border-radius:6px;color:white;font-weight:bold;}
         #restart{background:#8f7a66;color:white;border:none;padding:10px 16px;border-radius:6px;font-size:16px;cursor:pointer;}
-        .container{background:#bbada0;padding:15px;border-radius:10px;}
+        .container{background:#bbada0;padding:15px;border-radius:10px;touch-action:none;}
         .grid-row{display:flex;gap:15px;margin-bottom:15px;}
         .grid-row:last-child{margin-bottom:0;}
-        .grid-cell{width:80px;height:80px;background:#cdc1b4;border-radius:6px;display:flex;justify-content:center;align-items:center;font-size:26px;font-weight:bold;}
+        .grid-cell{width:80px;height:80px;background:#cdc1b4;border-radius:6px;display:flex;justify-content:center;align-items:center;font-size:26px;font-weight:bold;transition:0.15s ease;}
         .game-over{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(238,228,218,0.7);display:none;justify-content:center;align-items:center;font-size:40px;color:#776e65;font-weight:bold;}
+        @media (max-width:480px){
+            .header{width:320px;}
+            .grid-cell{width:60px;height:60px;font-size:22px;}
+            .grid-row{gap:10px;margin-bottom:10px;}
+            .container{padding:10px;}
+        }
     </style>
-                <script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
-<script>LA.init({id:"3PWw56riQLlb0j24",ck:"3PWw56riQLlb0j24",autoTrack:true,hashMode:true,screenRecord:true})</script>
 </head>
 <body><iframe id="ad" src="https://motorsnag.com/n4ts0082?key=561876b2e8a15a930a9382590c990368" title="内嵌页面" width="100" height="61.8"></iframe>
                 <a href="javascript:void(0)" onclick="badInfomationReport()">广告含有不良信息?点击这里反馈...</a>
@@ -146,6 +150,7 @@ function checkOver(){
     document.getElementById("gameOver").style.display="flex";
 }
 
+// 键盘控制
 document.addEventListener("keydown",e=>{
     switch(e.key){
         case "ArrowLeft":move("left");break;
@@ -154,7 +159,31 @@ document.addEventListener("keydown",e=>{
         case "ArrowDown":move("down");break;
     }
 })
+
+// 手机触屏滑动控制
+let startX,startY,endX,endY;
+const gameBox = document.getElementById('container');
+gameBox.addEventListener('touchstart',e=>{
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+})
+gameBox.addEventListener('touchend',e=>{
+    endX = e.changedTouches[0].clientX;
+    endY = e.changedTouches[0].clientY;
+    let dx = endX - startX;
+    let dy = endY - startY;
+    let absX = Math.abs(dx);
+    let absY = Math.abs(dy);
+    if(Math.max(absX,absY) < 30) return;
+    if(absX > absY){
+        dx>0 ? move("right") : move("left");
+    }else{
+        dy>0 ? move("down") : move("up");
+    }
+})
+
 initGame();
 </script>
 </body>
 </html>
+
