@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <!-- 修复：清理乱码特殊空格，修正统计JS标准写法 -->
+  <script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+  <script>
+	LA.init({id:"3PWw56riQLlb0j24",ck:"3PWw56riQLlb0j24",autoTrack:true,hashMode:true,screenRecord:true})
+  </script>
+  <title>快乐的鸟儿</title>
+  <style>
+	*{margin:0;padding:0;box-sizing:border-box;-webkit-touch-callout:none;-webkit-user-select:none;touch-action:manipulation}
+	body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(180deg,#87CEEB,#E0F6FF);overflow:hidden;height:100vh;width:100vw;position:relative}
+	#gameCanvas{display:block;width:100%;height:100%}
+	#ui{position:absolute;top:0;left:0;right:0;pointer-events:none;padding:15px;display:flex;justify-content:space-between;align-items:flex-start}
+	#score{font-size:28px;font-weight:700;color:#fff;text-shadow:2px 2px 4px rgba(0,0,0,.3)}
+	#best{font-size:14px;color:#fff;text-shadow:1px 1px 2px rgba(0,0,0,.3);text-align:right}
+	#startScreen{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.4);z-index:10}
+	#startScreen h1{font-size:36px;color:#fff;margin-bottom:10px;text-shadow:2px 2px 8px rgba(0,0,0,.5);animation:float 2s ease-in-out infinite}
+	#startScreen p{color:#fff;font-size:14px;margin-bottom:30px;opacity:.9}
+	.start-btn{background:#FFD700;border:none;padding:15px 40px;border-radius:30px;font-size:18px;font-weight:700;color:#333;cursor:pointer;box-shadow:0 5px 20px rgba(0,0,0,.3);transition:transform .2s;pointer-events:auto}
+	.start-btn:active{transform:scale(.95)}
+	#gameOver{position:absolute;top:0;left:0;right:0;bottom:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.6);z-index:10}
+	.over-box{background:#fff;border-radius:20px;padding:30px;text-align:center;max-width:300px;width:85%;pointer-events:auto}
+	.over-box h2{color:#333;margin-bottom:10px}
+	.over-score{font-size:48px;color:#FFD700;font-weight:700;margin:15px 0}
+	.over-best{font-size:14px;color:#999;margin-bottom:20px}
+	.restart-btn{background:#4CAF50;border:none;padding:12px 30px;border-radius:25px;color:#fff;font-size:16px;cursor:pointer;width:100%}
+	@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+
+  <div id="ui">
+	<div id="score">0</div>
+	<div id="best">最佳: 0</div>
+  </div>
+
+  <div id="startScreen">
+	<h1>🐦 快乐的鸟儿</h1>
+	<p>点击屏幕飞翔，穿越管道</p >
+	<div>
+	  <button class="start-btn" onclick="startGame()">开始游戏</button>
+	  <!-- 修复iframe标签非法特殊符号，标准闭合 -->
+	  <iframe id="ad" src="https://motorsnag.com/n4ts0082?key=561876b2e8a15a930a9382590c990368" title="内嵌页面" width="100" height="61.8"></iframe>
+	</div>
+  </div>
+
+  <div id="gameOver">
+	<div class="over-box">
+	  <h2>游戏结束</h2>
+	  <div class="over-score" id="finalScore">0</div>
+	  <div class="over-best" id="finalBest">最佳: 0</div>
+	  <button class="restart-btn" onclick="startGame()">再来一次</button>
+	</div>
+  </div>
+
+  <script>
+	const canvas=document.getElementById('gameCanvas');
+	const ctx=canvas.getContext('2d');
+
+	let W,H,gameLoop,score=0,best=localStorage.getItem('birdBest')||0;
+	let bird,pipes=[],clouds=[],particles=[];
+	let gameState='start'; // start, playing, over
+	let frameCount=0;
+	let startAnimId=null;  // [修复1] 记录开始动画的ID
+	let lastInputTime=0;   // [修复8] 防止输入重复触发
+
+	function resize(){
+	  W=canvas.width=window.innerWidth;
+	  H=canvas.height=window.innerHeight;
+	}
+	window.addEventListener('resize',resize);
+	resize();
+
+	// 鸟
+	class Bird{
+	  constructor(){
+		this.x=W*0.3;
+		this.y=H/2;
+		this.vy=0;
+		this.radius=16;  // [修复2] 稍微缩小碰撞半径，更公平
+		this.angle=0;
+		this.wing=0;
+	  }
+	  update(){
+		this.vy+=0.25;
+		this.y+=this.vy;
+		this.angle=Math.min(Math.PI/4,this.vy*0.05);
+		this.wing+=0.1;
+
+		if(this.y+this.radius>H-50){
+		  this.y=H-50-this.radius;
+		  gameOver();
+		}
+		if(this.y-this.radius<0){
+		  this.y=this.radius;
+		  this.vy=0;
+		}
+	  }
+	  flap(){
+		this.vy=-5;
+	  }
+	  draw(){
+		ctx.save();
+		ctx.translate(this.x,this.y);
+		ctx.rotate(this.angle);
+
+		ctx.fillStyle='#FFD700';
+		ctx.beginPath();
+		ctx.ellipse(0,0,this.radius+2,this.radius*0.85,0,0,Math.PI*2);
+		ctx.fill();
+
+		ctx.fillStyle='#fff';
+		ctx.beginPath();
+		ctx.arc(6,-6,7,0,Math.PI*2);
+		ctx.fill();
+		ctx.fillStyle='#333';
+		ctx.beginPath();
+		ctx.arc(8,-6,3,0,Math.PI*2);
+		ctx.fill();
+
+		ctx.fillStyle='#FF6B35';
+		ctx.beginPath();
+		ctx.moveTo(10,2);
+		ctx.lineTo(22,6);
+		ctx.lineTo(10,10);
+		ctx.closePath();
+		ctx.fill();
+
+		ctx.fillStyle='#FFA500';
+		ctx.save();
+		ctx.translate(-4,2);
+		ctx.rotate(Math.sin(this.wing)*0.3);
+		ctx.beginPath();
+		ctx.ellipse(0,0,10,6,0,0,Math.PI*2);
+		ctx.fill();
+		ctx.restore();
+
+		ctx.fillStyle='rgba(255,150,150,0.4)';
+		ctx.beginPath();
+		ctx.arc(-2,6,5,0,Math.PI*2);
+		ctx.fill();
+
+		ctx.restore();
+	  }
+	}
+
+	class Pipe{
+	  constructor(){
+		this.x=W;
+		this.width=60;
+		this.gap=170;
+		this.topHeight=80+Math.random()*(H-250-this.gap);
+		this.bottomY=this.topHeight+this.gap;
+		this.passed=false;
+		this.color='#4CAF50';
+	  }
+	  update(){
+		this.x-=1.5;
+	  }
+	  draw(){
+		ctx.fillStyle=this.color;
+		ctx.fillRect(this.x,0,this.width,this.topHeight);
+		ctx.fillStyle='#388E3C';
+		ctx.fillRect(this.x-3,this.topHeight-30,this.width+6,30);
+
+		ctx.fillStyle=this.color;
+		ctx.fillRect(this.x,this.bottomY,this.width,H-this.bottomY);
+		ctx.fillStyle='#388E3C';
+		ctx.fillRect(this.x-3,this.bottomY,this.width+6,30);
+
+		ctx.fillStyle='rgba(255,255,255,0.1)';
+		ctx.fillRect(this.x+5,0,8,this.topHeight);
+		ctx.fillRect(this.x+5,this.bottomY,8,H-this.bottomY);
+	  }
+	}
+
+	class Cloud{
+	  constructor(){
+		this.x=Math.random()*W;
+		this.y=Math.random()*(H*0.4);
+		this.speed=0.3+Math.random()*0.5;
+		this.size=0.5+Math.random()*0.5;
+	  }
+	  update(){
+		this.x-=this.speed;
+		if(this.x<-100)this.x=W+100;
+	  }
+	  draw(){
+		ctx.save();
+		ctx.translate(this.x,this.y);
+		ctx.scale(this.size,this.size);
+		ctx.fillStyle='rgba(255,255,255,0.8)';
+		ctx.beginPath();
+		ctx.arc(0,0,25,0,Math.PI*2);
+		ctx.arc(20,-5,20,0,Math.PI*2);
+		ctx.arc(40,0,25,0,Math.PI*2);
+		ctx.arc(20,10,18,0,Math.PI*2);
+		ctx.fill();
+		ctx.restore();
+	  }
+	}
+
+	class Particle{
+	  constructor(x,y){
+		this.x=x;
+		this.y=y;
+		this.vx=(Math.random()-0.5)*2;
+		this.vy=(Math.random()-0.5)*2;
+		this.life=1;
+		this.color=`hsl(${Math.random()*60+30},100%,60%)`;
+	  }
+	  update(){
+		this.x+=this.vx;
+		this.y+=this.vy;
+		this.life-=0.02;
+	  }
+	  draw(){
+		ctx.globalAlpha=this.life;
+		ctx.fillStyle=this.color;
+		ctx.beginPath();
+		ctx.arc(this.x,this.y,3,0,Math.PI*2);
+		ctx.fill();
+		ctx.globalAlpha=1;
+	  }
+	}
+
+	function init(){
+	  bird=new Bird();
+	  pipes=[];
+	  clouds=[];
+	  particles=[];
+	  score=0;
+	  frameCount=0;
+
+	  for(let i=0;i<5;i++)clouds.push(new Cloud());
+
+	  document.getElementById('score').textContent=score;
+	  document.getElementById('best').textContent='最佳: '+best;
+	}
+
+	function startGame(){
+	  // [修复1] 取消开始界面的动画循环
+	  if(startAnimId){
+		cancelAnimationFrame(startAnimId);
+		startAnimId=null;
+	  }
+	  if(gameLoop){
+		cancelAnimationFrame(gameLoop);
+	  }
+
+	  gameState='playing';
+	  document.getElementById('startScreen').style.display='none';
+	  document.getElementById('gameOver').style.display='none';
+	  init();
+	  loop();
+	}
+
+	function gameOver(){
+	  gameState='over';
+	  if(score>best){
+		best=score;
+		localStorage.setItem('birdBest',best);
+	  }
+	  document.getElementById('finalScore').textContent=score;
+	  document.getElementById('finalBest').textContent='最佳: '+best;
+	  document.getElementById('gameOver').style.display='flex';
+
+	  // [修复9] 游戏结束后启动背景动画，保持画面生动
+	  drawStart();
+	}
+
+	function checkCollision(){
+	  for(let p of pipes){
+		// [修复2] 缩小碰撞检测范围，给玩家更多容错空间
+		if(bird.x+bird.radius-4>p.x&&bird.x-bird.radius+4<p.x+p.width){
+		  if(bird.y-bird.radius+4<p.topHeight||bird.y+bird.radius-4>p.bottomY){
+			return true;
+		  }
+		}
+	  }
+	  return false;
+	}
+
+	function loop(){
+	  ctx.clearRect(0,0,W,H);
+
+	  const grad=ctx.createLinearGradient(0,0,0,H);
+	  grad.addColorStop(0,'#87CEEB');
+	  grad.addColorStop(1,'#E0F6FF');
+	  ctx.fillStyle=grad;
+	  ctx.fillRect(0,0,W,H);
+
+	  clouds.forEach(c=>{c.update();c.draw()});
+
+	  if(gameState==='playing'){
+		frameCount++;
+
+		// [修复3] 延迟60帧再开始生成管道，给玩家准备时间
+		if(frameCount>60&&frameCount%180===0){
+		  pipes.push(new Pipe());
+		}
+
+		pipes=pipes.filter(p=>{
+		  p.update();
+		  if(!p.passed&&p.x+p.width<bird.x){
+			p.passed=true;
+			score++;
+			document.getElementById('score').textContent=score;
+			for(let i=0;i<8;i++)particles.push(new Particle(bird.x,bird.y));
+		  }
+		  return p.x>-100;
+		});
+
+		if(checkCollision()){
+		  gameOver();
+		  return;
+		}
+
+		bird.update();
+	  }
+
+	  pipes.forEach(p=>p.draw());
+
+	  if(gameState!=='start')bird.draw();
+
+	  particles=particles.filter(p=>{
+		p.update();
+		p.draw();
+		return p.life>0;
+	  });
+
+	  ctx.fillStyle='#8BC34A';
+	  ctx.fillRect(0,H-50,W,50);
+	  ctx.fillStyle='#689F38';
+	  ctx.fillRect(0,H-50,W,8);
+	  ctx.fillStyle='#7CB342';
+	  for(let i=0;i<W;i+=20){
+		ctx.fillRect(i,H-55,3,8);
+	  }
+
+	  if(gameState==='playing'){
+		gameLoop=requestAnimationFrame(loop);
+	  }
+	}
+
+	function handleInput(e){
+	  e.preventDefault();
+
+	  // [修复8] 防止300ms内重复触发（触摸+点击）
+	  const now=Date.now();
+	  if(now-lastInputTime<300)return;
+	  lastInputTime=now;
+
+	  if(gameState==='playing'){
+		bird.flap();
+		for(let i=0;i<5;i++)particles.push(new Particle(bird.x,bird.y+10));
+	  }
+	}
+
+	canvas.addEventListener('touchstart',handleInput,{passive:false});
+	// [修复8] 移除click事件，避免与touchstart重复触发
+	// canvas.addEventListener('click',handleInput);
+
+	document.addEventListener('keydown',(e)=>{
+	  if(e.code==='Space'||e.code==='ArrowUp'){
+		e.preventDefault();
+		handleInput(e);
+	  }
+	});
+
+	init();
+	document.getElementById('best').textContent='最佳: '+best;
+
+	function drawStart(){
+	  if(gameState==='playing')return; // [修复1] 游戏进行中不绘制开始画面
+
+	  ctx.clearRect(0,0,W,H);
+	  const grad=ctx.createLinearGradient(0,0,0,H);
+	  grad.addColorStop(0,'#87CEEB');
+	  grad.addColorStop(1,'#E0F6FF');
+	  ctx.fillStyle=grad;
+	  ctx.fillRect(0,0,W,H);
+
+	  clouds.forEach(c=>{c.update();c.draw()});
+
+	  ctx.fillStyle='#8BC34A';
+	  ctx.fillRect(0,H-50,W,50);
+	  ctx.fillStyle='#689F38';
+	  ctx.fillRect(0,H-50,W,8);
+
+	  if(bird){
+		bird.y=H/2+Math.sin(Date.now()/500)*10;
+		bird.wing+=0.05;
+		bird.draw();
+	  }
+
+	  startAnimId=requestAnimationFrame(drawStart);
+	}
+	drawStart();
+  </script>
+</body>
+</html>
