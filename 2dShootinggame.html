@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>2D横版枪战游戏</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{background:#222;overflow:hidden;display:flex;flex-direction:column;align-items:center;}
+#game{background:#3a5f3a;border:2px solid #fff;}
+.info{width:100%;max-width:800px;color:#fff;padding:8px;font-size:16px;display:flex;justify-content:space-between;}
+.ctrl{position:fixed;bottom:10px;left:0;width:100%;display:flex;justify-content:space-between;padding:0 15px;pointer-events:none;}
+.btn{width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,0.3);border:none;color:#fff;font-size:22px;pointer-events:auto;}
+.leftCtrl{display:flex;gap:10px;}
+.rightCtrl{display:flex;gap:10px;}
+@media(min-width:768px){.ctrl{display:none;}}
+</style>
+</head>
+<body>
+<div class="info">
+<span>血量：<span id="hp">100</span></span>
+<span>分数：<span id="score">0</span></span>
+<span>弹药：<span id="bullet">30</span>/30</span>
+</div>
+<canvas id="game"></canvas>
+<div class="ctrl">
+<div class="leftCtrl">
+<button class="btn" id="left">←</button>
+<button class="btn" id="right">→</button>
+</div>
+<div class="rightCtrl">
+<button class="btn" id="fire">射击</button>
+<button class="btn" id="reload">换弹</button>
+</div>
+</div>
+
+<script>
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+canvas.width=800;canvas.height=450;
+
+//玩家数据
+let player={
+    x:80,y:320,w:40,h:60,speed:4,hp:100,
+    bullet:30,maxBullet:30,angle:0
+};
+let bullets=[];
+let enemies=[];
+let score=0;
+let keys={left:false,right:false};
+
+//绘制玩家
+function drawPlayer(){
+    ctx.save();
+    ctx.translate(player.x+player.w/2,player.y+player.h/2);
+    ctx.fillStyle="#4285F4";
+    ctx.fillRect(-player.w/2,-player.h/2,player.w,player.h);
+    //枪
+    ctx.fillStyle="#222";
+    ctx.fillRect(15,-8,35,8);
+    ctx.restore();
+}
+
+//子弹类
+class Bullet{
+    constructor(x,y,a){
+        this.x=x;this.y=y;this.angle=a;this.speed=10;
+    }
+    update(){
+        this.x+=Math.cos(this.angle)*this.speed;
+        this.y+=Math.sin(this.angle)*this.speed;
+    }
+    draw(){
+        ctx.fillStyle="#ff0";
+        ctx.beginPath();
+        ctx.arc(this.x,this.y,4,0,Math.PI*2);
+        ctx.fill();
+    }
+}
+
+//敌人
+class Enemy{
+    constructor(){
+        this.x=canvas.width;
+        this.y=320;
+        this.w=40;this.h=60;
+        this.speed=1+Math.random()*1.5;
+        this.hp=2;
+    }
+    update(){
+        this.x-=this.speed;
+    }
+    draw(){
+        ctx.fillStyle="#e53935";
+        ctx.fillRect(this.x,this.y,this.w,this.h);
+    }
+}
+
+//生成敌人
+function spawnEnemy(){
+    setInterval(()=>{
+        enemies.push(new Enemy());
+    },1800);
+}
+
+//射击
+function fire(){
+    if(player.bullet<=0)return;
+    player.bullet--;
+    let bx=player.x+player.w/2+35;
+    let by=player.y+player.h/2-4;
+    bullets.push(new Bullet(bx,by,0));
+    updateUI();
+}
+
+//换弹
+function reload(){
+    player.bullet=player.maxBullet;
+    updateUI();
+}
+
+//更新界面数值
+function updateUI(){
+    document.getElementById('hp').innerText=player.hp;
+    document.getElementById('score').innerText=score;
+    document.getElementById('bullet').innerText=player.bullet;
+}
+
+//碰撞检测
+function collide(a,b){
+    return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+}
+
+//游戏主循环
+function gameLoop(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    //地面
+    ctx.fillStyle="#2d4d2d";
+    ctx.fillRect(0,380,canvas.width,70);
+
+    //玩家移动
+    if(keys.left&&player.x>0)player.x-=player.speed;
+    if(keys.right&&player.x<canvas.width-player.w)player.x+=player.speed;
+
+    //更新子弹
+    bullets.forEach((b,i)=>{
+        b.update();b.draw();
+        if(b.x>canvas.width||b.x<0)bullets.splice(i,1);
+    });
+
+    //更新敌人
+    enemies.forEach((e,ei)=>{
+        e.update();e.draw();
+        //子弹打敌人
+        bullets.forEach((b,bi)=>{
+            if(b.x>e.x&&b.x<e.x+e.w&&b.y>e.y&&b.y<e.y+e.h){
+                e.hp--;
+                bullets.splice(bi,1);
+                if(e.hp<=0){
+                    enemies.splice(ei,1);
+                    score+=100;
+                    updateUI();
+                }
+            }
+        });
+        //敌人撞到玩家扣血
+        if(collide(player,e)){
+            player.hp-=1;
+            updateUI();
+            if(player.hp<=0){
+                alert("游戏结束！得分："+score);
+                location.reload();
+            }
+        }
+    });
+
+    drawPlayer();
+    requestAnimationFrame(gameLoop);
+}
+
+//键盘控制
+document.addEventListener('keydown',e=>{
+    if(e.key=="ArrowLeft")keys.left=true;
+    if(e.key=="ArrowRight")keys.right=true;
+    if(e.key==" ")fire();
+    if(e.key=="r"||e.key=="R")reload();
+});
+document.addEventListener('keyup',e=>{
+    if(e.key=="ArrowLeft")keys.left=false;
+    if(e.key=="ArrowRight")keys.right=false;
+});
+
+//手机触控按钮
+document.getElementById('left').addEventListener('touchstart',()=>keys.left=true);
+document.getElementById('left').addEventListener('touchend',()=>keys.left=false);
+document.getElementById('right').addEventListener('touchstart',()=>keys.right=true);
+document.getElementById('right').addEventListener('touchend',()=>keys.right=false);
+document.getElementById('fire').addEventListener('click',fire);
+document.getElementById('reload').addEventListener('click',reload);
+
+//启动游戏
+spawnEnemy();
+gameLoop();
+</script>
+</body>
+</html>
