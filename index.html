@@ -3,6 +3,49 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>悬浮B站跳转按钮</title>
+    <style>
+        *{margin: 0;padding: 0;box-sizing: border-box;}
+        body{min-height: 100vh;background: #f5f5f5;}
+        /* 悬浮B站按钮 固定左下角 */
+        .bilibili-btn{
+            position: fixed;
+            left: 15px;
+            bottom: 20px;
+            padding: 12px 20px;
+            background: #fb7299;
+            color: #fff;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 3px 10px rgba(251,114,153,0.4);
+            z-index: 999;
+            transition: all 0.3s ease;
+        }
+        .bilibili-btn:hover{
+            background: #f85a87;
+            transform: scale(1.05);
+        }
+        /* 手机端适配缩小 */
+        @media (max-width: 768px){
+            .bilibili-btn{
+                padding: 10px 16px;
+                font-size: 14px;
+                left: 10px;
+                bottom: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- 替换href里链接为你的B站主页地址即可 -->
+<a href="https://space.bilibili.com/3546840226073372" target="_blank">
+    <button class="bilibili-btn">进入B站主页</button>
+</a>
 	<title>Hello World</title>
 	<link rel="stylesheet" href="styles.css">
                 <script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
