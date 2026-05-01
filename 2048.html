@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2048 小游戏</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;}
+        body{background:#faf8ef;display:flex;flex-direction:column;align-items:center;padding-top:30px;}
+        .header{width:420px;display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;}
+        h1{font-size:48px;color:#776e65;}
+        .score-box{background:#bbada0;padding:8px 18px;border-radius:6px;color:white;font-weight:bold;}
+        #restart{background:#8f7a66;color:white;border:none;padding:10px 16px;border-radius:6px;font-size:16px;cursor:pointer;}
+        .container{background:#bbada0;padding:15px;border-radius:10px;}
+        .grid-row{display:flex;gap:15px;margin-bottom:15px;}
+        .grid-row:last-child{margin-bottom:0;}
+        .grid-cell{width:80px;height:80px;background:#cdc1b4;border-radius:6px;display:flex;justify-content:center;align-items:center;font-size:26px;font-weight:bold;}
+        .game-over{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(238,228,218,0.7);display:none;justify-content:center;align-items:center;font-size:40px;color:#776e65;font-weight:bold;}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>2048</h1>
+        <div>
+            <div class="score-box">分数：<span id="score">0</span></div>
+            <button id="restart" onclick="initGame()">重新开始</button>
+        </div>
+    </div>
+    <div class="container" id="container"></div>
+    <div class="game-over" id="gameOver">游戏结束</div>
+
+<script>
+let grid = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+let score = 0;
+const colorMap = {
+    2:"#eee4da",4:"#ede0c8",8:"#f2b179",16:"#f59563",
+    32:"#f67c5f",64:"#f65e3b",128:"#edcf72",256:"#edcc61",
+    512:"#edc850",1024:"#edc53f",2048:"#edc22e"
+};
+const textColor = {2:"#776e65",4:"#776e65",default:"#fff"};
+
+function initGame(){
+    grid = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+    score = 0;
+    document.getElementById("score").innerText = score;
+    document.getElementById("gameOver").style.display = "none";
+    randomNum();randomNum();
+    render();
+}
+
+function randomNum(){
+    let empty = [];
+    for(let i=0;i<4;i++){
+        for(let j=0;j<4;j++){
+            if(grid[i][j]===0) empty.push([i,j]);
+        }
+    }
+    if(empty.length===0) return;
+    let [x,y] = empty[Math.floor(Math.random()*empty.length)];
+    grid[x][y] = Math.random()>0.8?4:2;
+}
+
+function render(){
+    let html = "";
+    for(let i=0;i<4;i++){
+        html += '<div class="grid-row">';
+        for(let j=0;j<4;j++){
+            let val = grid[i][j];
+            let bg = colorMap[val]||"#cdc1b4";
+            let color = textColor[val]||textColor.default;
+            html += `<div class="grid-cell" style="background:${bg};color:${color}">${val===0?"":val}</div>`;
+        }
+        html += '</div>';
+    }
+    document.getElementById("container").innerHTML = html;
+}
+
+function moveLeft(arr){
+    let newArr = arr.filter(v=>v!==0);
+    for(let i=0;i<newArr.length-1;i++){
+        if(newArr[i]===newArr[i+1]){
+            newArr[i] *=2;
+            score += newArr[i];
+            newArr.splice(i+1,1);
+        }
+    }
+    while(newArr.length<4) newArr.push(0);
+    return newArr;
+}
+function rotate(arr){
+    let res = [[],[],[],[]];
+    for(let i=0;i<4;i++){
+        for(let j=0;j<4;j++){
+            res[i][j] = grid[3-j][i];
+        }
+    }
+    return res;
+}
+
+function isChange(old,now){
+    for(let i=0;i<4;i++)
+        for(let j=0;j<4;j++)
+            if(old[i][j]!==now[i][j])return true;
+    return false;
+}
+
+function move(dir){
+    let old = JSON.parse(JSON.stringify(grid));
+    if(dir==="left"){
+        for(let i=0;i<4;i++) grid[i] = moveLeft(grid[i]);
+    }else if(dir==="right"){
+        for(let i=0;i<4;i++) grid[i].reverse(),grid[i]=moveLeft(grid[i]),grid[i].reverse();
+    }else if(dir==="up"){
+        grid=rotate(grid);
+        for(let i=0;i<4;i++) grid[i]=moveLeft(grid[i]);
+        grid=rotate(rotate(rotate(grid)));
+    }else if(dir==="down"){
+        grid=rotate(grid);
+        for(let i=0;i<4;i++) grid[i].reverse(),grid[i]=moveLeft(grid[i]),grid[i].reverse();
+        grid=rotate(rotate(rotate(grid)));
+    }
+    if(isChange(old,grid)){
+        randomNum();
+        document.getElementById("score").innerText=score;
+        render();
+        checkOver();
+    }
+}
+
+function checkOver(){
+    for(let i=0;i<4;i++)
+        for(let j=0;j<4;j++)
+            if(grid[i][j]===0)return;
+    let d = [[0,1],[1,0]];
+    for(let i=0;i<4;i++){
+        for(let j=0;j<4;j++){
+            for(let [dx,dy] of d){
+                let x=i+dx,y=j+dy;
+                if(x<4&&y<4&&grid[i][j]===grid[x][y])return;
+            }
+        }
+    }
+    document.getElementById("gameOver").style.display="flex";
+}
+
+document.addEventListener("keydown",e=>{
+    switch(e.key){
+        case "ArrowLeft":move("left");break;
+        case "ArrowRight":move("right");break;
+        case "ArrowUp":move("up");break;
+        case "ArrowDown":move("down");break;
+    }
+})
+initGame();
+</script>
+</body>
+</html>
