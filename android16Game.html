@@ -1,384 +1,559 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Android 16 太空彩蛋游戏</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Android 16 Space Explorer</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            overflow: hidden;
-            user-select: none;
         }
+        
         body {
-            background: #000000;
-            font-family: system-ui, -apple-system, sans-serif;
+            background: #000;
+            overflow: hidden;
+            font-family: 'Roboto', 'Segoe UI', sans-serif;
+            touch-action: none;
         }
+        
         #gameCanvas {
             display: block;
-            width: 100vw;
-            height: 100vh;
-            background: linear-gradient(180deg, #000000 0%, #0a0a23 100%);
         }
-        #autoBtn {
+        
+        #ui {
             position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #0f0;
+            font-size: 12px;
+            line-height: 1.6;
+            text-shadow: 0 0 5px #0f0;
+        }
+        
+        #autoBtn {
+            position: absolute;
             bottom: 30px;
             right: 30px;
-            padding: 12px 24px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid #ffffff;
-            border-radius: 50px;
-            color: #ffffff;
-            font-size: 16px;
+            width: 60px;
+            height: 60px;
+            background: rgba(0, 200, 0, 0.3);
+            border: 2px solid #0f0;
+            border-radius: 50%;
+            color: #0f0;
+            font-size: 12px;
             font-weight: bold;
             cursor: pointer;
-            backdrop-filter: blur(10px);
-            transition: all 0.2s ease;
-            z-index: 100;
+            pointer-events: auto;
+            transition: all 0.3s;
         }
-        #autoBtn.active {
-            background: #ffffff;
-            color: #000000;
-        }
+        
         #autoBtn:hover {
+            background: rgba(0, 200, 0, 0.5);
+        }
+        
+        #autoBtn.active {
+            background: #0f0;
+            color: #000;
+        }
+        
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: rgba(255,255,255,0.5);
+            font-size: 11px;
+        }
+        
+        #title {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #fff;
+            pointer-events: auto;
+        }
+        
+        #title h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        #title p {
+            font-size: 14px;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 30px;
+        }
+        
+        #startBtn {
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 30px;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        #startBtn:hover {
             transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
         }
-        .shake {
-            animation: shake 0.2s ease-in-out;
-        }
-        @keyframes shake {
-            0%, 100% { transform: translate(0); }
-            25% { transform: translate(-5px, 5px); }
-            50% { transform: translate(5px, -5px); }
-            75% { transform: translate(-5px, -5px); }
+        
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
-    <button id="autoBtn">AUTO</button>
-
+    
+    <div id="ui">
+        <div id="info" class="hidden">
+            <div>速度: <span id="speed">0</span></div>
+            <div>坐标: <span id="coords">0, 0</span></div>
+            <div>最近星体: <span id="nearest">-</span></div>
+            <div>已探索: <span id="explored">0</span></div>
+        </div>
+        
+        <button id="autoBtn" class="hidden">AUTO</button>
+        
+        <div id="instructions" class="hidden">
+            方向键/WASD 控制飞船<br>
+            接近星体减速着陆
+        </div>
+        
+        <div id="title">
+            <h1>🚀 太空探索</h1>
+            <p>Android 16 Easter Egg</p>
+            <button id="startBtn">开始探索</button>
+        </div>
+    </div>
+    
     <script>
-        // 画布初始化
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const autoBtn = document.getElementById('autoBtn');
         
-        // 画布尺寸适配
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+        let width, height;
+        let gameStarted = false;
+        let autoMode = false;
+        
+        // 飞船
+        const ship = {
+            x: 0,
+            y: 0,
+            vx: 0,
+            vy: 0,
+            angle: -Math.PI / 2,
+            size: 20,
+            thrust: 0.15,
+            friction: 0.99,
+            maxSpeed: 8
+        };
+        
+        // 星体
+        let bodies = [];
+        const bodyTypes = ['star', 'planet', 'moon'];
+        const bodyColors = {
+            star: ['#FFD700', '#FFA500', '#FF6B6B', '#87CEEB', '#DDA0DD'],
+            planet: ['#8B4513', '#CD853F', '#DEB887', '#4682B4', '#9ACD32', '#FF6347'],
+            moon: ['#C0C0C0', '#A9A9A9', '#808080', '#696969']
+        };
+        
+        // 已探索的星体
+        let explored = new Set();
+        
+        // 星星背景
+        let stars = [];
+        
+        // 控制
+        const keys = {};
+        
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            ship.x = width / 2;
+            ship.y = height / 2;
         }
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
-
-        // 游戏核心配置
-        const config = {
-            starCount: 120,        // 星星数量
-            asteroidCount: 15,     // 小行星数量
-            shipSpeed: 5,          // 飞船移动速度
-            autoSpeed: 3.5,        // 自动驾驶速度
-            baseScrollSpeed: 2,    // 基础滚动速度
-            isAuto: false,         // 自动驾驶开关
-            isShaking: false       // 碰撞震动开关
-        };
-
-        // 游戏对象
-        let stars = [];         // 星星数组
-        let asteroids = [];     // 小行星数组
-        let ship = {             // 飞船属性
-            x: canvas.width / 2,
-            y: canvas.height / 2,
-            width: 40,
-            height: 60,
-            radius: 20,
-            isDragging: false,
-            dragOffsetX: 0,
-            dragOffsetY: 0
-        };
-
-        // 生成星星（三层视差效果）
-        function initStars() {
+        
+        function generateStars() {
             stars = [];
-            for (let i = 0; i < config.starCount; i++) {
+            for (let i = 0; i < 200; i++) {
                 stars.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
+                    x: Math.random() * width * 3 - width,
+                    y: Math.random() * height * 3 - height,
                     size: Math.random() * 2 + 0.5,
-                    speed: Math.random() * 2 + 0.5,
-                    opacity: Math.random() * 0.8 + 0.2
+                    brightness: Math.random()
                 });
             }
         }
-
-        // 生成小行星
-        function initAsteroids() {
-            asteroids = [];
-            for (let i = 0; i < config.asteroidCount; i++) {
-                createAsteroid();
+        
+        function generateBodies() {
+            bodies = [];
+            const numBodies = 15 + Math.floor(Math.random() * 10);
+            
+            for (let i = 0; i < numBodies; i++) {
+                const type = bodyTypes[Math.floor(Math.random() * bodyTypes.length)];
+                const colors = bodyColors[type];
+                
+                bodies.push({
+                    x: Math.random() * width * 2 - width / 2,
+                    y: Math.random() * height * 2 - height / 2,
+                    radius: type === 'star' ? 40 + Math.random() * 30 : 
+                            type === 'planet' ? 15 + Math.random() * 25 : 
+                            8 + Math.random() * 12,
+                    type: type,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    name: generateName(),
+                    mass: Math.random() * 100 + 10,
+                    hasFlag: false
+                });
             }
-        }
-
-        // 创建单个小行星
-        function createAsteroid(isReset = false) {
-            const asteroid = {
-                x: isReset ? Math.random() * canvas.width : Math.random() * canvas.width,
-                y: isReset ? -50 : Math.random() * -canvas.height,
-                size: Math.random() * 30 + 15,
-                speed: Math.random() * 3 + config.baseScrollSpeed,
-                rotate: Math.random() * Math.PI * 2,
-                rotateSpeed: (Math.random() - 0.5) * 0.05
-            };
-            asteroids.push(asteroid);
-        }
-
-        // 更新星星位置
-        function updateStars() {
-            stars.forEach(star => {
-                star.y += star.speed;
-                // 超出屏幕重置
-                if (star.y > canvas.height) {
-                    star.y = -10;
-                    star.x = Math.random() * canvas.width;
-                }
+            
+            // 确保有一个大恒星作为太阳
+            bodies.unshift({
+                x: width / 2 + 200,
+                y: height / 2 - 100,
+                radius: 60,
+                type: 'star',
+                color: '#FFD700',
+                name: '太阳',
+                mass: 1000,
+                hasFlag: false
             });
         }
-
-        // 更新小行星位置
-        function updateAsteroids() {
-            for (let i = asteroids.length - 1; i >= 0; i--) {
-                const rock = asteroids[i];
-                rock.y += rock.speed;
-                rock.rotate += rock.rotateSpeed;
-
-                // 超出屏幕重置
-                if (rock.y > canvas.height + rock.size) {
-                    asteroids.splice(i, 1);
-                    createAsteroid(true);
-                }
-            }
+        
+        function generateName() {
+            const prefixes = ['阿尔法', '贝塔', '伽马', '德尔塔', '艾普西隆', '泽塔', '奥米伽', 'Proxima', 'Kepler', 'Gliese'];
+            const suffixes = ['座', '星', '云', 'IX', 'VII', 'III', 'B', 'C', '-b', '-c'];
+            return prefixes[Math.floor(Math.random() * prefixes.length)] + 
+                   suffixes[Math.floor(Math.random() * suffixes.length)];
         }
-
-        // 自动驾驶逻辑
-        function autoPilot() {
-            if (!config.isAuto) return;
-
-            // 检测前方危险小行星
-            let nearestRock = null;
-            let minDistance = Infinity;
-
-            asteroids.forEach(rock => {
-                // 只检测飞船前方、同水平区域的小行星
-                if (rock.y < ship.y + ship.height && rock.y > ship.y - 200) {
-                    const dx = rock.x - ship.x;
-                    const dy = rock.y - ship.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-
-                    if (distance < minDistance) {
-                        minDistance = distance;
-                        nearestRock = rock;
+        
+        function init() {
+            resize();
+            generateStars();
+            generateBodies();
+            ship.x = width / 2;
+            ship.y = height / 2;
+            ship.vx = 0;
+            ship.vy = 0;
+            explored.clear();
+            autoMode = false;
+            document.getElementById('autoBtn').classList.remove('active');
+        }
+        
+        function startGame() {
+            gameStarted = true;
+            document.getElementById('title').classList.add('hidden');
+            document.getElementById('info').classList.remove('hidden');
+            document.getElementById('autoBtn').classList.remove('hidden');
+            document.getElementById('instructions').classList.remove('hidden');
+            init();
+            gameLoop();
+        }
+        
+        function update() {
+            if (!gameStarted) return;
+            
+            // 手动控制
+            if (!autoMode) {
+                if (keys['ArrowUp'] || keys['KeyW']) ship.vy -= ship.thrust;
+                if (keys['ArrowDown'] || keys['KeyS']) ship.vy += ship.thrust;
+                if (keys['ArrowLeft'] || keys['KeyA']) ship.vx -= ship.thrust;
+                if (keys['ArrowRight'] || keys['KeyD']) ship.vx += ship.thrust;
+            } else {
+                // 自动导航到最近的未探索星体
+                let nearest = null;
+                let nearestDist = Infinity;
+                
+                for (const body of bodies) {
+                    if (!explored.has(body)) {
+                        const dx = body.x - ship.x;
+                        const dy = body.y - ship.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < nearestDist) {
+                            nearestDist = dist;
+                            nearest = body;
+                        }
                     }
                 }
-            });
-
-            // 自动躲避
-            if (nearestRock && minDistance < 120) {
-                const offsetLeft = nearestRock.x - (ship.x - 80);
-                const offsetRight = (ship.x + 80) - nearestRock.x;
-                // 选择距离更远的一侧躲避
-                if (offsetLeft > offsetRight) {
-                    ship.x = Math.max(ship.radius, ship.x - config.autoSpeed);
-                } else {
-                    ship.x = Math.min(canvas.width - ship.radius, ship.x + config.autoSpeed);
+                
+                if (nearest) {
+                    const dx = nearest.x - ship.x;
+                    const dy = nearest.y - ship.y;
+                    const targetAngle = Math.atan2(dy, dx);
+                    
+                    // 缓慢转向
+                    ship.vx += Math.cos(targetAngle) * ship.thrust * 0.5;
+                    ship.vy += Math.sin(targetAngle) * ship.thrust * 0.5;
                 }
             }
-        }
-
-        // 碰撞检测
-        function checkCollision() {
-            asteroids.forEach(rock => {
-                const dx = rock.x - ship.x;
-                const dy = rock.y - ship.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-
-                // 碰撞触发
-                if (distance < ship.radius + rock.size / 2) {
-                    if (!config.isShaking) {
-                        config.isShaking = true;
-                        document.body.classList.add('shake');
-                        // 震动结束重置
-                        setTimeout(() => {
-                            document.body.classList.remove('shake');
-                            config.isShaking = false;
-                        }, 200);
+            
+            // 限制速度
+            const speed = Math.sqrt(ship.vx * ship.vx + ship.vy * ship.vy);
+            if (speed > ship.maxSpeed) {
+                ship.vx = (ship.vx / speed) * ship.maxSpeed;
+                ship.vy = (ship.vy / speed) * ship.maxSpeed;
+            }
+            
+            // 应用摩擦力
+            ship.vx *= ship.friction;
+            ship.vy *= ship.friction;
+            
+            // 更新位置
+            ship.x += ship.vx;
+            ship.y += ship.vy;
+            
+            // 更新飞船角度
+            if (speed > 0.1) {
+                ship.angle = Math.atan2(ship.vy, ship.vx);
+            }
+            
+            // 检查与星体的碰撞
+            for (const body of bodies) {
+                const dx = body.x - ship.x;
+                const dy = body.y - ship.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist < body.radius + ship.size / 2) {
+                    // 靠近减速着陆
+                    if (speed < 2) {
+                        explored.add(body);
+                        body.hasFlag = true;
+                        ship.vx *= 0.5;
+                        ship.vy *= 0.5;
+                    } else {
+                        // 太快了，弹开
+                        const nx = dx / dist;
+                        const ny = dy / dist;
+                        ship.x = body.x - nx * (body.radius + ship.size / 2 + 5);
+                        ship.y = body.y - ny * (body.radius + ship.size / 2 + 5);
+                        ship.vx = -nx * speed * 0.5;
+                        ship.vy = -ny * speed * 0.5;
                     }
                 }
-            });
-        }
-
-        // 渲染星星
-        function renderStars() {
-            stars.forEach(star => {
-                ctx.beginPath();
-                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
-                ctx.fill();
-            });
-        }
-
-        // 渲染小行星
-        function renderAsteroids() {
-            asteroids.forEach(rock => {
-                ctx.save();
-                ctx.translate(rock.x, rock.y);
-                ctx.rotate(rock.rotate);
-                
-                // 绘制不规则小行星
-                ctx.beginPath();
-                const points = 8;
-                for (let i = 0; i < points; i++) {
-                    const angle = (i / points) * Math.PI * 2;
-                    const radius = rock.size * (0.8 + Math.random() * 0.4);
-                    const x = Math.cos(angle) * radius;
-                    const y = Math.sin(angle) * radius;
-                    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+            }
+            
+            // 更新UI
+            document.getElementById('speed').textContent = speed.toFixed(1);
+            document.getElementById('coords').textContent = 
+                Math.round(ship.x) + ', ' + Math.round(ship.y);
+            document.getElementById('explored').textContent = explored.size + ' / ' + bodies.length;
+            
+            // 找最近的星体
+            let nearestBody = null;
+            let nearestDist = Infinity;
+            for (const body of bodies) {
+                const dx = body.x - ship.x;
+                const dy = body.y - ship.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < nearestDist) {
+                    nearestDist = dist;
+                    nearestBody = body;
                 }
-                ctx.closePath();
-                ctx.fillStyle = '#3a3a4a';
-                ctx.fill();
-                ctx.strokeStyle = '#666677';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-                
-                ctx.restore();
-            });
+            }
+            document.getElementById('nearest').textContent = 
+                nearestBody ? nearestBody.name + ' (' + Math.round(nearestDist) + ')' : '-';
         }
-
-        // 渲染飞船
-        function renderShip() {
-            ctx.save();
-            ctx.translate(ship.x, ship.y);
-
-            // 飞船尾焰
-            ctx.beginPath();
-            ctx.moveTo(-10, 25);
-            ctx.lineTo(0, 40 + Math.random() * 10);
-            ctx.lineTo(10, 25);
-            ctx.closePath();
-            const gradient = ctx.createLinearGradient(0, 25, 0, 50);
-            gradient.addColorStop(0, '#ffffff');
-            gradient.addColorStop(1, '#00aaff');
-            ctx.fillStyle = gradient;
-            ctx.fill();
-
-            // 飞船主体
-            ctx.beginPath();
-            ctx.moveTo(0, -ship.height / 2);
-            ctx.lineTo(ship.width / 2, ship.height / 2);
-            ctx.lineTo(-ship.width / 2, ship.height / 2);
-            ctx.closePath();
-            ctx.fillStyle = '#ffffff';
-            ctx.fill();
-
-            // 飞船窗口
-            ctx.beginPath();
-            ctx.arc(0, -5, 8, 0, Math.PI * 2);
-            ctx.fillStyle = '#00aaff';
-            ctx.fill();
-
-            ctx.restore();
-        }
-
-        // 游戏主循环
-        function gameLoop() {
+        
+        function draw() {
             // 清空画布
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // 更新逻辑
-            updateStars();
-            updateAsteroids();
-            autoPilot();
-            checkCollision();
-
-            // 渲染画面
-            renderStars();
-            renderAsteroids();
-            renderShip();
-
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, width, height);
+            
+            // 相机偏移
+            const offsetX = width / 2 - ship.x;
+            const offsetY = height / 2 - ship.y;
+            
+            // 绘制星星背景
+            ctx.save();
+            for (const star of stars) {
+                const sx = star.x + offsetX * 0.3;
+                const sy = star.y + offsetY * 0.3;
+                
+                if (sx > -50 && sx < width + 50 && sy > -50 && sy < height + 50) {
+                    const twinkle = 0.5 + Math.sin(Date.now() / 500 + star.brightness * 10) * 0.5;
+                    ctx.fillStyle = `rgba(255, 255, 255, ${star.brightness * twinkle})`;
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, star.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            ctx.restore();
+            
+            // 绘制星体
+            for (const body of bodies) {
+                const bx = body.x + offsetX;
+                const by = body.y + offsetY;
+                
+                if (bx > -100 && bx < width + 100 && by > -100 && by < height + 100) {
+                    // 发光效果
+                    const gradient = ctx.createRadialGradient(
+                        bx, by, 0, bx, by, body.radius * 2
+                    );
+                    gradient.addColorStop(0, body.color);
+                    gradient.addColorStop(0.5, body.color + '40');
+                    gradient.addColorStop(1, 'transparent');
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(bx, by, body.radius * 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 星体本身
+                    ctx.fillStyle = body.color;
+                    ctx.beginPath();
+                    ctx.arc(bx, by, body.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 恒星光晕
+                    if (body.type === 'star') {
+                        ctx.strokeStyle = '#FFD70020';
+                        ctx.lineWidth = 3;
+                        for (let i = 1; i <= 3; i++) {
+                            ctx.beginPath();
+                            ctx.arc(bx, by, body.radius + i * 10, 0, Math.PI * 2);
+                            ctx.stroke();
+                        }
+                    }
+                    
+                    // 旗帜
+                    if (body.hasFlag) {
+                        ctx.fillStyle = '#FFFF00';
+                        ctx.beginPath();
+                        ctx.moveTo(bx, by - body.radius - 20);
+                        ctx.lineTo(bx + 15, by - body.radius - 15);
+                        ctx.lineTo(bx, by - body.radius - 10);
+                        ctx.fill();
+                        ctx.strokeStyle = '#FFFFFF';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(bx, by - body.radius - 20);
+                        ctx.lineTo(bx, by - body.radius + 5);
+                        ctx.stroke();
+                    }
+                    
+                    // 星体名称
+                    ctx.fillStyle = '#FFFFFF80';
+                    ctx.font = '10px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(body.name, bx, by + body.radius + 15);
+                }
+            }
+            
+            // 绘制飞船
+            const sx = ship.x + offsetX;
+            const sy = ship.y + offsetY;
+            
+            ctx.save();
+            ctx.translate(sx, sy);
+            ctx.rotate(ship.angle + Math.PI / 2);
+            
+            // 引擎火焰
+            const flameSize = 5 + Math.random() * 5;
+            if (keys['ArrowUp'] || keys['KeyW'] || autoMode) {
+                ctx.fillStyle = '#FF660080';
+                ctx.beginPath();
+                ctx.moveTo(-5, 10);
+                ctx.lineTo(0, 10 + flameSize);
+                ctx.lineTo(5, 10);
+                ctx.fill();
+            }
+            
+            // 飞船主体
+            ctx.fillStyle = '#0F0';
+            ctx.beginPath();
+            ctx.moveTo(0, -ship.size);
+            ctx.lineTo(-ship.size / 2, ship.size / 2);
+            ctx.lineTo(0, ship.size / 3);
+            ctx.lineTo(ship.size / 2, ship.size / 2);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 飞船轮廓
+            ctx.strokeStyle = '#0F0';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            ctx.restore();
+            
+            // 速度指示器
+            const speed = Math.sqrt(ship.vx * ship.vx + ship.vy * ship.vy);
+            if (speed > 0.5) {
+                ctx.strokeStyle = '#0F080';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(sx, sy);
+                ctx.lineTo(sx + ship.vx * 10, sy + ship.vy * 10);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
+        
+        function gameLoop() {
+            update();
+            draw();
             requestAnimationFrame(gameLoop);
         }
-
-        // 鼠标/触摸操控事件
-        // 按下事件
-        function handleStart(x, y) {
-            // 检测是否点击到飞船
-            const dx = x - ship.x;
-            const dy = y - ship.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-
-            if (distance < ship.radius * 2) {
-                ship.isDragging = true;
-                ship.dragOffsetX = x - ship.x;
-                ship.dragOffsetY = y - ship.y;
-                config.isAuto = false;
-                autoBtn.classList.remove('active');
-            }
-        }
-
-        // 移动事件
-        function handleMove(x, y) {
-            if (ship.isDragging) {
-                let newX = x - ship.dragOffsetX;
-                let newY = y - ship.dragOffsetY;
-
-                // 边界限制
-                newX = Math.max(ship.radius, Math.min(canvas.width - ship.radius, newX));
-                newY = Math.max(ship.radius, Math.min(canvas.height - ship.radius, newY));
-
-                ship.x = newX;
-                ship.y = newY;
-            }
-        }
-
-        // 松开事件
-        function handleEnd() {
-            ship.isDragging = false;
-        }
-
-        // PC端鼠标事件
-        canvas.addEventListener('mousedown', (e) => {
-            handleStart(e.clientX, e.clientY);
+        
+        // 事件监听
+        window.addEventListener('resize', resize);
+        
+        window.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
         });
-        canvas.addEventListener('mousemove', (e) => {
-            handleMove(e.clientX, e.clientY);
+        
+        window.addEventListener('keyup', (e) => {
+            keys[e.code] = false;
         });
-        window.addEventListener('mouseup', handleEnd);
-
-        // 移动端触摸事件
+        
+        // 触摸控制
+        let touchStartX, touchStartY;
+        
         canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            handleStart(touch.clientX, touch.clientY);
+            if (!gameStarted) return;
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
         });
+        
         canvas.addEventListener('touchmove', (e) => {
+            if (!gameStarted || autoMode) return;
             e.preventDefault();
-            const touch = e.touches[0];
-            handleMove(touch.clientX, touch.clientY);
+            const dx = e.touches[0].clientX - touchStartX;
+            const dy = e.touches[0].clientY - touchStartY;
+            
+            ship.vx += dx * 0.002;
+            ship.vy += dy * 0.002;
+            
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
         });
-        window.addEventListener('touchend', handleEnd);
-
-        // AUTO按钮切换
-        autoBtn.addEventListener('click', () => {
-            config.isAuto = !config.isAuto;
-            autoBtn.classList.toggle('active', config.isAuto);
+        
+        // AUTO按钮
+        document.getElementById('autoBtn').addEventListener('click', () => {
+            autoMode = !autoMode;
+            document.getElementById('autoBtn').classList.toggle('active', autoMode);
         });
-
-        // 游戏初始化启动
-        initStars();
-        initAsteroids();
-        gameLoop();
+        
+        // 开始按钮
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        
+        // 初始化
+        resize();
+        generateStars();
     </script>
 </body>
 </html>
