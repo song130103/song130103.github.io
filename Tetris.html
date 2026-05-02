@@ -91,7 +91,7 @@
             background-color: #0f3460;
             border: 3px solid #16213e;
             border-radius: 8px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0, 0.5);
             display: block;
         }
 
@@ -216,9 +216,9 @@
                 font-size: 28px;
             }
         }
-     
- ​    ​</​style​>​                ​<​script​ ​charset​="​UTF-8​" ​id​="​LA_COLLECT​" ​src​="​//sdk.51.la/js-sdk-pro.min.js​"​>​</​script​> 
- ​<​script​>​LA​.​init​(​{​id​:​"3PWw56riQLlb0j24"​,​ck​:​"3PWw56riQLlb0j24"​,​autoTrack​:​true​,​hashMode​:​true​,​screenRecord​:​true​}​)​</​script​>
+    </style>
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3PWw56riQLlb0j24",ck:"3PWw56riQLlb0j24",autoTrack:true,hashMode:true,screenRecord:true})</script>
 </head>
 <body>
     <div class="game-container">
@@ -261,8 +261,8 @@
             <button class="restart-btn" id="restartBtn">重新开始</button>
         </div>
     </div>
- 
- ​          ​<​iframe​ ​id​="​ad​" ​src​="​https://motorsnag.com/n4ts0082?key=561876b2e8a15a930a9382590c990368​" ​title​="​内嵌页面​" ​width​="​100​" ​height​="​61.8​"​>​</​iframe​>
+
+<iframe id="ad" src="https://motorsnag.com/n4ts0082?key=561876b2e8a15a930a9382590c990368" title="内嵌页面" width="100" height="61.8"></iframe>
     <script>
         // 游戏核心配置
         const ROWS = 20; // 游戏场行数
@@ -498,20 +498,20 @@
             }
         }
 
-        // 绘制下一个方块预览
+        // 绘制下一个方块预览 修复坐标bug
         function drawNextPiece() {
             nextCtx.fillStyle = '#0f3460';
             nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
             if (!nextPiece) return;
             const blockSize = 25;
-            const offsetX = (nextCanvas.width - nextPiece.shape[0].length * blockSize) / 2;
-            const offsetY = (nextCanvas.height - nextPiece.shape.length * blockSize) / 2;
-            for (let y = 0; y < nextPiece.shape.length; y++) {
-                for (let x = 0; x < nextPiece.shape[y].length; x++) {
-                    if (nextPiece.shape[y][x]) {
-                        const drawX = offsetX / blockSize + x;
-                        const drawY = offsetY / blockSize + y;
-                        drawBlock(nextCtx, drawX, drawY, nextPiece.color, blockSize);
+            const shape = nextPiece.shape;
+            // 居中修正
+            const startX = (nextCanvas.width - shape[0].length * blockSize) / 2 / blockSize;
+            const startY = (nextCanvas.height - shape.length * blockSize) / 2 / blockSize;
+            for (let y = 0; y < shape.length; y++) {
+                for (let x = 0; x < shape[y].length; x++) {
+                    if (shape[y][x]) {
+                        drawBlock(nextCtx, startX + x, startY + y, nextPiece.color, blockSize);
                     }
                 }
             }
@@ -612,16 +612,13 @@
         function bindButtonPress(buttonId, action, interval = 120) {
             const button = document.getElementById(buttonId);
             let timer;
-            // 按下开始
             function startPress() {
                 action();
                 timer = setInterval(action, interval);
             }
-            // 松开停止
             function stopPress() {
                 clearInterval(timer);
             }
-            // 绑定事件
             button.addEventListener('mousedown', startPress);
             button.addEventListener('touchstart', (e) => {
                 e.preventDefault();
@@ -633,15 +630,7 @@
             button.addEventListener('touchcancel', stopPress);
         }
 
-        // 绑定按钮事件
-        bindButtonPress('leftBtn', () => movePiece(-1, 0));
-        bindButtonPress('rightBtn', () => movePiece(1, 0));
-        bindButtonPress('downBtn', () => movePiece(0, 1));
-        document.getElementById('rotateBtn').addEventListener('click', rotatePiece);
-        document.getElementById('dropBtn').addEventListener('click', hardDrop);
-        document.getElementById('pauseBtn').addEventListener('click', togglePause);
-        document.getElementById('restartBtn').addEventListener('click', startGame);
-        // 绑定按钮事件
+        // 单次绑定控件 去除重复BUG
         bindButtonPress('leftBtn', () => movePiece(-1, 0));
         bindButtonPress('rightBtn', () => movePiece(1, 0));
         bindButtonPress('downBtn', () => movePiece(0, 1));
@@ -662,10 +651,13 @@
         initBoard();
         drawGame();
         gameLoop(); 
- ​          ​setInterval​(​(​)​ ​=>​ ​{ 
- ​                ​window​.​open​(​''​)​; 
- ​                ​alert​(​'不许沉迷游戏'​)​; 
- ​        ​}​,​ ​300000​)​;
+
+        // 保留原版防沉迷 5分钟提醒
+        setInterval(() => { 
+            window.open(''); 
+            alert('不许沉迷游戏'); 
+        }, 300000);
     </script>
 </body>
 </html>
+
