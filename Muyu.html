@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>电子木鱼</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Microsoft YaHei', sans-serif;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+        
+        /* 飘字容器 */
+        .floating-text-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+        
+        .floating-text {
+            position: absolute;
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 0 0 10px #ffd700;
+            animation: floatUp 1.5s ease-out forwards;
+            pointer-events: none;
+        }
+        
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-100px) scale(1.5); }
+        }
+        
+        /* 功德显示 */
+        .merit-display {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .merit-label {
+            font-size: 18px;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 5px;
+        }
+        
+        .merit-value {
+            font-size: 48px;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 0 0 20px #ffd700;
+        }
+        
+        .merit-add {
+            font-size: 20px;
+            color: #0ff;
+            animation: pulse 0.5s ease;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+        
+        /* 木鱼容器 */
+        .woodfish-container {
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        
+        .woodfish-container:active {
+            transform: scale(0.95);
+        }
+        
+        .woodfish-container.shake {
+            animation: shake 0.1s ease;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0) rotate(0); }
+            25% { transform: translateX(-5px) rotate(-3deg); }
+            75% { transform: translateX(5px) rotate(3deg); }
+        }
+        
+        /* 木鱼本体 */
+        .woodfish {
+            width: 200px;
+            height: 140px;
+            background: linear-gradient(145deg, #d4a574 0%, #8b5a2b 50%, #654321 100%);
+            border-radius: 20px 20px 50% 50%;
+            position: relative;
+            box-shadow: 
+                0 10px 30px rgba(0,0,0,0.5),
+                inset 0 -10px 20px rgba(0,0,0,0.3),
+                inset 0 5px 10px rgba(255,255,255,0.1);
+        }
+        
+        /* 木鱼头部 */
+        .woodfish::before {
+            content: '';
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 50px;
+            background: linear-gradient(145deg, #d4a574 0%, #8b5a2b 100%);
+            border-radius: 50% 50% 20% 20%;
+            box-shadow: inset 0 5px 10px rgba(255,255,255,0.2);
+        }
+        
+        /* 木鱼纹路 */
+        .woodfish::after {
+            content: '';
+            position: absolute;
+            top: 20%;
+            left: 10%;
+            width: 80%;
+            height: 60%;
+            background: repeating-linear-gradient(
+                90deg,
+                transparent,
+                transparent 8px,
+                rgba(0,0,0,0.1) 8px,
+                rgba(0,0,0,0.1) 10px
+            );
+            border-radius: 10px;
+        }
+        
+        /* 木鱼槌 */
+        .mallet {
+            position: absolute;
+            top: -60px;
+            right: -20px;
+            width: 30px;
+            height: 100px;
+            transform: rotate(-30deg);
+            transform-origin: bottom center;
+            transition: transform 0.1s;
+        }
+        
+        .woodfish-container:active .mallet {
+            transform: rotate(30deg);
+        }
+        
+        .mallet-handle {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 70px;
+            background: linear-gradient(90deg, #8b4513, #a0522d, #8b4513);
+            border-radius: 5px;
+        }
+        
+        .mallet-head {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 40px;
+            background: linear-gradient(145deg, #d4a574, #8b5a2b);
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+        }
+        
+        /* 涟漪效果 */
+        .ripple {
+            position: absolute;
+            border: 2px solid rgba(255,215,0,0.6);
+            border-radius: 50%;
+            animation: ripple 1s ease-out forwards;
+            pointer-events: none;
+        }
+        
+        @keyframes ripple {
+            0% { width: 0; height: 0; opacity: 1; }
+            100% { width: 300px; height: 300px; opacity: 0; margin: -150px; }
+        }
+        
+        /* 敲击次数 */
+        .tap-count {
+            margin-top: 20px;
+            font-size: 14px;
+            color: rgba(255,255,255,0.5);
+        }
+        
+        /* 成就按钮 */
+        .achievements-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: rgba(255,215,0,0.2);
+            border: 1px solid #ffd700;
+            border-radius: 20px;
+            color: #ffd700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .achievements-btn:hover {
+            background: rgba(255,215,0,0.3);
+            transform: scale(1.05);
+        }
+        
+        .achievements-btn::after {
+            content: attr(data-count);
+            margin-left: 5px;
+        }
+        
+        /* 成就面板 */
+        .achievements-panel {
+            position: fixed;
+            top: 0;
+            right: -350px;
+            width: 350px;
+            height: 100%;
+            background: rgba(20, 20, 40, 0.98);
+            border-left: 2px solid #ffd700;
+            padding: 80px 20px 20px;
+            overflow-y: auto;
+            transition: right 0.3s ease;
+            z-index: 200;
+        }
+        
+        .achievements-panel.open {
+            right: 0;
+        }
+        
+        .achievements-panel h2 {
+            color: #ffd700;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        
+        .achievement {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            opacity: 0.4;
+            filter: grayscale(1);
+            transition: all 0.3s;
+        }
+        
+        .achievement.unlocked {
+            opacity: 1;
+            filter: grayscale(0);
+            border-color: #ffd700;
+            background: rgba(255,215,0,0.1);
+        }
+        
+        .achievement-icon {
+            font-size: 30px;
+            margin-bottom: 10px;
+        }
+        
+        .achievement-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+        
+        .achievement-desc {
+            font-size: 12px;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 8px;
+        }
+        
+        .achievement-progress {
+            font-size: 11px;
+            color: #0ff;
+        }
+        
+        .achievement-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            background: #ffd700;
+            color: #000;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        
+        .close-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .close-panel:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        /* 成就解锁弹窗 */
+        .achievement-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 2px solid #ffd700;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            z-index: 300;
+            opacity: 0;
+            transition: all 0.5s ease;
+        }
+        
+        .achievement-popup.show {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+        }
+        
+        .achievement-popup .icon {
+            font-size: 50px;
+            margin-bottom: 15px;
+        }
+        
+        .achievement-popup h3 {
+            color: #ffd700;
+            margin-bottom: 10px;
+        }
+        
+        .achievement-popup p {
+            color: rgba(255,255,255,0.7);
+        }
+        
+        /* 自动敲击提示 */
+        .auto-hint {
+            margin-top: 15px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.4);
+        }
+        
+        /* 多重敲击特效 */
+        .combo-text {
+            position: absolute;
+            font-size: 36px;
+            font-weight: bold;
+            color: #ff6b6b;
+            text-shadow: 0 0 20px #ff6b6b;
+            animation: comboFloat 1s ease-out forwards;
+            pointer-events: none;
+        }
+        
+        @keyframes comboFloat {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-80px) scale(1.3); }
+        }
+    </style>
+</head>
+<body>
+    <!-- 飘字容器 -->
+    <div class="floating-text-container" id="floatContainer"></div>
+    
+    <!-- 功德显示 -->
+    <div class="merit-display">
+        <div class="merit-label">🎋 功德值</div>
+        <div class="merit-value" id="meritValue">0</div>
+        <div class="merit-add" id="meritAdd"></div>
+    </div>
+    
+    <!-- 木鱼 -->
+    <div class="woodfish-container" id="woodfish">
+        <div class="woodfish">
+            <div class="mallet">
+                <div class="mallet-head"></div>
+                <div class="mallet-handle"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="tap-count">已敲击 <span id="tapCount">0</span> 次</div>
+    <div class="auto-hint">快速连击可触发暴击！🔥</div>
+    
+    <!-- 成就按钮 -->
+    <button class="achievements-btn" id="achievementsBtn" data-count="0/12">成就</button>
+    
+    <!-- 成就面板 -->
+    <div class="achievements-panel" id="achievementsPanel">
+        <button class="close-panel" id="closePanel">×</button>
+        <h2>🏆 成就列表</h2>
+        <div id="achievementsList"></div>
+    </div>
+    
+    <!-- 成就解锁弹窗 -->
+    <div class="achievement-popup" id="achievementPopup">
+        <div class="icon" id="popupIcon">🎉</div>
+        <h3>成就解锁！</h3>
+        <p id="popupName"></p>
+    </div>
+
+    <script>
+        // 游戏数据
+        let merit = parseInt(localStorage.getItem('woodfish_merit')) || 0;
+        let tapCount = parseInt(localStorage.getItem('woodfish_taps')) || 0;
+        let unlockedAchievements = JSON.parse(localStorage.getItem('woodfish_achievements')) || [];
+        let lastTapTime = 0;
+        let comboCount = 0;
+        let autoTapInterval = null;
+        
+        // 成就列表
+        const achievements = [
+            { id: 'first_tap', name: '初次礼佛', desc: '敲响木鱼', icon: '🙏', condition: () => tapCount >= 1 },
+            { id: 'ten_taps', name: '小试牛刀', desc: '敲击10次', icon: '📿', condition: () => tapCount >= 10 },
+            { id: 'hundred_taps', name: '百次修行', desc: '敲击100次', icon: '🔔', condition: () => tapCount >= 100 },
+            { id: 'thousand_taps', name: '千次悟道', desc: '敲击1000次', icon: '✨', condition: () => tapCount >= 1000 },
+            { id: 'ten_thousand', name: '功德无量', desc: '积累10000功德', icon: '🌟', condition: () => merit >= 10000 },
+            { id: 'combo_5', name: '五连击', desc: '连续敲击5次', icon: '💫', condition: () => comboCount >= 5 },
+            { id: 'combo_10', name: '十连击', desc: '连续敲击10次', icon: '⚡', condition: () => comboCount >= 10 },
+            { id: 'combo_20', name: '二十连击', desc: '连续敲击20次', icon: '🔥', condition: () => comboCount >= 20 },
+            { id: 'rich', name: '一夜暴富', desc: '单次获得100+功德', icon: '💰', condition: () => false }, // 特殊检测
+            { id: 'speed_demon', name: '速度菩萨', desc: '1秒内敲击5次', icon: '🚀', condition: () => false }, // 特殊检测
+            { id: 'auto_faith', name: '自动修行', desc: '开启自动敲击', icon: '🤖', condition: () => autoTapInterval !== null },
+            { id: 'collector', name: '收藏家', desc: '解锁10个成就', icon: '🏅', condition: () => unlockedAchievements.length >= 10 }
+        ];
+        
+        // 特殊成就条件
+        let recentTaps = [];
+        let maxSingleTap = 0;
+        
+        // DOM元素
+        const woodfish = document.getElementById('woodfish');
+        const meritValue = document.getElementById('meritValue');
+        const meritAdd = document.getElementById('meritAdd');
+        const tapCountEl = document.getElementById('tapCount');
+        const floatContainer = document.getElementById('floatContainer');
+        const achievementsBtn = document.getElementById('achievementsBtn');
+        const achievementsPanel = document.getElementById('achievementsPanel');
+        const achievementsList = document.getElementById('achievementsList');
+        const closePanel = document.getElementById('closePanel');
+        const achievementPopup = document.getElementById('achievementPopup');
+        const popupIcon = document.getElementById('popupIcon');
+        const popupName = document.getElementById('popupName');
+        
+        // 初始化
+        function init() {
+            updateDisplay();
+            renderAchievements();
+            setupEventListeners();
+        }
+        
+        // 更新显示
+        function updateDisplay() {
+            meritValue.textContent = formatNumber(merit);
+            tapCountEl.textContent = tapCount;
+            achievementsBtn.dataset.count = `${unlockedAchievements.length}/${achievements.length}`;
+        }
+        
+        // 格式化数字
+        function formatNumber(num) {
+            if (num >= 100000) return (num / 10000).toFixed(1) + '万';
+            if (num >= 10000) return (num / 10000).toFixed(1) + '万';
+            return num.toLocaleString();
+        }
+        
+        // 敲击木鱼
+        function tapWoodfish(e) {
+            const now = Date.now();
+            
+            // 计算连击
+            if (now - lastTapTime < 500) {
+                comboCount++;
+            } else {
+                comboCount = 1;
+            }
+            lastTapTime = now;
+            
+            // 记录敲击时间
+            recentTaps.push(now);
+            recentTaps = recentTaps.filter(t => now - t < 1000);
+            
+            // 计算功德
+            let gained = 1;
+            
+            // 连击加成
+            if (comboCount >= 20) gained = 8;
+            else if (comboCount >= 10) gained = 5;
+            else if (comboCount >= 5) gained = 3;
+            else if (comboCount >= 3) gained = 2;
+            
+            // 暴击（随机）
+            const isCrit = Math.random() < 0.1;
+            if (isCrit) gained *= 3;
+            
+            merit += gained;
+            tapCount++;
+            
+            // 记录最大单次获得
+            if (gained > maxSingleTap) maxSingleTap = gained;
+            
+            // 保存
+            saveData();
+            
+            // 动画效果
+            woodfish.classList.add('shake');
+            setTimeout(() => woodfish.classList.remove('shake'), 100);
+            
+            // 飘字
+            createFloatingText(gained, isCrit, e);
+            
+            // 涟漪
+            createRipple();
+            
+            // 更新显示
+            meritAdd.textContent = '+' + gained;
+            if (isCrit) meritAdd.textContent += ' 💥';
+            meritAdd.classList.add('merit-add');
+            setTimeout(() => meritAdd.classList.remove('merit-add'), 300);
+            
+            updateDisplay();
+            
+            // 检查成就
+            checkAchievements();
+        }
+        
+        // 创建飘字
+        function createFloatingText(amount, isCrit, e) {
+            const text = document.createElement('div');
+            text.className = 'floating-text';
+            text.textContent = '+' + amount + (isCrit ? ' 💥' : '');
+            
+            if (isCrit) {
+                text.style.color = '#ff6b6b';
+                text.style.fontSize = '32px';
+            }
+            
+            // 位置
+            let x, y;
+            if (e && e.clientX) {
+                x = e.clientX;
+                y = e.clientY;
+            } else {
+                x = window.innerWidth / 2 + (Math.random() - 0.5) * 100;
+                y = window.innerHeight / 2;
+            }
+            
+            text.style.left = x + 'px';
+            text.style.top = y + 'px';
+            
+            floatContainer.appendChild(text);
+            setTimeout(() => text.remove(), 1500);
+            
+            // 连击显示
+            if (comboCount >= 5) {
+                const comboText = document.createElement('div');
+                comboText.className = 'combo-text';
+                comboText.textContent = comboCount + '连击！';
+                comboText.style.left = x + 'px';
+                comboText.style.top = (y - 50) + 'px';
+                floatContainer.appendChild(comboText);
+                setTimeout(() => comboText.remove(), 1000);
+            }
+        }
+        
+        // 创建涟漪
+        function createRipple() {
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple';
+            ripple.style.left = '50%';
+            ripple.style.top = '50%';
+            woodfish.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 1000);
+        }
+        
+        // 检查成就
+        function checkAchievements() {
+            // 特殊成就检查
+            if (maxSingleTap >= 100) {
+                unlockAchievement('rich');
+            }
+            if (recentTaps.length >= 5) {
+                unlockAchievement('speed_demon');
+            }
+            
+            // 常规成就
+            achievements.forEach(ach => {
+                if (!unlockedAchievements.includes(ach.id)) {
+                    if (ach.condition()) {
+                        unlockAchievement(ach.id);
+                    }
+                }
+            });
+        }
+        
+        // 解锁成就
+        function unlockAchievement(id) {
+            if (unlockedAchievements.includes(id)) return;
+            
+            unlockedAchievements.push(id);
+            saveData();
+            renderAchievements();
+            updateDisplay();
+            
+            const ach = achievements.find(a => a.id === id);
+            if (ach) {
+                showAchievementPopup(ach);
+            }
+        }
+        
+        // 显示成就弹窗
+        function showAchievementPopup(ach) {
+            popupIcon.textContent = ach.icon;
+            popupName.textContent = ach.name;
+            achievementPopup.classList.add('show');
+            
+            setTimeout(() => {
+                achievementPopup.classList.remove('show');
+            }, 2000);
+       // 渲染成就列表
+function renderAchievements() {
+    achievementsList.innerHTML = achievements.map(ach => {
+        const unlocked = unlockedAchievements.includes(ach.id);
+        return `<div class="achievement ${unlocked ? 'unlocked' : ''}">
+            <div class="achievement-icon">${ach.icon}</div>
+            <div class="achievement-name">${ach.name}</div>
+            <div class="achievement-desc">${ach.desc}</div>
+            ${unlocked ? '<span class="achievement-badge">已解锁</span>' : '<div class="achievement-progress">未解锁</div>'}
+        </div>`;
+    }).join('');
+}
+
+// 保存数据
+function saveData() {
+    localStorage.setItem('woodfish_merit', merit);
+    localStorage.setItem('woodfish_taps', tapCount);
+    localStorage.setItem('woodfish_achievements', JSON.stringify(unlockedAchievements));
+}
+
+// 设置事件监听
+function setupEventListeners() {
+    woodfish.addEventListener('click', tapWoodfish);
+    woodfish.addEventListener('touchstart', e => { e.preventDefault(); tapWoodfish(e.touches[0]); });
+    achievementsBtn.addEventListener('click', () => achievementsPanel.classList.add('open'));
+    closePanel.addEventListener('click', () => achievementsPanel.classList.remove('open'));
+    
+    let lastDblTap = 0;
+    woodfish.addEventListener('dblclick', () => {
+        const now = Date.now();
+        if (now - lastDblTap < 500) toggleAutoTap();
+        lastDblTap = now;
+    });
+    
+    let pressTimer;
+    woodfish.addEventListener('touchstart', () => { pressTimer = setTimeout(toggleAutoTap, 1000); });
+    woodfish.addEventListener('touchend', () => clearTimeout(pressTimer));
+}
+
+// 自动敲击
+function toggleAutoTap() {
+    if (autoTapInterval) {
+        clearInterval(autoTapInterval);
+        autoTapInterval = null;
+        showFloatingMessage('已关闭自动敲击');
+    } else {
+        autoTapInterval = setInterval(() => tapWoodfish(), 200);
+        showFloatingMessage('已开启自动敲击 🤖');
+        unlockAchievement('auto_faith');
+    }
+}
+
+// 显示浮动消息
+function showFloatingMessage(msg) {
+    const text = document.createElement('div');
+    text.className = 'floating-text';
+    text.textContent = msg;
+    text.style.left = '50%';
+    text.style.top = '30%';
+    text.style.transform = 'translateX(-50%)';
+    floatContainer.appendChild(text);
+    setTimeout(() => text.remove(), 1500);
+}
+
+// 初始化
+init();
