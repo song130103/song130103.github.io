@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>消消乐</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: 'Microsoft YaHei', sans-serif;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .title {
+            font-size: 32px;
+            color: #fff;
+            text-shadow: 0 0 20px #ffd700;
+            margin-bottom: 10px;
+        }
+        .title span { color: #ffd700; }
+        .score-board {
+            display: flex;
+            gap: 30px;
+            color: #fff;
+            font-size: 16px;
+        }
+        .score-board span { color: #ffd700; font-weight: bold; }
+        
+        .game-container {
+            background: rgba(0,0,0,0.4);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 5px;
+        }
+        
+        .cell {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        .cell:hover {
+            transform: scale(1.1);
+            z-index: 10;
+        }
+        .cell.selected {
+            transform: scale(1.15);
+            box-shadow: 0 0 20px #fff;
+            z-index: 11;
+        }
+        .cell.empty {
+            background: rgba(255,255,255,0.05) !important;
+            cursor: default;
+        }
+        .cell.fall {
+            animation: fall 0.3s ease;
+        }
+        @keyframes fall {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        /* 颜色 */
+        .red { background: linear-gradient(145deg, #ff6b6b, #ee5a5a); }
+        .blue { background: linear-gradient(145deg, #4facfe, #00f2fe); }
+        .green { background: linear-gradient(145deg, #43e97b, #38f9d7); }
+        .yellow { background: linear-gradient(145deg, #fddb92, #d1fdff); color: #333; }
+        .purple { background: linear-gradient(145deg, #a855f7, #7c3aed); }
+        .orange { background: linear-gradient(145deg, #ff9a56, #ff6b6b); }
+        
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+        }
+        .btn {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            border: none;
+            border-radius: 25px;
+            color: #000;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255,215,0,0.5);
+        }
+        
+        /* 提示 */
+        .hint-text {
+            color: rgba(255,255,255,0.7);
+            font-size: 14px;
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        /* 消除特效 */
+        .cell消除 {
+            animation: eliminate 0.3s ease forwards;
+        }
+        @keyframes eliminate {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(0); opacity: 0; }
+        }
+        
+        /* 成就 */
+        .ach-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 8px 15px;
+            background: rgba(255,215,0,0.2);
+            border: 1px solid #ffd700;
+            border-radius: 15px;
+            color: #ffd700;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .ach-panel {
+            position: fixed;
+            top: 0; right: -300px;
+            width: 300px;
+            height: 100%;
+            background: rgba(20,20,40,0.98);
+            border-left: 2px solid #ffd700;
+            padding: 60px 15px 15px;
+            overflow-y: auto;
+            transition: right 0.3s;
+            z-index: 100;
+        }
+        .ach-panel.open { right: 0; }
+        .ach-panel h2 { color: #ffd700; text-align: center; margin-bottom: 15px; }
+        .ach-item {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+            opacity: 0.4;
+            filter: grayscale(1);
+        }
+        .ach-item.unlocked { opacity: 1; filter: grayscale(0); border-color: #ffd700; }
+        .ach-icon { font-size: 24px; }
+        .ach-name { color: #fff; font-weight: bold; font-size: 14px; }
+        .ach-desc { color: rgba(255,255,255,0.5); font-size: 11px; }
+        .close-btn { position: absolute; top: 15px; right: 15px; font-size: 24px; color: #fff; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">✨ 消消乐 <span>v1.0</span></div>
+        <div class="score-board">
+            分数: <span id="score">0</span> | 
+            最高: <span id="best">0</span> | 
+            消除: <span id="eliminated">0</span>
+        </div>
+    </div>
+    
+    <div class="game-container">
+        <div class="grid" id="grid"></div>
+    </div>
+    
+    <div class="controls">
+        <button class="btn" onclick="restart()">重新开始</button>
+    </div>
+    
+    <div class="hint-text">点击两个相同方块即可消除</div>
+    
+    <button class="ach-btn" id="achBtn" onclick="toggleAch()">🏆 成就 <span id="achCount">0/8</span></button>
+    
+    <div class="ach-panel" id="achPanel">
+        <span class="close-btn" onclick="toggleAch()">×</span>
+        <h2>🏆 成就列表</h2>
+        <div id="achList"></div>
+    </div>
+
+    <script>
+        // 游戏数据
+        const ROWS = 8, COLS = 8;
+        const COLORS = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
+        const ICONS = ['❤️', '💙', '💚', '💛', '💜', '🧡'];
+        
+        let grid = [];
+        let score = 0;
+        let best = parseInt(localStorage.getItem('match3_best')) || 0;
+        let eliminated = parseInt(localStorage.getItem('match3_eliminated')) || 0;
+        let selected = null;
+        let unlockedAch = JSON.parse(localStorage.getItem('match3_ach')) || [];
+        let combo = 0;
+        let totalMatches = parseInt(localStorage.getItem('match3_matches')) || 0;
+        
+        // 成就
+        const achievements = [
+            {id:'first', name:'初次消除', desc:'完成第一次消除', icon:'🌟'},
+            {id:'score100', name:'百分达成', desc:'获得100分', icon:'💯'},
+            {id:'score500', name:'五百积分', desc:'获得500分', icon:'🎯'},
+            {id:'elim10', name:'消除小将', desc:'累计消除10个', icon:'🎖️'},
+            {id:'elim50', name:'消除达人', desc:'累计消除50个', icon:'🏆'},
+            {id:'combo3', name:'三连消', desc:'一次消除3组', icon:'💫'},
+            {id:'persistence', name:'坚持不懈', desc:'累计消除100个', icon:'💎'},
+            {id:'master', name:'消消大师', desc:'累计消除500个', icon:'👑'}
+        ];
+        
+        // 初始化
+        function init() {
+            grid = [];
+            selected = null;
+            document.getElementById('score').textContent = score;
+            document.getElementById('best').textContent = best;
+            document.getElementById('eliminated').textContent = eliminated;
+            document.getElementById('achCount').textContent = `${unlockedAch.length}/8`;
+            
+            // 生成网格
+            for (let r = 0; r < ROWS; r++) {
+                grid[r] = [];
+                for (let c = 0; c < COLS; c++) {
+                    grid[r][c] = randomColor();
+                }
+            }
+            
+            // 确保有可消除的
+            while (hasMatches()) {
+                for (let r = 0; r < ROWS; r++) {
+                    for (let c = 0; c < COLS; c++) {
+                        if (hasMatchAt(r, c)) {
+                            grid[r][c] = randomColor();
+                        }
+                    }
+                }
+            }
+            
+            renderAchievements();
+            render();
+        }
+        
+        // 随机颜色
+        function randomColor() {
+            return COLORS[Math.floor(Math.random() * COLORS.length)];
+        }
+        
+        // 随机图标
+        function randomIcon(color) {
+            return ICONS[COLORS.indexOf(color)];
+        }
+        
+        // 渲染
+        function render() {
+            const gridEl = document.getElementById('grid');
+            gridEl.innerHTML = '';
+            
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell ' + grid[r][c];
+                    cell.textContent = randomIcon(grid[r][c]);
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    
+                    if (grid[r][c] === '') {
+                        cell.classList.add('empty');
+                        cell.textContent = '';
+                    }
+                    
+                    if (selected && selected.r === r && selected.c === c) {
+                        cell.classList.add('selected');
+                    }
+                    
+                    cell.addEventListener('click', () => handleClick(r, c));
+                    gridEl.appendChild(cell);
+                }
+            }
+        }
+        
+        // 点击处理
+        function handleClick(r, c) {
+            if (grid[r][c] === '') return;
+            
+            if (!selected) {
+                selected = {r, c};
+                render();
+                return;
+            }
+            
+            // 检查是否相同
+            if (selected.r === r && selected.c === c) {
+                selected = null;
+                render();
+                return;
+            }
+            
+            // 检查是否相邻
+            const dr = Math.abs(selected.r - r);
+            const dc = Math.abs(selected.c - c);
+            
+            if ((dr === 1 && dc === 0) || (dr === 0 && dc === 1)) {
+                // 相邻且相同
+                if (grid[selected.r][selected.c] === grid[r][c]) {
+                    eliminate(selected.r, selected.c, r, c);
+                    selected = null;
+                } else {
+                    selected = {r, c};
+                    render();
+                }
+            } else {
+                selected = {r, c};
+                render();
+            }
+        }
+        
+        // 消除
+        function eliminate(r1, c1, r2, c2) {
+            combo++;
+            
+            // 消除动画
+            const cells = document.querySelectorAll('.cell');
+            const idx1 = r1 * COLS + c1;
+            const idx2 = r2 * COLS + c2;
+            cells[idx1].classList.add('eliminate');
+            cells[idx2].classList.add('eliminate');
+            
+            setTimeout(() => {
+                grid[r1][c1] = '';
+                grid[r2][c2] = '';
+                
+                // 计算分数
+                let points = 20;
+                if (combo >= 3) {
+                    points = 20 * combo;
+                    unlockAchievement('combo3');
+                }
+                score += points;
+                eliminated += 2;
+                totalMatches++;
+                
+                // 保存
+                localStorage.setItem('match3_score', score);
+                localStorage.setItem('match3_eliminated', eliminated);
+                localStorage.setItem('match3_matches', totalMatches);
+                
+                if (score > best) {
+                    best = score;
+                    localStorage.setItem('match3_best', best);
+                }
+                
+                document.getElementById('score').textContent = score;
+                document.getElementById('best').textContent = best;
+                document.getElementById('eliminated').textContent = eliminated;
+                
+                // 检查成就
+                checkAchievements();
+                
+                // 下落
+                drop();
+                
+                setTimeout(() => {
+                    fill();
+                    render();
+                    
+                    // 继续检查
+                    if (hasMatches()) {
+                        setTimeout(autoRemove, 300);
+                    } else {
+                        combo = 0;
+                        // 检查游戏结束
+                        if (!hasPossibleMoves()) {
+                            alert('没有可消除的了！得分: ' + score);
+                        }
+                    }
+                }, 100);
+            }, 300);
+        }
+        
+        // 下落
+        function drop() {
+            for (let c = 0; c < COLS; c++) {
+                let emptyRow = ROWS - 1;
+                for (let r = ROWS - 1; r >= 0; r--) {
+                    if (grid[r][c] !== '') {
+                        if (r !== emptyRow) {
+                            grid[emptyRow][c] = grid[r][c];
+                            grid[r][c] = '';
+                        }
+                        emptyRow--;
+                    }
+                }
+            }
+        }
+        
+        // 填充
+        function fill() {
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (grid[r][c] === '') {
+                        grid[r][c] = randomColor();
+                    }
+                }
+            }
+        }
+        
+        // 是否有匹配
+        function hasMatches() {
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (hasMatchAt(r, c)) return true;
+                }
+            }
+            return false;
+        }
+        
+        // 指定位置是否有匹配
+        function hasMatchAt(r, c) {
+            const color = grid[r][c];
+            if (color === '') return false;
+            
+            // 横
+            if (c >= 2 && grid[r][c-1] === color && grid[r][c-2] === color) return true;
+            // 竖
+            if (r >= 2 && grid[r-1][c] === color && grid[r-2][c] === color) return true;
+            
+            return false;
+        }
+        
+        // 自动消除
+        function autoRemove() {
+            let matchFound = false;
+            
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (hasMatchAt(r, c)) {
+                        // 找配对
+                        let r2 = r, c2 = c;
+                        
+                        // 横
+                        if (c <= COLS - 3 && grid[r][c+1] === grid[r][c]) {
+                            if (c + 2 < COLS && grid[r][c+2] === grid[r][c]) {
+                                c2 = c + 2;
+                            } else {
+                                c2 = c + 1;
+                            }
+                        }
+                        // 竖
+                        else if (r <= ROWS - 3 && grid[r+1][c] === grid[r][c]) {
+                            if (r + 2 < ROWS && grid[r+2][c] === grid[r][c]) {
+                                r2 = r + 2;
+                            } else {
+                                r2 = r + 1;
+                            }
+                        }
+                        
+                        eliminate(r, c, r2, c2);
+                        matchFound = true;
+                        break;
+                    }
+                }
+                if (matchFound) break;
+            }
+        }
+        
+        // 是否有可移动的
+        function hasPossibleMoves() {
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    // 尝试交换
+                    if (c < COLS - 1) {
+                        swap(r, c, r, c + 1);
+                        if (hasMatchAt(r, c) || hasMatchAt(r, c + 1)) {
+                            swap(r, c, r, c + 1);
+                            return true;
+                        }
+                        swap(r, c, r, c + 1);
+                    }
+                    if (r < ROWS - 1) {
+                        swap(r, c, r + 1, c);
+                        if (hasMatchAt(r, c) || hasMatchAt(r + 1, c)) {
+                            swap(r, c, r + 1, c);
+                            return true;
+                        }
+                        swap(r, c, r + 1, c);
+                    }
+                }
+            }
+            return false;
+        }
+        
+        function swap(r1, c1, r2, c2) {
+            const temp = grid[r1][c1];
+            grid[r1][c1] = grid[r2][c2];
+            grid[r2][c2] = temp;
+        }
+        
+        // 检查成就
+        function checkAchievements() {
+            unlockAchievement('first');
+            if (score >= 100) unlockAchievement('score100');
+            if (score >= 500) unlockAchievement('score500');
+            if (eliminated >= 10) unlockAchievement('elim10');
+            if (eliminated >= 50) unlockAchievement('elim50');
+            if (eliminated >= 100) unlockAchievement('persistence');
+            if (eliminated >= 500) unlockAchievement('master');
+        }
+        
+        // 解锁成就
+        function unlockAchievement(id) {
+            if (unlockedAch.includes(id)) return;
+            unlockedAch.push(id);
+            localStorage.setItem('match3_ach', JSON.stringify(unlockedAch));
+            renderAchievements();
+            document.getElementById('achCount').textContent = `${unlockedAch.length}/8`;
+        }
+        
+        // 渲染成就
+        function renderAchievements() {
+            const list = document.getElementById('achList');
+            list.innerHTML = achievements.map(a => `
+                <div class="ach-item ${unlockedAch.includes(a.id) ? 'unlocked' : ''}">
+                    <div class="ach-icon">${a.icon}</div>
+                    <div class="ach-name">${a.name}</div>
+                    <div class="ach-desc">${a.desc}</div>
+                </div>
+            `).join('');
+        }
+        
+        // 切换成就面板
+        function toggleAch() {
+            document.getElementById('achPanel').classList.toggle('open');
+        }
+        
+        // 重新开始
+        function restart() {
+            score = 0;
+            combo = 0;
+            localStorage.setItem('match3_score', 0);
+            init();
+        }
+        
+        // 启动
+        init();
+    </script>
+</body>
+</html>
