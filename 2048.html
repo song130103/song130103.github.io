@@ -46,7 +46,7 @@ const colorMap = {
     512:"#edc850",1024:"#edc53f",2048:"#edc22e"
 };
 const textColor = {2:"#776e65",4:"#776e65",default:"#fff"};
-
+alert('为了积极响应国家政策，守护青少年网络健康，本游戏添加了防沉迷机制。当游玩时间超过5分钟时会弹窗提醒并自动退出游戏。');
 function initGame(){
     grid = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
     score = 0;
@@ -183,9 +183,11 @@ gameBox.addEventListener('touchend',e=>{
     }
 })
 
-initGame();setInterval(() => { 
-    window.open(''); 
-    alert('不许沉迷游戏，勤学善思才能赢'); 
+initGame();
+    setTimeout(() => { 
+	
+	alert('不许沉迷游戏，勤学善思才能赢'); 
+        location.href=''; 
 }, 300000);
 </script>
 </body>
