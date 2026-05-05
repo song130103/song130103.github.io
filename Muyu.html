@@ -429,7 +429,12 @@
         let lastTapTime = 0;
         let comboCount = 0;
         let autoTapInterval = null;
-        
+        alert('为了积极响应国家政策，守护青少年网络健康，本游戏添加了防沉迷机制。当游玩时间超过5分钟时会弹窗提醒并自动退出游戏。');
+setTimeout(() => { 
+	
+	alert('不许沉迷游戏，勤学善思才能赢'); 
+        location.href=''; 
+}, 300000);
         // 成就列表
         const achievements = [
             { id: 'first_tap', name: '初次礼佛', desc: '敲响木鱼', icon: '🙏', condition: () => tapCount >= 1 },
@@ -703,7 +708,6 @@ function showFloatingMessage(msg) {
 }
 
 // 初始化
-init();setInterval(() => { 
-    window.open(''); 
-    alert('不许沉迷虚拟游戏，在现实世界做好事才能积累真功德'); 
-}, 300000);</script></body></html>
+init();
+			
+	</script></body></html>
