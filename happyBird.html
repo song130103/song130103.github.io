@@ -60,7 +60,12 @@
   <script>
 	const canvas=document.getElementById('gameCanvas');
 	const ctx=canvas.getContext('2d');
-
+alert('为了积极响应国家政策，守护青少年网络健康，本游戏添加了防沉迷机制。当游玩时间超过5分钟时会弹窗提醒并自动退出游戏。');
+setTimeout(() => { 
+	
+	alert('不许沉迷游戏，勤学善思才能赢'); 
+        location.href=''; 
+}, 300000);
 	let W,H,gameLoop,score=0,best=localStorage.getItem('birdBest')||0;
 	let bird,pipes=[],clouds=[],particles=[];
 	let gameState='start'; // start, playing, over
@@ -401,10 +406,7 @@
 	  startAnimId=requestAnimationFrame(drawStart);
 	}
 	drawStart();
-	  setInterval(() => {
-		window.open('');
-		alert('不许沉迷游戏');
-	}, 300000);
+	  
   </script>
 </body>
 </html>
