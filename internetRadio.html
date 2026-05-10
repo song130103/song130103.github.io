@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>内置电台</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .radio-player {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 40px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* 唱片封面 */
+        .vinyl-container {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            margin: 0 auto 30px;
+        }
+        
+        .vinyl {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #1a1a1a, #333, #1a1a1a);
+            position: relative;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            animation: spin 8s linear infinite;
+            animation-play-state: paused;
+        }
+        
+        .vinyl.playing {
+            animation-play-state: running;
+        }
+        
+        .vinyl::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40%;
+            height: 40%;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+        
+        .vinyl::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 12%;
+            height: 12%;
+            border-radius: 50%;
+            background: #fff;
+        }
+        
+        /* 唱片纹理 */
+        .vinyl-grooves {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: repeating-radial-gradient(
+                circle at center,
+                transparent 0px,
+                transparent 2px,
+                rgba(255,255,255,0.03) 2px,
+                rgba(255,255,255,0.03) 4px
+            );
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* 频道信息 */
+        .channel-info {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        
+        .now-playing {
+            color: #fff;
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .channel-name {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+        }
+        
+        .live-badge {
+            display: inline-block;
+            background: #e74c3c;
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 10px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
+        /* 控制按钮 */
+        .controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .btn {
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn-main {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            font-size: 28px;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-main:hover {
+            transform: scale(1.1);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
+        }
+        
+        .btn-small {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 18px;
+        }
+        
+        .btn-small:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+        
+        .btn-small:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* 音量控制 */
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 20px;
+            margin-bottom: 25px;
+        }
+        
+        .volume-icon {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 18px;
+            cursor: pointer;
+        }
+        
+        .volume-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+        }
+        
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.5);
+        }
+        
+        /* 频道列表 */
+        .channel-list {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 20px;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .channel-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .channel-list::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+        }
+        
+        .channel-list::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.3);
+            border-radius: 3px;
+        }
+        
+        .channel-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 5px;
+        }
+        
+        .channel-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .channel-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .channel-item.active {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.5), rgba(118, 75, 162, 0.5));
+        }
+        
+        .channel-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-right: 12px;
+        }
+        
+        .channel-info-mini {
+            flex: 1;
+        }
+        
+        .channel-title {
+            color: #fff;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .channel-desc {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 11px;
+            margin-top: 2px;
+        }
+        
+        /* 状态显示 */
+        .status {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+            margin-top: 15px;
+        }
+        
+        .status.playing {
+            color: #4ade80;
+        }
+        
+        .status.error {
+            color: #f87171;
+        }
+        
+        /* 暗色主题适配 */
+        @media (prefers-color-scheme: dark) {
+            body { /* Already dark */ }
+        }
+    </style>
+</head>
+<body>
+    <div class="radio-player">
+        <!-- 唱片 -->
+        <div class="vinyl-container">
+            <div class="vinyl" id="vinyl">
+                <div class="vinyl-grooves"></div>
+            </div>
+        </div>
+        
+        <!-- 频道信息 -->
+        <div class="channel-info">
+            <div class="now-playing" id="nowPlaying">选择一个电台开始</div>
+            <div class="channel-name" id="channelDesc">内置网络电台</div>
+            <div class="live-badge" id="liveBadge" style="display: none;">🔴 LIVE</div>
+        </div>
+        
+        <!-- 控制按钮 -->
+        <div class="controls">
+            <button class="btn btn-small" id="prevBtn" onclick="prevChannel()">⏮</button>
+            <button class="btn btn-main" id="playBtn" onclick="togglePlay()">▶</button>
+            <button class="btn btn-small" id="nextBtn" onclick="nextChannel()">⏭</button>
+        </div>
+        
+        <!-- 音量 -->
+        <div class="volume-control">
+            <span class="volume-icon" id="volumeIcon" onclick="toggleMute()">🔊</span>
+            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="70" onchange="setVolume(this.value)">
+        </div>
+        
+        <!-- 频道列表 -->
+        <div class="channel-list" id="channelList"></div>
+        
+        <!-- 状态 -->
+        <div class="status" id="status">准备就绪</div>
+    </div>
+    
+    <!-- 隐藏的音频播放器 -->
+    <audio id="audioPlayer" crossorigin="anonymous"></audio>
+    
+    <script>
+        // 电台频道数据（使用公开免费电台流）
+        const channels = [
+            {
+                name: 'Jazz FM',
+                desc: '舒缓爵士乐',
+                icon: '🎷',
+                url: 'https://strw1.openstream.co/420?trxid=5e9a9b8c7f8a9b1c2d3e4f5g&t=audio.m3u&source=web&uid=1234&szm=128',
+                type: 'audio/mp3'
+            },
+            {
+                name: 'Lofi Hip Hop',
+                desc: '放松学习音乐',
+                icon: '🎹',
+                url: 'https://strw1.openstream.co/1493?trxid=abc123&t=audio.m3u&source=web&uid=5678',
+                type: 'audio/mp3'
+            },
+            {
+                name: 'Classical Music',
+                desc: '古典音乐精选',
+                icon: '🎻',
+                url: 'https://live.musopen.org:8085/streamvbr0',
+                type: 'audio/mpeg'
+            },
+            {
+                name: 'Electronic Vibes',
+                desc: '电子音乐',
+                icon: '🎧',
+                url: 'https://strw1.openstream.co/1492?trxid=xyz789&t=audio.m3u&source=web&uid=9012',
+                type: 'audio/mp3'
+            },
+            {
+                name: 'Chill Pop',
+                desc: '轻松流行乐',
+                icon: '🎤',
+                url: 'https://strw1.openstream.co/1491?trxid=pop123&t=audio.m3u&source=web&uid=3456',
+                type: 'audio/mp3'
+            }
+        ];
+        
+        let currentChannel = 0;
+        let isPlaying = false;
+        let isMuted = false;
+        let previousVolume = 70;
+        
+        const audio = document.getElementById('audioPlayer');
+        const playBtn = document.getElementById('playBtn');
+        const vinyl = document.getElementById('vinyl');
+        const nowPlaying = document.getElementById('nowPlaying');
+        const channelDesc = document.getElementById('channelDesc');
+        const liveBadge = document.getElementById('liveBadge');
+        const status = document.getElementById('status');
+        const volumeIcon = document.getElementById('volumeIcon');
+        const volumeSlider = document.getElementById('volumeSlider');
+        
+        // 初始化
+        function init() {
+            renderChannelList();
+            loadChannel(currentChannel);
+            setVolume(volumeSlider.value);
+        }
+        
+        // 渲染频道列表
+        function renderChannelList() {
+            const list = document.getElementById('channelList');
+            list.innerHTML = channels.map((ch, i) => `
+                <div class="channel-item ${i === currentChannel ? 'active' : ''}" onclick="selectChannel(${i})">
+                    <div class="channel-icon">${ch.icon}</div>
+                    <div class="channel-info-mini">
+                        <div class="channel-title">${ch.name}</div>
+                        <div class="channel-desc">${ch.desc}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // 加载频道
+        function loadChannel(index) {
+            currentChannel = index;
+            const ch = channels[index];
+            
+            audio.src = ch.url;
+            audio.type = ch.type;
+            
+            nowPlaying.textContent = ch.name;
+            channelDesc.textContent = ch.desc;
+            liveBadge.style.display = 'none';
+            
+            renderChannelList();
+            
+            // 更新按钮状态
+            document.getElementById('prevBtn').disabled = false;
+            document.getElementById('nextBtn').disabled = false;
+        }
+        
+        // 选择频道
+        function selectChannel(index) {
+            if (isPlaying) {
+                audio.pause();
+            }
+            loadChannel(index);
+            status.textContent = '正在连接...';
+            status.className = 'status';
+            
+            audio.load();
+            audio.play().then(() => {
+                isPlaying = true;
+                updatePlayState();
+            }).catch(err => {
+                status.textContent = '连接失败，请尝试其他频道';
+                status.className = 'status error';
+                isPlaying = false;
+                updatePlayState();
+            });
+        }
+        
+        // 播放/暂停
+        function togglePlay() {
+            if (isPlaying) {
+                audio.pause();
+                isPlaying = false;
+            } else {
+                audio.load();
+                audio.play().then(() => {
+                    isPlaying = true;
+                }).catch(err => {
+                    status.textContent = '播放失败，请检查网络';
+                    status.className = 'status error';
+                    isPlaying = false;
+                });
+            }
+            updatePlayState();
+        }
+        
+        // 更新播放状态
+        function updatePlayState() {
+            playBtn.textContent = isPlaying ? '⏸' : '▶';
+            vinyl.classList.toggle('playing', isPlaying);
+            liveBadge.style.display = isPlaying ? 'inline-block' : 'none';
+            status.textContent = isPlaying ? '正在播放' : '已暂停';
+            status.className = isPlaying ? 'status playing' : 'status';
+        }
+        
+        // 上一频道
+        function prevChannel() {
+            let newIndex = currentChannel - 1;
+            if (newIndex < 0) newIndex = channels.length - 1;
+            selectChannel(newIndex);
+        }
+        
+        // 下一频道
+        function nextChannel() {
+            let newIndex = currentChannel + 1;
+            if (newIndex >= channels.length) newIndex = 0;
+            selectChannel(newIndex);
+        }
+        
+        // 音量控制
+        function setVolume(val) {
+            audio.volume = val / 100;
+            volumeSlider.value = val;
+            previousVolume = val;
+            isMuted = val === 0;
+            updateVolumeIcon();
+        }
+        
+        // 静音切换
+        function toggleMute() {
+            if (isMuted) {
+                setVolume(previousVolume);
+            } else {
+                previousVolume = volumeSlider.value;
+                setVolume(0);
+            }
+        }
+        
+        // 更新音量图标
+        function updateVolumeIcon() {
+            const vol = volumeSlider.value;
+            if (vol === 0) {
+                volumeIcon.textContent = '🔇';
+            } else if (vol < 30) {
+                volumeIcon.textContent = '🔈';
+            } else if (vol < 70) {
+                volumeIcon.textContent = '🔉';
+            } else {
+                volumeIcon.textContent = '🔊';
+            }
+        }
+        
+        // 音频事件
+        audio.addEventListener('playing', () => {
+            isPlaying = true;
+            updatePlayState();
+        });
+        
+        audio.addEventListener('pause', () => {
+            if (!audio.ended) {
+                isPlaying = false;
+                updatePlayState();
+            }
+        });
+        
+        audio.addEventListener('error', () => {
+            status.textContent = '连接失败，请尝试其他频道';
+            status.className = 'status error';
+            isPlaying = false;
+            updatePlayState();
+        });
+        
+        audio.addEventListener('waiting', () => {
+            status.textContent = '缓冲中...';
+            status.className = 'status';
+        });
+        
+        audio.addEventListener('playing', () => {
+            status.textContent = '正在播放';
+            status.className = 'status playing';
+        });
+        
+        // 启动
+        init();
+    </script>
+</body>
+</html>
