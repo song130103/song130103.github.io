@@ -1,0 +1,1179 @@
+<html lang="zh-CN"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>红楼梦戏院2048</title>
+  <!-- Tailwind CSS v3 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#000000',
+            secondary: '#ffffff',
+            accent: '#d4af37',
+            'text-shadow': '0 2px 4px rgba(0,0,0,0.1)',
+          },
+          fontFamily: {
+            'inter': ['Inter', 'sans-serif'],
+            'sans': ['Inter', 'sans-serif'],
+          },
+          boxShadow: {
+            'inner-lg': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
+            'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+          },
+          backdropBlur: {
+            'glass': '4px',
+          },
+        }
+      }
+    }
+  </script>
+
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .text-shadow {
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      .text-shadow-lg {
+        text-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      }
+      .glass-effect {
+        background: rgba(255, 255, 255, 0.25);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+      }
+      .tile-inner {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        border-radius: 0.5rem;
+        font-weight: bold;
+        z-index: 10;
+        transition: transform 0.15s ease, opacity 0.15s ease;
+      }
+      .tile-inner img {
+        width: 60%;
+        height: 60%;
+        object-fit: contain;
+        margin-bottom: 0.25rem;
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+      }
+      .tile-inner img.loaded {
+        opacity: 1;
+      }
+      .tile-inner .name {
+        font-size: 0.75rem;
+        font-family: 'Inter', sans-serif;
+      }
+      .tile-merged .tile-inner {
+        animation: pop 0.2s ease-in-out;
+        z-index: 20;
+      }
+      @keyframes pop {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.2);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+      @keyframes victoryAppear {
+        0% {
+          opacity: 0;
+          transform: scale(0.8) rotate(-5deg);
+          filter: blur(10px);
+        }
+        50% {
+          transform: scale(1.1) rotate(3deg);
+        }
+        100% {
+          opacity: 1;
+          transform: scale(1) rotate(0);
+          filter: blur(0);
+        }
+      }
+      .victory-card {
+        animation: victoryAppear 2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+      .game-message {
+        display: none;
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 100;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        animation: fadeIn 0.5s ease-in-out;
+        border-radius: 0.5rem;
+      }
+      .game-message.game-won, .game-message.game-over {
+        display: flex;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      .game-message .message {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+        font-family: 'Inter', sans-serif;
+        color: white;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+      }
+      .game-message .quote {
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+        color: white;
+        font-family: 'Inter', sans-serif;
+        max-width: 80%;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+      }
+      .game-message button {
+        font-size: 1.2rem;
+        padding: 0.5rem 1.5rem;
+        border-radius: 0.25rem;
+        background: white;
+        color: #333;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background 0.2s ease;
+        font-family: 'Inter', sans-serif;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      }
+      .game-message button:hover {
+        background: #f0f0f0;
+      }
+      .game-message button:active {
+        transform: translateY(2px);
+      }
+      .custom-select {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+      }
+      .custom-select select {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 100%;
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        border: 1px solid #ddd;
+        background-color: white;
+        cursor: pointer;
+        font-family: 'Inter', sans-serif;
+      }
+      .custom-select::after {
+        content: '\25BC';
+        position: absolute;
+        top: 50%;
+        right: 0.75rem;
+        transform: translateY(-50%);
+        pointer-events: none;
+      }
+      .portrait-preview {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 2px solid #ddd;
+        margin: 1rem auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f9f9f9;
+      }
+      .portrait-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .upload-btn {
+        display: block;
+        width: 100%;
+        padding: 0.5rem 1rem;
+        background-color: #f0f0f0;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        font-family: 'Inter', sans-serif;
+      }
+      .upload-btn:hover {
+        background-color: #e0e0e0;
+      }
+      .upload-btn input.hidden {
+        display: none;
+      }
+      .restore-btn {
+        margin-top: 1rem;
+        padding: 0.5rem 1rem;
+        background-color: #f0f0f0;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        font-family: 'Inter', sans-serif;
+        border: none;
+      }
+      .restore-btn:hover {
+        background-color: #e0e0e0;
+      }
+      .ink-stroke {
+        position: relative;
+      }
+      .ink-stroke::after {
+        content: '';
+        position: absolute;
+        bottom: -5px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(to right, transparent, #000, transparent);
+      }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen font-inter">
+<div class="relative w-full min-h-screen overflow-hidden" style="min-height: 100vh; display: flex; flex-direction: column;">
+    <!-- 背景图 -->
+    <div class="absolute inset-0 z-0">
+      <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/4dca70059ce044bfbbfe7294d42d7211~tplv-a9rns2rl98-image.image?rcl=202510231052564D481AD8A531CFEB2552&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1763780135&x-signature=sNnOoVVmzXx%2BzEC4MTc3rBnxWMQ%3D" alt="水墨山水背景" class="w-full h-full object-cover opacity-50" style="border: none;">
+    </div>
+
+    <!-- 主容器 -->
+    <div class="relative z-10 container mx-auto px-4 py-8 md:py-12 max-w-6xl flex-grow flex flex-col">
+      <!-- 标题区 -->
+      <header class="mb-8 text-center">
+        <div class="flex justify-center items-center relative">
+          <h1 class="text-3xl md:text-4xl font-inter text-primary">红楼梦戏院2048</h1>
+          <div class="absolute right-0 md:right-auto md:left-full md:ml-4 top-0 transform md:translate-x-0 translate-x-16 -translate-y-4 bg-white px-2 py-1 rounded">
+            <span class="text-lg font-inter text-red-800">石记</span>
+          </div>
+        </div>
+        <p class="mt-4 text-lg text-gray-700 max-w-2xl mx-auto font-inter">轻移方向，合并同类，从小丫鬟至太虚仙境，层层递进</p>
+      </header>
+
+      <!-- 主要内容区 -->
+      <div class="flex flex-col md:flex-row justify-center items-start gap-8 mt-8">
+        <!-- 游戏棋盘区 -->
+        <div class="relative">
+          <div class="game-container bg-black bg-opacity-80 rounded-lg p-4 shadow-lg border-2 border-black" style="box-shadow: 0 10px 25px rgba(0,0,0,0.5), 0 6px 12px rgba(0,0,0,0.3), inset 0 1px 3px rgba(255,255,255,0.1);">
+            <div class="grid grid-cols-4 gap-3 bg-black bg-opacity-50 rounded-md p-3" id="game-board" style="max-width: 500px; width: 100%; aspect-ratio: 1/1; margin: 0 auto;">
+              <!-- 棋盘格子将通过JS动态生成 -->
+            </div>
+
+            <!-- 分数区域 -->
+            <div class="flex justify-between mt-3 text-white">
+              <div class="flex flex-col items-center">
+                <span class="text-sm opacity-75 font-inter" style="font-weight: bold; font-size: 16px;">当前赢银</span>
+                <span class="text-xl font-bold font-inter" id="score">0</span>
+              </div>
+              <div class="flex flex-col items-center">
+                <span class="text-sm opacity-75 font-inter" style="font-weight: bold; font-size: 16px;">最高殊荣</span>
+                <span class="text-xl font-bold font-inter" id="best-score">0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 游戏结束/胜利消息 -->
+          <div class="game-message" id="game-message">
+            <div class="victory-card bg-white bg-opacity-90 p-8 rounded-lg shadow-xl max-w-md">
+              <div class="message" id="message-text">游戏胜利!</div>
+              <div class="quote" id="quote-text">太虚幻境乃天上之境...「千红一哭，万艳同悲」</div>
+              <div class="flex gap-4 justify-center">
+                <button id="try-again-btn" class="bg-primary text-white hover:bg-opacity-80">再探</button>
+                <button id="continue-btn" class="bg-gray-200 hover:bg-gray-300 hidden">继续游历</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右侧自定义区 -->
+        <div class="w-full md:w-64 glass-effect rounded-lg p-6" style="min-height: 530px; align-self: flex-start; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);">
+          <h2 class="text-2xl font-inter text-center mb-4 ink-stroke inline-block relative" style="font-size: 20px;">潇湘馆画案</h2>
+
+          <!-- 人物下拉选择 -->
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2 font-inter">人物选择</label>
+            <div class="custom-select">
+              <select id="character-select">
+                <option value="">选择人物...</option>
+                <option value="2">2-坠儿</option>
+                <option value="4">4-袭人</option>
+                <option value="8">8-平儿</option>
+                <option value="16">16-迎春</option>
+                <option value="32">32-探春</option>
+                <option value="64">64-惜春</option>
+                <option value="128">128-林黛玉</option>
+                <option value="256">256-薛宝钗</option>
+                <option value="512">512-王熙凤</option>
+                <option value="1024">1024-贾母</option>
+                <option value="2048">2048-警幻仙子</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 被选择人物预览 -->
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2 font-inter">预览</label>
+            <div class="portrait-preview" id="portrait-preview">
+              <img src="" alt="人物预览" id="preview-image" class="hidden">
+              <span id="preview-placeholder" class="text-gray-400">选择人物</span>
+            </div>
+          </div>
+
+          <!-- 上传提示 -->
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2 font-inter">自定义头像</label>
+            <label for="image-upload" class="upload-btn text-center w-full cursor-pointer">
+              <input type="file" id="image-upload" accept="image/*" class="hidden">
+              <span class="font-inter">点此砚墨作画</span>
+              <p class="text-xs text-gray-500 mt-1 font-inter">建议上传1:1比例图片</p>
+            </label>
+          </div>
+
+          <!-- 复原描摹按钮 -->
+          <button id="restore-btn" class="restore-btn w-full font-inter">复原描摹</button>
+
+          <!-- 悔棋按钮 -->
+          <button id="undo-btn" class="mt-4 w-full bg-primary text-white py-2 px-4 rounded hover:bg-opacity-80 transition-colors font-inter">
+            <i class="fa fa-undo mr-2"></i>锦囊妙计
+          </button>
+
+        </div>
+      </div>
+
+      <!-- 操作提示 -->
+      <div class="mt-12 text-center text-gray-600 text-sm">
+        <p class="font-inter">操作方式：键盘方向键 ↑ ↓ ← → 或触摸滑动</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 角色配置表
+    const characterConfig = {
+      2: {
+        name: "坠儿",
+        description: "小丫鬟",
+        image: "https://p3-flow-imagex-sign.byteimg.com/ocean-cloud-tos/image_generation/43ef289bd0080031fc20c9f11722f4e0_1761190154418508276.jpeg~tplv-a9rns2rl98-image.jpeg?rk3s=25bff839&x-expires=2076550154&x-signature=VTlqMCxlfnmWQBdPb9X0o3LLObc%3D"
+      },
+      4: {
+        name: "袭人",
+        description: "侍女",
+        image: "https://p9-flow-imagex-sign.byteimg.com/ocean-cloud-tos/image_generation/70c784fea2cfbc20ef37cd6e43d00777_1761190243880047748.jpeg~tplv-a9rns2rl98-image.jpeg?rk3s=25bff839&x-expires=2076550243&x-signature=fuHcLlYWJT59Q2ZAmXbUpeThidw%3D"
+      },
+      8: {
+        name: "平儿",
+        description: "少妇",
+        image: "https://p3-flow-imagex-sign.byteimg.com/ocean-cloud-tos/image_generation/fa41bdb6766e539a1067eeae7cf4a1a9_1761190262480995207.jpeg~tplv-a9rns2rl98-image.jpeg?rk3s=25bff839&x-expires=2076550262&x-signature=f6CuFXJqt8bhD9djwsDoR2%2FcrVM%3D"
+      },
+      16: {
+        name: "迎春",
+        description: "小姐",
+        image: "https://p3-flow-imagex-sign.byteimg.com/ocean-cloud-tos/image_generation/c9e5d8f437eeb4e2c56aae0c2dac7fff_1761190325720735708.jpeg~tplv-a9rns2rl98-image.jpeg?rk3s=25bff839&x-expires=2076550326&x-signature=ofA%2FffK%2B2s92Kmm4I%2F%2FRVlyRQOE%3D"
+      },
+      32: {
+        name: "探春",
+        description: "小姐",
+        image: "https://p9-flow-imagex-sign.byteimg.com/ocean-cloud-tos/image_generation/b459218b29a016888891f65323ffa076_1761190344944765585.jpeg~tplv-a9rns2rl98-image.jpeg?rk3s=25bff839&x-expires=2076550345&x-signature=0f44RTTCuRzvl9PwQH0qnmonun0%3D"
+      },
+      64: {
+        name: "惜春",
+        description: "小姐",
+        image: "https://p3-flow-imagex-sign.byteimg.com/ocean-cloud-tos/image_generation/f1896a7199b09bdc0fb1a9491fdab79b_1761190362759187649.jpeg~tplv-a9rns2rl98-image.jpeg?rk3s=25bff839&x-expires=2076550362&x-signature=3iesarW0FZZHmiz4ggUa6tieSuI%3D"
+      },
+      128: {
+        name: "林黛玉",
+        description: "才女",
+        image: "https://p9-flow-imagex-sign.byteimg.com/ocean-cloud-tos/image_generation/383e27481757a303661c768a16283333_1761190377392210340.jpeg~tplv-a9rns2rl98-image.jpeg?rk3s=25bff839&x-expires=2076550377&x-signature=AA4IYmJcyt%2B5uJvnn22NBnn5qto%3D"
+      },
+      256: {
+        name: "薛宝钗",
+        description: "淑女",
+        image: "https://p3-flow-imagex-sign.byteimg.com/ocean-cloud-tos/image_generation/0fb9f4c3e8c5da17de4f6a81877194fc_1761190395126585144.jpeg~tplv-a9rns2rl98-image.jpeg?rk3s=25bff839&x-expires=2076550395&x-signature=VVWQI45pr31ZEk4xeFklJjtO7t8%3D"
+      },
+      512: {
+        name: "王熙凤",
+        description: "少奶奶",
+        image: "https://p3-flow-imagex-sign.byteimg.com/ocean-cloud-tos/image_generation/6a159de12d6b3552a8d3a75bcaabe3ba_1761190419632157406.jpeg~tplv-a9rns2rl98-image.jpeg?rk3s=25bff839&x-expires=2076550419&x-signature=t4v0Sl%2F7N4nxWXXblFHK5o3f2%2B4%3D"
+      },
+      1024: {
+        name: "贾母",
+        description: "老太太",
+        image: "https://p3-flow-imagex-sign.byteimg.com/ocean-cloud-tos/image_generation/58205310564e2adba5708bef8fb45876_1761190437825693286.jpeg~tplv-a9rns2rl98-image.jpeg?rk3s=25bff839&x-expires=2076550437&x-signature=PZFj7rjTADDcF%2FySeIKzQ1sFB4U%3D"
+      },
+      2048: {
+        name: "警幻仙子",
+        description: "仙女",
+        image: "https://p3-flow-imagex-sign.byteimg.com/ocean-cloud-tos/image_generation/a35f6b024e0f984ab97775a1da732d27_1761190462790562252.jpeg~tplv-a9rns2rl98-image.jpeg?rk3s=25bff839&x-expires=2076550462&x-signature=leCWoQs3ZMDMkYJEGvJgcaXJdJk%3D"
+      }
+    };
+
+    // 游戏核心逻辑
+    class Game2048 {
+      constructor() {
+        this.size = 4; // 4x4 棋盘
+        this.board = [];
+        this.score = 0;
+        this.bestScore = localStorage.getItem('bestScore') || 0;
+        this.previousState = null; // 用于悔棋
+        this.customPortraits = JSON.parse(localStorage.getItem('customPortraits')) || {};
+        this.won = false;
+        this.over = false;
+
+        // 初始化DOM元素
+        this.gameBoard = document.getElementById('game-board');
+        this.scoreDisplay = document.getElementById('score');
+        this.bestScoreDisplay = document.getElementById('best-score');
+        this.gameMessage = document.getElementById('game-message');
+        this.messageText = document.getElementById('message-text');
+        this.quoteText = document.getElementById('quote-text');
+        this.tryAgainBtn = document.getElementById('try-again-btn');
+        this.continueBtn = document.getElementById('continue-btn');
+        this.characterSelect = document.getElementById('character-select');
+        this.portraitPreview = document.getElementById('portrait-preview');
+        this.previewImage = document.getElementById('preview-image');
+        this.previewPlaceholder = document.getElementById('preview-placeholder');
+        this.imageUpload = document.getElementById('image-upload');
+        this.restoreBtn = document.getElementById('restore-btn');
+        this.undoBtn = document.getElementById('undo-btn');
+
+        // 初始化游戏
+        this.setup();
+
+        // 添加事件监听器
+        this.setupEventListeners();
+
+        // 游戏初始化完成
+      }
+
+      // 初始化游戏
+      setup() {
+        // 创建棋盘格子
+        this.gameBoard.innerHTML = '';
+        this.gameBoard.style.gridTemplateColumns = `repeat(${this.size}, 1fr)`;
+
+        // 创建固定的格子元素
+        for (let i = 0; i < this.size * this.size; i++) {
+          const tile = document.createElement('div');
+          tile.className = 'bg-white bg-opacity-20 rounded-lg flex items-center justify-center aspect-square';
+          this.gameBoard.appendChild(tile);
+        }
+
+        // 创建空棋盘数据
+        this.board = Array(this.size).fill().map(() => Array(this.size).fill(0));
+
+        // 更新分数显示
+        this.scoreDisplay.textContent = this.score;
+        this.bestScoreDisplay.textContent = this.bestScore;
+
+        // 预加载图片 - 性能优化的核心
+        this.preloadImages();
+
+        // 随机放置两个初始棋子
+        this.addRandomTile();
+        this.addRandomTile();
+
+        // 渲染棋盘
+        this.renderBoard();
+
+        // 重置游戏状态
+        this.won = false;
+        this.over = false;
+        this.gameMessage.classList.remove('game-won', 'game-over');
+      }
+
+      // 保存当前状态用于悔棋
+      saveState() {
+        this.previousState = {
+          board: JSON.parse(JSON.stringify(this.board)),
+          score: this.score
+        };
+      }
+
+      // 悔棋
+      undo() {
+        if (this.previousState) {
+          this.board = this.previousState.board;
+          this.score = this.previousState.score;
+          this.scoreDisplay.textContent = this.score;
+          this.renderBoard();
+          this.previousState = null; // 只能悔棋一次
+        }
+      }
+
+      // 添加随机棋子
+      addRandomTile() {
+        // 获取所有空格子
+        const emptyTiles = [];
+        for (let i = 0; i < this.size; i++) {
+          for (let j = 0; j < this.size; j++) {
+            if (this.board[i][j] === 0) {
+              emptyTiles.push({ x: i, y: j });
+            }
+          }
+        }
+
+        // 如果有空格子，随机选择一个并放置棋子
+        if (emptyTiles.length > 0) {
+          const randomTile = emptyTiles[Math.floor(Math.random() * emptyTiles.length)];
+          // 90%概率生成2，10%概率生成4
+          this.board[randomTile.x][randomTile.y] = Math.random() < 0.9 ? 2 : 4;
+          return true;
+        }
+        return false;
+      }
+
+      // 预加载所有图片
+      preloadImages() {
+        this.imageCache = {};
+        this.loadingPromises = {};
+
+        // 预加载默认角色图片
+        for (const key in characterConfig) {
+          this.preloadSingleImage(key, characterConfig[key].image);
+        }
+
+        // 预加载自定义头像
+        for (const key in this.customPortraits) {
+          this.preloadSingleImage(key, this.customPortraits[key]);
+        }
+      }
+
+      // 预加载单个图片的通用方法
+      preloadSingleImage(key, src) {
+        // 检查是否已缓存相同源的图片
+        if (this.imageCache[key] && this.imageCache[key].src === src) {
+          return Promise.resolve(this.imageCache[key]);
+        }
+
+        // 检查是否正在加载中
+        if (this.loadingPromises[key]) {
+          return this.loadingPromises[key];
+        }
+
+        // 创建新的加载Promise
+        this.loadingPromises[key] = new Promise((resolve, reject) => {
+          const img = new Image();
+
+          img.onload = () => {
+            this.imageCache[key] = img;
+            delete this.loadingPromises[key];
+            resolve(img);
+          };
+
+          img.onerror = () => {
+            delete this.loadingPromises[key];
+            reject(new Error(`Failed to load image: ${src}`));
+          };
+
+          img.src = src;
+        });
+
+        return this.loadingPromises[key];
+      }
+
+      // 渲染棋盘
+      renderBoard() {
+        // 渲染每个格子
+        const tiles = this.gameBoard.children;
+
+        for (let i = 0; i < this.size; i++) {
+          for (let j = 0; j < this.size; j++) {
+            const index = i * this.size + j;
+            const value = this.board[i][j];
+            const tile = tiles[index];
+
+            if (value !== 0) {
+              // 检查是否已有相同值的棋子内容
+              const existingValue = tile.dataset.value;
+              const existingSrc = tile.dataset.src;
+              const newSrc = this.customPortraits[value] || characterConfig[value].image;
+
+              if (existingValue === value.toString() && existingSrc === newSrc) {
+                // 棋子值和图片源都相同，跳过重新渲染
+                continue;
+              }
+
+              // 设置新值和源标记
+              tile.dataset.value = value.toString();
+              tile.dataset.src = newSrc;
+
+              // 获取或创建棋子内部元素
+              let tileInner = tile.querySelector('.tile-inner');
+              if (!tileInner) {
+                tileInner = document.createElement('div');
+                tileInner.className = 'tile-inner bg-white rounded-lg shadow-inner-lg';
+                tile.appendChild(tileInner);
+              }
+
+              // 获取角色配置
+              const config = characterConfig[value];
+
+              // 获取或创建图片元素
+              let img = tileInner.querySelector('img');
+              if (!img) {
+                img = document.createElement('img');
+                img.alt = config.name;
+                tileInner.appendChild(img);
+              }
+
+              // 获取或创建名称元素
+              let name = tileInner.querySelector('.name');
+              if (!name) {
+                name = document.createElement('div');
+                name.className = 'name';
+                tileInner.appendChild(name);
+              }
+
+              // 智能图片加载 - 使用缓存优先策略避免闪烁
+              const currentSrc = img.getAttribute('data-current-src');
+
+              // 检查缓存中是否已有该图片
+              if (this.imageCache[value] && this.imageCache[value].src === newSrc) {
+                // 直接使用缓存的图片,无需淡入动画
+                if (currentSrc !== newSrc) {
+                  img.setAttribute('data-current-src', newSrc);
+                  img.src = this.imageCache[value].src;
+                }
+                // 确保图片立即可见
+                if (!img.classList.contains('loaded')) {
+                  img.classList.add('loaded');
+                }
+              } else if (currentSrc !== newSrc) {
+                // 只有在源改变时才重新加载
+                img.setAttribute('data-current-src', newSrc);
+                img.classList.remove('loaded');
+
+                if (this.loadingPromises[value]) {
+                  // 图片正在加载中，等待加载完成
+                  this.loadingPromises[value].then((cachedImg) => {
+                    if (img.getAttribute('data-current-src') === newSrc) {
+                      img.src = cachedImg.src;
+                      img.classList.add('loaded');
+                    }
+                  }).catch(() => {
+                    // 图片加载失败时的处理
+                  });
+                } else {
+                  // 预加载并缓存新图片
+                  this.preloadSingleImage(value, newSrc).then((cachedImg) => {
+                    if (img.getAttribute('data-current-src') === newSrc) {
+                      img.src = cachedImg.src;
+                      img.classList.add('loaded');
+                    }
+                  }).catch(() => {
+                    // 图片预加载失败时的处理
+                  });
+                }
+              }
+
+              name.textContent = config.name;
+
+              // 标记为已渲染
+              tile.classList.add('tile-rendered');
+
+              // 显示棋子
+              tile.classList.remove('bg-white', 'bg-opacity-20');
+            } else {
+              // 清空标记和内容
+              delete tile.dataset.value;
+              delete tile.dataset.src;
+              tile.classList.remove('tile-rendered');
+              tile.innerHTML = '';
+              tile.className = 'bg-white bg-opacity-20 rounded-lg flex items-center justify-center aspect-square';
+            }
+          }
+        }
+      }
+
+      // 移动棋子
+      move(direction) {
+        // 如果游戏已结束，不执行移动
+        if (this.over || this.won) return false;
+
+        // 保存当前状态用于悔棋
+        this.saveState();
+
+        // 创建一个副本用于比较移动前后的状态
+        const previousBoard = JSON.parse(JSON.stringify(this.board));
+        let moved = false;
+
+        // 根据方向执行移动
+        switch (direction) {
+          case 'up':
+            moved = this.moveUp();
+            break;
+          case 'right':
+            moved = this.moveRight();
+            break;
+          case 'down':
+            moved = this.moveDown();
+            break;
+          case 'left':
+            moved = this.moveLeft();
+            break;
+        }
+
+        // 如果有移动，添加新棋子并检查游戏状态
+        if (moved) {
+          this.playMoveSound(); // 播放移动音效
+          this.addRandomTile();
+          this.renderBoard();
+          this.checkGameStatus();
+        } else {
+          // 如果没有移动，清除悔棋状态
+          this.previousState = null;
+        }
+
+        return moved;
+      }
+
+      // 向上移动
+      moveUp() {
+        let moved = false;
+
+        for (let j = 0; j < this.size; j++) {
+          for (let i = 1; i < this.size; i++) {
+            if (this.board[i][j] !== 0) {
+              let row = i;
+              while (row > 0 && this.board[row - 1][j] === 0) {
+                this.board[row - 1][j] = this.board[row][j];
+                this.board[row][j] = 0;
+                row--;
+                moved = true;
+              }
+
+              if (row > 0 && this.board[row - 1][j] === this.board[row][j]) {
+                this.board[row - 1][j] *= 2;
+                this.score += this.board[row - 1][j];
+                this.board[row][j] = 0;
+                moved = true;
+
+                // 播放合并音效
+                this.playMergeSound();
+              }
+            }
+          }
+        }
+
+        if (moved) {
+          this.scoreDisplay.textContent = this.score;
+          this.updateBestScore();
+        }
+
+        return moved;
+      }
+
+      // 向右移动
+      moveRight() {
+        let moved = false;
+
+        for (let i = 0; i < this.size; i++) {
+          for (let j = this.size - 2; j >= 0; j--) {
+            if (this.board[i][j] !== 0) {
+              let col = j;
+              while (col < this.size - 1 && this.board[i][col + 1] === 0) {
+                this.board[i][col + 1] = this.board[i][col];
+                this.board[i][col] = 0;
+                col++;
+                moved = true;
+              }
+
+              if (col < this.size - 1 && this.board[i][col + 1] === this.board[i][col]) {
+                this.board[i][col + 1] *= 2;
+                this.score += this.board[i][col + 1];
+                this.board[i][col] = 0;
+                moved = true;
+
+                // 播放合并音效
+                this.playMergeSound();
+              }
+            }
+          }
+        }
+
+        if (moved) {
+          this.scoreDisplay.textContent = this.score;
+          this.updateBestScore();
+        }
+
+        return moved;
+      }
+
+      // 向下移动
+      moveDown() {
+        let moved = false;
+
+        for (let j = 0; j < this.size; j++) {
+          for (let i = this.size - 2; i >= 0; i--) {
+            if (this.board[i][j] !== 0) {
+              let row = i;
+              while (row < this.size - 1 && this.board[row + 1][j] === 0) {
+                this.board[row + 1][j] = this.board[row][j];
+                this.board[row][j] = 0;
+                row++;
+                moved = true;
+              }
+
+              if (row < this.size - 1 && this.board[row + 1][j] === this.board[row][j]) {
+                this.board[row + 1][j] *= 2;
+                this.score += this.board[row + 1][j];
+                this.board[row][j] = 0;
+                moved = true;
+
+                // 播放合并音效
+                this.playMergeSound();
+              }
+            }
+          }
+        }
+
+        if (moved) {
+          this.scoreDisplay.textContent = this.score;
+          this.updateBestScore();
+        }
+
+        return moved;
+      }
+
+      // 向左移动
+      moveLeft() {
+        let moved = false;
+
+        for (let i = 0; i < this.size; i++) {
+          for (let j = 1; j < this.size; j++) {
+            if (this.board[i][j] !== 0) {
+              let col = j;
+              while (col > 0 && this.board[i][col - 1] === 0) {
+                this.board[i][col - 1] = this.board[i][col];
+                this.board[i][col] = 0;
+                col--;
+                moved = true;
+              }
+
+              if (col > 0 && this.board[i][col - 1] === this.board[i][col]) {
+                this.board[i][col - 1] *= 2;
+                this.score += this.board[i][col - 1];
+                this.board[i][col] = 0;
+                moved = true;
+
+                // 播放合并音效
+                this.playMergeSound();
+              }
+            }
+          }
+        }
+
+        if (moved) {
+          this.scoreDisplay.textContent = this.score;
+          this.updateBestScore();
+        }
+
+        return moved;
+      }
+
+      // 播放移动音效
+      playMoveSound() {
+        try {
+          const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+
+          // 简单的移动音效
+          oscillator.type = 'sine';
+          oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+          oscillator.frequency.exponentialRampToValueAtTime(300, audioContext.currentTime + 0.1);
+
+          gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+
+          oscillator.start();
+          oscillator.stop(audioContext.currentTime + 0.1);
+        } catch (error) {
+          console.log('音频播放不支持或被禁用');
+        }
+      }
+
+      // 播放合并音效
+      playMergeSound() {
+        try {
+          const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+
+          // 合并音效
+          oscillator.type = 'triangle';
+          oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+          oscillator.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.2);
+
+          gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+
+          oscillator.start();
+          oscillator.stop(audioContext.currentTime + 0.2);
+        } catch (error) {
+          console.log('音频播放不支持或被禁用');
+        }
+      }
+
+      // 更新最高分
+      updateBestScore() {
+        if (this.score > this.bestScore) {
+          this.bestScore = this.score;
+          this.bestScoreDisplay.textContent = this.bestScore;
+          localStorage.setItem('bestScore', this.bestScore);
+        }
+      }
+
+      // 检查游戏状态
+      checkGameStatus() {
+        // 检查是否达成2048（胜利）
+        if (!this.won) {
+          for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
+              if (this.board[i][j] === 2048) {
+                this.won = true;
+                this.messageText.textContent = '太虚幻境';
+                this.quoteText.textContent = '太虚幻境乃天上之境...「千红一哭，万艳同悲」';
+                this.gameMessage.classList.add('game-won');
+                this.continueBtn.classList.remove('hidden');
+                return;
+              }
+            }
+          }
+        }
+
+        // 检查是否还有空格子
+        for (let i = 0; i < this.size; i++) {
+          for (let j = 0; j < this.size; j++) {
+            if (this.board[i][j] === 0) {
+              return; // 还有空格子，游戏继续
+            }
+          }
+        }
+
+        // 检查是否还有可合并的棋子
+        for (let i = 0; i < this.size; i++) {
+          for (let j = 0; j < this.size; j++) {
+            const value = this.board[i][j];
+
+            // 检查右侧
+            if (j < this.size - 1 && value === this.board[i][j + 1]) {
+              return; // 可以合并，游戏继续
+            }
+
+            // 检查下方
+            if (i < this.size - 1 && value === this.board[i + 1][j]) {
+              return; // 可以合并，游戏继续
+            }
+          }
+        }
+
+        // 没有空格子且没有可合并的棋子，游戏结束
+        this.over = true;
+        this.messageText.textContent = '盛筵必散';
+        this.quoteText.textContent = '盛筵必散，且待重来';
+        this.gameMessage.classList.add('game-over');
+        this.continueBtn.classList.add('hidden');
+      }
+
+      // 设置事件监听器
+      setupEventListeners() {
+        // 键盘控制
+        document.addEventListener('keydown', (e) => {
+          switch (e.key) {
+            case 'ArrowUp':
+              e.preventDefault();
+              this.move('up');
+              break;
+            case 'ArrowRight':
+              e.preventDefault();
+              this.move('right');
+              break;
+            case 'ArrowDown':
+              e.preventDefault();
+              this.move('down');
+              break;
+            case 'ArrowLeft':
+              e.preventDefault();
+              this.move('left');
+              break;
+          }
+        });
+
+        // 触摸控制
+        let touchStartX, touchStartY;
+        const gameContainer = document.querySelector('.game-container');
+
+        gameContainer.addEventListener('touchstart', (e) => {
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+          e.preventDefault();
+        }, { passive: false });
+
+        gameContainer.addEventListener('touchmove', (e) => {
+          e.preventDefault();
+        }, { passive: false });
+
+        gameContainer.addEventListener('touchend', (e) => {
+          if (!touchStartX || !touchStartY) return;
+
+          const touchEndX = e.changedTouches[0].clientX;
+          const touchEndY = e.changedTouches[0].clientY;
+
+          const dx = touchEndX - touchStartX;
+          const dy = touchEndY - touchStartY;
+
+          // 最小滑动距离为50px
+          if (Math.abs(dx) > 50 || Math.abs(dy) > 50) {
+            if (Math.abs(dx) > Math.abs(dy)) {
+              // 水平滑动
+              this.move(dx > 0 ? 'right' : 'left');
+            } else {
+              // 垂直滑动
+              this.move(dy > 0 ? 'down' : 'up');
+            }
+          }
+
+          touchStartX = null;
+          touchStartY = null;
+          e.preventDefault();
+        }, { passive: false });
+
+        // 按钮事件
+        this.tryAgainBtn.addEventListener('click', () => {
+          this.setup();
+        });
+
+        this.continueBtn.addEventListener('click', () => {
+          this.gameMessage.classList.remove('game-won');
+          this.won = false;
+        });
+
+        // 人物选择事件
+        this.characterSelect.addEventListener('change', () => {
+          const value = this.characterSelect.value;
+          if (value) {
+            const config = characterConfig[value];
+            this.previewImage.src = this.customPortraits[value] || config.image;
+            this.previewImage.alt = config.name;
+            this.previewImage.classList.remove('hidden');
+            this.previewPlaceholder.classList.add('hidden');
+          } else {
+            this.previewImage.classList.add('hidden');
+            this.previewPlaceholder.classList.remove('hidden');
+          }
+        });
+
+        // 图片上传事件
+        this.imageUpload.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          const value = this.characterSelect.value;
+
+          if (file) {
+            if (!value) {
+              alert('请先选择要自定义的人物角色');
+              e.target.value = ''; // 清空文件选择
+              return;
+            }
+
+            const reader = new FileReader();
+
+            reader.onload = (event) => {
+              const dataUrl = event.target.result;
+
+              // 保存自定义头像到localStorage
+              this.customPortraits[value] = dataUrl;
+              localStorage.setItem('customPortraits', JSON.stringify(this.customPortraits));
+
+              // 预加载并缓存新图片
+              this.preloadSingleImage(value, dataUrl).then(() => {
+                // 更新预览
+                this.previewImage.src = dataUrl;
+                this.previewImage.classList.remove('hidden');
+                this.previewPlaceholder.classList.add('hidden');
+
+                // 重新渲染棋盘以应用新头像
+                this.renderBoard();
+
+                alert('自定义头像上传成功!');
+              }).catch((error) => {
+                console.error('Failed to cache uploaded image:', error);
+                alert('头像上传失败，请重试!');
+              });
+            };
+
+            reader.readAsDataURL(file);
+          }
+        });
+
+        // 复原描摹按钮事件
+        this.restoreBtn.addEventListener('click', () => {
+          const value = this.characterSelect.value;
+
+          if (value) {
+            // 删除自定义头像
+            delete this.customPortraits[value];
+            localStorage.setItem('customPortraits', JSON.stringify(this.customPortraits));
+
+            // 清除缓存中的自定义图片，重新加载默认图片
+            const config = characterConfig[value];
+            this.preloadSingleImage(value, config.image).then(() => {
+              // 更新预览
+              this.previewImage.src = config.image;
+              this.previewImage.classList.remove('hidden');
+              this.previewPlaceholder.classList.add('hidden');
+
+              // 重新渲染棋盘
+              this.renderBoard();
+            });
+          }
+        });
+
+        // 悔棋按钮事件
+        this.undoBtn.addEventListener('click', () => {
+          this.undo();
+        });
+      }
+    }
+
+    // 初始化游戏
+    document.addEventListener('DOMContentLoaded', () => {
+      const game = new Game2048();
+    });
+  </script>
+
+</body></html>
