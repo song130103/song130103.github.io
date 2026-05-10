@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌾 种田大亨</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: linear-gradient(180deg, #87CEEB 0%, #98D8C8 50%, #7CB342 100%); min-height: 100vh; padding: 20px; }
+        .game-container { max-width: 800px; margin: 0 auto; }
+        .top-bar { background: rgba(255,255,255,0.95); border-radius: 20px; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        .game-title { font-size: 24px; color: #2E7D32; font-weight: bold; }
+        .stats { display: flex; gap: 20px; }
+        .stat { display: flex; align-items: center; gap: 5px; font-size: 18px; font-weight: bold; }
+        .farm-area { background: #8B4513; border-radius: 20px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .farm-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+        .plot { aspect-ratio: 1; background: #654321; border-radius: 15px; border: 3px solid #3E2723; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.3s; position: relative; overflow: hidden; }
+        .plot:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .plot.empty::after { content: '+'; font-size: 40px; color: rgba(255,255,255,0.3); }
+        .plot.watered { background: #5D4037; }
+        .crop { font-size: 50px; animation: sway 2s ease-in-out infinite; }
+        @keyframes sway { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+        .growth-bar { position: absolute; bottom: 5px; width: 80%; height: 6px; background: rgba(0,0,0,0.3); border-radius: 3px; overflow: hidden; }
+        .growth-fill { height: 100%; background: linear-gradient(90deg, #4CAF50, #8BC34A); transition: width 0.3s; }
+        .status-badge { position: absolute; top: 5px; right: 5px; font-size: 16px; }
+        .control-panel { background: rgba(255,255,255,0.95); border-radius: 20px; padding: 20px; margin-top: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        .panel-title { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+        .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+        .action-btn { padding: 12px 20px; border: none; border-radius: 15px; font-size: 14px; font-weight: bold; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 8px; }
+        .action-btn:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .action-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-water { background: #2196F3; color: #fff; }
+        .btn-fertilize { background: #FF9800; color: #fff; }
+        .btn-harvest { background: #4CAF50; color: #fff; }
+        .btn-next-day { background: #9C27B0; color: #fff; }
+        .shop { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
+        .seed-item { background: #f5f5f5; border-radius: 15px; padding: 15px; text-align: center; cursor: pointer; transition: all 0.3s; border: 2px solid transparent; }
+        .seed-item:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .seed-item.selected { border-color: #4CAF50; background: #E8F5E9; }
+        .seed-icon { font-size: 40px; margin-bottom: 10px; }
+        .seed-name { font-weight: bold; margin-bottom: 5px; }
+        .seed-price { color: #FF9800; font-weight: bold; }
+        .seed-profit { color: #4CAF50; font-size: 12px; }
+        .seed-time { color: #999; font-size: 12px; }
+        .log { background: #f5f5f5; border-radius: 15px; padding: 15px; margin-top: 20px; max-height: 150px; overflow-y: auto; }
+        .log-title { font-weight: bold; margin-bottom: 10px; }
+        .log-item { padding: 5px 0; border-bottom: 1px solid #eee; font-size: 13px; color: #666; }
+        .log-item:last-child { border: none; }
+        .message { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255,255,255,0.98); padding: 30px 50px; border-radius: 20px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); z-index: 200; animation: popIn 0.3s ease; display: none; }
+        @keyframes popIn { from { transform: translate(-50%, -50%) scale(0.5); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
+        .message-icon { font-size: 60px; margin-bottom: 15px; }
+        .message-text { font-size: 20px; font-weight: bold; color: #333; }
+        .message-sub { color: #666; margin-top: 10px; }
+        .inventory { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
+        .inv-item { background: #E8F5E9; padding: 8px 15px; border-radius: 20px; font-size: 14px; display: flex; align-items: center; gap: 5px; }
+        @media (max-width: 600px) { .farm-grid { grid-template-columns: repeat(3, 1fr); } .top-bar { flex-direction: column; gap: 10px; } .stats { width: 100%; justify-content: space-around; } }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="top-bar">
+            <div class="game-title">🌾 种田大亨</div>
+            <div class="stats">
+                <div class="stat" style="color:#FFD700;"><span>💰</span><span id="coins">100</span></div>
+                <div class="stat" style="color:#FF9800;"><span>📅</span><span>第 <span id="day">1</span> 天</span></div>
+            </div>
+        </div>
+        <div class="farm-area">
+            <div class="farm-grid" id="farmGrid"></div>
+            <div class="action-buttons">
+                <button class="action-btn btn-water" onclick="waterSelected()">💧 浇水</button>
+                <button class="action-btn btn-fertilize" onclick="fertilizeSelected()">🌱 施肥</button>
+                <button class="action-btn btn-harvest" onclick="harvestSelected()">🌾 收获</button>
+                <button class="action-btn btn-next-day" onclick="nextDay()">⏰ 下一天</button>
+            </div>
+        </div>
+        <div class="control-panel">
+            <div class="panel-title">🛒 商店 - 选择要种植的种子</div>
+            <div class="shop" id="shop"></div>
+            <div class="panel-title" style="margin-top: 20px;">📦 背包</div>
+            <div class="inventory" id="inventory"></div>
+        </div>
+        <div class="log">
+            <div class="log-title">📜 农场日志</div>
+            <div id="gameLog"></div>
+        </div>
+    </div>
+    <div class="message" id="message">
+        <div class="message-icon" id="msgIcon">🎉</div>
+        <div class="message-text" id="msgText"></div>
+        <div class="message-sub" id="msgSub"></div>
+    </div>
+
+    <script>
+        const CROPS = {
+            wheat: { name: '小麦', icon: '🌾', price: 10, profit: 25, growTime: 2 },
+            carrot: { name: '胡萝卜', icon: '🥕', price: 20, profit: 50, growTime: 3 },
+            tomato: { name: '番茄', icon: '🍅', price: 30, profit: 80, growTime: 4 },
+            corn: { name: '玉米', icon: '🌽', price: 40, profit: 120, growTime: 5 },
+            watermelon: { name: '西瓜', icon: '🍉', price: 60, profit: 200, growTime: 6 },
+            strawberry: { name: '草莓', icon: '🍓', price: 80, profit: 300, growTime: 7 }
+        };
+        const PLOT_COUNT = 12;
+        let gameState = { coins: 100, day: 1, selectedSeed: null, selectedPlot: null, plots: [], inventory: {}, log: [] };
+        
+        function init() {
+            for (let i = 0; i < PLOT_COUNT; i++) {
+                gameState.plots.push({ id: i, crop: null, growth: 0, watered: false, fertilized: false });
+            }
+            renderFarm(); renderShop(); renderInventory();
+            addLog('🎉 欢迎来到种田大亨！开始你的农场生活吧！');
+        }
+        
+        function renderFarm() {
+            const grid = document.getElementById('farmGrid');
+            grid.innerHTML = gameState.plots.map((plot, i) => {
+                const crop = plot.crop ? CROPS[plot.crop] : null;
+                const growthPercent = plot.crop ? (plot.growth / CROPS[plot.crop].growTime) * 100 : 0;
+                const isReady = plot.crop && plot.growth >= CROPS[plot.crop].growTime;
+                const isSelected = gameState.selectedPlot === i;
+                const stages = ['🌱', '🌿', '🪴'];
+                const stageIcon = crop && !isReady ? stages[Math.floor(Math.random() * 3)] : (crop ? crop.icon : '');
+                return `<div class="plot ${!plot.crop ? 'empty' : ''} ${plot.watered ? 'watered' : ''} ${isSelected ? 'selected' : ''}" style="${isSelected ? 'border-color:#4CAF50;box-shadow:0 0 20px rgba(76,175,80,0.5);' : ''}" onclick="clickPlot(${i})">${crop ? `<span class="crop">${stageIcon}</span><div class="growth-bar"><div class="growth-fill" style="width:${growthPercent}%"></div></div>${plot.fertilized?'<span class="status-badge">✨</span>':''}${isReady?'<span class="status-badge">✅</span>':''}` : ''}</div>`;
+            }).join('');
+        }
+        
+        function renderShop() {
+            const shop = document.getElementById('shop');
+            shop.innerHTML = Object.entries(CROPS).map(([key, crop]) => `<div class="seed-item ${gameState.selectedSeed===key?'selected':''}" onclick="selectSeed('${key}')"><div class="seed-icon">${crop.icon}</div><div class="seed-name">${crop.name}</div><div class="seed-price">💰 ${crop.price}</div><div class="seed-profit">收益:+${crop.profit}</div><div class="seed-time">⏱️ ${crop.growTime}天</div></div>`).join('');
+        }
+        
+        function renderInventory() {
+            const inv = document.getElementById('inventory');
+            const items = Object.entries(gameState.inventory).filter(([k,v]) => v > 0);
+            inv.innerHTML = items.length === 0 ? '<span style="color:#999;">背包空空如也</span>' : items.map(([key,count]) => `<div class="inv-item">${CROPS[key].icon} ${CROPS[key].name} × ${count}</div>`).join('');
+        }
+        
+        function clickPlot(index) {
+            const plot = gameState.plots[index];
+            if (gameState.selectedSeed && !plot.crop) {
+                const seed = CROPS[gameState.selectedSeed];
+                if (gameState.coins >= seed.price) {
+                    gameState.coins -= seed.price;
+                    plot.crop = gameState.selectedSeed; plot.growth = 0; plot.watered = false; plot.fertilized = false;
+                    updateCoins(); renderFarm();
+                    addLog(`🌱 种植了${seed.icon} ${seed.name}，花费 💰${seed.price}`);
+                } else { showMessage('💸', '金币不足！', `需要 ${seed.price} 金币`); }
+                return;
+            }
+            gameState.selectedPlot = gameState.selectedPlot === index ? null : index;
+            renderFarm();
+        }
+        
+        function selectSeed(seedKey) { gameState.selectedSeed = seedKey; gameState.selectedPlot = null; renderShop(); renderFarm(); addLog(`📍 选择了 ${CROPS[seedKey].icon} ${CROPS[seedKey].name} 种子`); }
+        
+        function waterSelected() {
+            if (gameState.selectedPlot === null) { showMessage('👆', '请先选择土地', '点击土地选择要浇水的地块'); return; }
+            const plot = gameState.plots[gameState.selectedPlot];
+            if (!plot.crop) { showMessage('🌱', '这里没有作物', '先种植作物再浇水'); return; }
+            if (plot.watered) { showMessage('💧', '已经浇过水了', '今天已经浇过水了'); return; }
+            plot.watered = true; plot.growth += 0.5;
+            renderFarm(); addLog(`💧 给 ${CROPS[plot.crop].icon} ${CROPS[plot.crop].name} 浇了水`);
+        }
+        
+        function fertilizeSelected() {
+            if (gameState.selectedPlot === null) { showMessage('👆', '请先选择土地', '点击土地选择要施肥的地块'); return; }
+            const plot = gameState.plots[gameState.selectedPlot];
+            if (!plot.crop) { showMessage('🌱', '这里没有作物', '先种植作物再施肥'); return; }
+            if (plot.fertilized) { showMessage('✨', '已经施过肥了', '这块地已经施过肥了'); return; }
+            if (gameState.coins < 15) { showMessage('💸', '金币不足', '施肥需要 15 金币'); return; }
+            gameState.coins -= 15; plot.fertilized = true; plot.growth += 1;
+            updateCoins(); renderFarm(); addLog(`✨ 给 ${CROPS[plot.crop].icon} ${CROPS[plot.crop].name} 施了肥，花费 💰15`);
+        }
+        
+        function harvestSelected() {
+            if (gameState.selectedPlot === null) { showMessage('👆', '请先选择土地', '点击土地选择要收获的地块'); return; }
+            const plot = gameState.plots[gameState.selectedPlot];
+            if (!plot.crop) { showMessage('🌱', '这里没有作物', '先种植作物再收获'); return; }
+            const crop = CROPS[plot.crop];
+            if (plot.growth < crop.growTime) { showMessage('🌿', '作物还未成熟', `还需要 ${Math.ceil(crop.growTime - plot.growth)} 天`); return; }
+            const earnings = crop.profit;
+            gameState.coins += earnings;
+            gameState.inventory[plot.crop] = (gameState.inventory[plot.crop] || 0) + 1;
+            showMessage('🎉', '收获成功！', `获得 💰${earnings} 和 ${crop.icon}×1`);
+            plot.crop = null; plot.growth = 0; plot.watered = false; plot.fertilized = false; gameState.selectedPlot = null;
+            updateCoins(); renderFarm(); renderInventory();
+            addLog(`🎉 收获了 ${crop.icon} ${crop.name}，获得 💰${earnings}`);
+        }
+        
+        function nextDay() {
+            gameState.day++;
+            gameState.plots.forEach(plot => { if (plot.crop) { let growth = 1; if (plot.watered) growth += 0.5; if (plot.fertilized) growth += 1; plot.growth += growth; plot.watered = false; } });
+            const readyCrops = gameState.plots.filter(p => p.crop && p.growth >= CROPS[p.crop].growTime);
+            document.getElementById('day').textContent = gameState.day;
+            renderFarm(); addLog(`⏰ 第 ${gameState.day} 天开始了！`);
+            if (readyCrops.length > 0) showMessage('🌾', '作物成熟了！', `有 ${readyCrops.length} 个作物可以收获了！`);
+        }
+        
+        function updateCoins() { document.getElementById('coins').textContent = gameState.coins; }
+        
+        function addLog(text) {
+            const time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            gameState.log.unshift(`[${time}] ${text}`);
+            if (gameState.log.length > 20) gameState.log.pop();
+            document.getElementById('gameLog').innerHTML = gameState.log.map(log => `<div class="log-item">${log}</div>`).join('');
+        }
+        
+        function showMessage(icon, text, sub) {
+            const msg = document.getElementById('message');
+            document.getElementById('msgIcon').textContent = icon;
+            document.getElementById('msgText').textContent = text;
+            document.getElementById('msgSub').textContent = sub;
+            msg.style.display = 'block';
+            setTimeout(() => { msg.style.display = 'none'; }, 2000);
+        }
+        
+        document.addEventListener('click', (e) => {
+            if (e.target.id !== 'message' && !document.getElementById('message').contains(e.target)) {
+                document.getElementById('message').style.display = 'none';
+            }
+        });
+        
+        init();
+    </script>
+</body>
+</html>
