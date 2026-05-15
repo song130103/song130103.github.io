@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>国际象棋 - AI对弈</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: #fff;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            letter-spacing: 2px;
+        }
+        
+        .game-container {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .left-panel, .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .score-panel {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 15px 25px;
+            display: flex;
+            gap: 30px;
+            font-size: 1.1rem;
+        }
+        
+        .score-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .score-label {
+            color: #aaa;
+        }
+        
+        .score-value {
+            font-weight: bold;
+            color: #4ecdc4;
+        }
+        
+        .chess-container {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        
+        .board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            width: min(70vmin, 480px);
+            height: min(70vmin, 480px);
+            border: 4px solid #8b7355;
+            border-radius: 4px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+        }
+        
+        .square {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: min(8vmin, 55px);
+            cursor: pointer;
+            position: relative;
+            transition: all 0.15s ease;
+        }
+        
+        .square.light {
+            background-color: #f0d9b5;
+        }
+        
+        .square.dark {
+            background-color: #b58863;
+        }
+        
+        .square.selected {
+            background-color: #829769 !important;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.3);
+        }
+        
+        .square.legal-move::after {
+            content: '';
+            position: absolute;
+            width: 30%;
+            height: 30%;
+            background-color: rgba(0,0,0,0.2);
+            border-radius: 50%;
+        }
+        
+        .square.legal-capture::after {
+            content: '';
+            position: absolute;
+            width: 90%;
+            height: 90%;
+            border: 4px solid rgba(0,0,0,0.2);
+            border-radius: 50%;
+            box-sizing: border-box;
+        }
+        
+        .square.last-move {
+            background-color: rgba(255,255,0,0.3) !important;
+        }
+        
+        .square.check {
+            animation: checkPulse 0.8s ease-in-out infinite;
+        }
+        
+        @keyframes checkPulse {
+            0%, 100% { background-color: #ff6b6b; }
+            50% { background-color: #ee5a5a; }
+        }
+        
+        .square:hover {
+            filter: brightness(1.1);
+        }
+        
+        .piece {
+            user-select: none;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            transition: transform 0.1s ease;
+        }
+        
+        .piece.white {
+            color: #fff;
+            text-shadow: 1px 1px 2px #000, -1px -1px 2px #000, 1px -1px 2px #000, -1px 1px 2px #000;
+        }
+        
+        .piece.black {
+            color: #333;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.3);
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 600;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: #fff;
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            color: #fff;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .history-panel {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 15px;
+            width: 220px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .history-title {
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .history-moves {
+            font-size: 0.9rem;
+            line-height: 1.8;
+        }
+        
+        .move-row {
+            display: flex;
+            gap: 8px;
+            padding: 2px 0;
+        }
+        
+        .move-num {
+            color: #888;
+            min-width: 25px;
+        }
+        
+        .move {
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        
+        .move:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .status-panel {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 15px 25px;
+            text-align: center;
+            font-size: 1.1rem;
+            min-width: 200px;
+        }
+        
+        .status-panel.thinking {
+            background: linear-gradient(135deg, rgba(78, 205, 196, 0.3), rgba(68, 160, 141, 0.3));
+            animation: thinkingPulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes thinkingPulse {
+            0%, 100% { box-shadow: 0 0 10px rgba(78, 205, 196, 0.3); }
+            50% { box-shadow: 0 0 25px rgba(78, 205, 196, 0.6); }
+        }
+        
+        .captured-pieces {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            font-size: 1.2rem;
+            min-height: 30px;
+        }
+        
+        .ai-thinking {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            color: #4ecdc4;
+        }
+        
+        .ai-thinking.show {
+            display: flex;
+        }
+        
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(78, 205, 196, 0.3);
+            border-top-color: #4ecdc4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            animation: modalPop 0.3s ease;
+        }
+        
+        @keyframes modalPop {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        .modal-title {
+            font-size: 2rem;
+            margin-bottom: 15px;
+        }
+        
+        .modal-message {
+            font-size: 1.2rem;
+            color: #aaa;
+            margin-bottom: 25px;
+        }
+        
+        .difficulty-selector {
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .difficulty-selector label {
+            display: block;
+            margin-bottom: 10px;
+            color: #aaa;
+        }
+        
+        .difficulty-selector select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        
+        .difficulty-selector select option {
+            background: #1a1a2e;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.3);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255,255,255,0.4);
+        }
+        
+        @media (max-width: 900px) {
+            .game-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .right-panel {
+                order: -1;
+            }
+            
+            .history-panel {
+                width: 100%;
+                max-width: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>♔ 国际象棋 AI 对弈 ♚</h1>
+    
+    <div class="score-panel">
+        <div class="score-item">
+            <span class="score-label">白方:</span>
+            <span class="score-value" id="white-score">0</span>
+        </div>
+        <div class="score-item">
+            <span class="score-label">黑方:</span>
+            <span class="score-value" id="black-score">0</span>
+        </div>
+    </div>
+    
+    <div class="game-container">
+        <div class="left-panel">
+            <div class="status-panel" id="status-panel">
+                <div id="status-text">白方回合</div>
+                <div class="ai-thinking" id="ai-thinking">
+                    <div class="spinner"></div>
+                    <span>AI 思考中...</span>
+                </div>
+            </div>
+            
+            <div class="chess-container">
+                <div class="board" id="board"></div>
+            </div>
+            
+            <div class="controls">
+                <button class="btn btn-secondary" id="undo-btn">悔棋</button>
+                <button class="btn btn-danger" id="restart-btn">重新开始</button>
+            </div>
+        </div>
+        
+        <div class="right-panel">
+            <div class="difficulty-selector">
+                <label>AI 难度:</label>
+                <select id="difficulty">
+                    <option value="2">简单 (2层)</option>
+                    <option value="3" selected>普通 (3层)</option>
+                    <option value="4">困难 (4层)</option>
+                </select>
+            </div>
+            
+            <div class="captured-pieces" id="white-captured" title="白方吃掉的棋子"></div>
+            <div class="captured-pieces" id="black-captured" title="黑方吃掉的棋子"></div>
+            
+            <div class="history-panel">
+                <div class="history-title">走棋记录</div>
+                <div class="history-moves" id="history-moves"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal" id="game-over-modal">
+        <div class="modal-content">
+            <div class="modal-title" id="modal-title">游戏结束</div>
+            <div class="modal-message" id="modal-message"></div>
+            <button class="btn btn-primary" id="modal-restart">再来一局</button>
+        </div>
+    </div>
+
+    <script>
+    // ==================== 棋子定义 ====================
+    const PIECES = {
+        EMPTY: 0,
+        W_KING: 1, W_QUEEN: 2, W_ROOK: 3, W_BISHOP: 4, W_KNIGHT: 5, W_PAWN: 6,
+        B_KING: 7, B_QUEEN: 8, B_ROOK: 9, B_BISHOP: 10, B_KNIGHT: 11, B_PAWN: 12
+    };
+
+    const PIECE_SYMBOLS = {
+        [PIECES.W_KING]: '♔', [PIECES.W_QUEEN]: '♕', [PIECES.W_ROOK]: '♖',
+        [PIECES.W_BISHOP]: '♗', [PIECES.W_KNIGHT]: '♘', [PIECES.W_PAWN]: '♙',
+        [PIECES.B_KING]: '♚', [PIECES.B_QUEEN]: '♛', [PIECES.B_ROOK]: '♜',
+        [PIECES.B_BISHOP]: '♝', [PIECES.B_KNIGHT]: '♞', [PIECES.B_PAWN]: '♟'
+    };
+
+    const PIECE_VALUES = {
+        [PIECES.W_PAWN]: 100, [PIECES.W_KNIGHT]: 320, [PIECES.W_BISHOP]: 330,
+        [PIECES.W_ROOK]: 500, [PIECES.W_QUEEN]: 900, [PIECES.W_KING]: 20000,
+        [PIECES.B_PAWN]: 100, [PIECES.B_KNIGHT]: 320, [PIECES.B_BISHOP]: 330,
+        [PIECES.B_ROOK]: 500, [PIECES.B_QUEEN]: 900, [PIECES.B_KING]: 20000
+    };
+
+    // 位置权重表（用于评估）
+    const POSITION_WEIGHTS = {
+        [PIECES.W_PAWN]: [
+            [0,  0,  0,  0,  0,  0,  0,  0],
+            [50, 50, 50, 50, 50, 50, 50, 50],
+            [10, 10, 20, 30, 30, 20, 10, 10],
+            [5,  5, 10, 25, 25, 10,  5,  5],
+            [0,  0,  0, 20, 20,  0,  0,  0],
+            [5, -5,-10,  0,  0,-10, -5,  5],
+            [5, 10, 10,-20,-20, 10, 10,  5],
+            [0,  0,  0,  0,  0,  0,  0,  0]
+        ],
+        [PIECES.W_KNIGHT]: [
+            [-50,-40,-30,-30,-30,-30,-40,-50],
+            [-40,-20,  0,  0,  0,  0,-20,-40],
+            [-30,  0, 10, 15, 15, 10,  0,-30],
+            [-30,  5, 15, 20, 20, 15,  5,-30],
+            [-30,  0, 15, 20, 20, 15,  0,-30],
+            [-30,  5, 10, 15, 15, 10,  5,-30],
+            [-40,-20,  0,  5,  5,  0,-20,-40],
+            [-50,-40,-30,-30,-30,-30,-40,-50]
+        ],
+        [PIECES.W_BISHOP]: [
+            [-20,-10,-10,-10,-10,-10,-10,-20],
+            [-10,  0,  0,  0,  0,  0,  0,-10],
+            [-10,  0,  5, 10, 10,  5,  0,-10],
+            [-10,  5,  5, 10, 10,  5,  5,-10],
+            [-10,  0, 10, 10, 10, 10,  0,-10],
+            [-10, 10, 10, 10, 10, 10, 10,-10],
+            [-10,  5,  0,  0,  0,  0,  5,-10],
+            [-20,-10,-10,-10,-10,-10,-10,-20]
+        ],
+        [PIECES.W_ROOK]: [
+            [0,  0,  0,  0,  0,  0,  0,  0],
+            [5, 10, 10, 10, 10, 10, 10,  5],
+            [-5,  0,  0,  0,  0,  0,  0, -5],
+            [-5,  0,  0,  0,  0,  0,  0, -5],
+            [-5,  0,  0,  0,  0,  0,  0, -5],
+            [-5,  0,  0,  0,  0,  0,  0, -5],
+            [-5,  0,  0,  0,  0,  0,  0, -5],
+            [0,  0,  0,  5,  5,  0,  0,  0]
+        ],
+        [PIECES.W_QUEEN]: [
+            [-20,-10,-10, -5, -5,-10,-10,-20],
+            [-10,  0,  0,  0,  0,  0,  0,-10],
+            [-10,  0,  5,  5,  5,  5,  0,-10],
+            [-5,  0,  5,  5,  5,  5,  0, -5],
+            [0,  0,  5,  5,  5,  5,  0, -5],
+            [-10,  5,  5,  5,  5,  5,  0,-10],
+            [-10,  0,  5,  0,  0,  0,  0,-10],
+            [-20,-10,-10, -5, -5,-10,-10,-20]
+        ],
+        [PIECES.W_KING]: [
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+            [-20,-30,-30,-40,-40,-30,-30,-20],
+            [-10,-20,-20,-20,-20,-20,-20,-10],
+            [20, 20,  0,  0,  0,  0, 20, 20],
+            [20, 30, 10,  0,  0, 10, 30, 20]
+        ]
+    };
+
+    // 复制黑方的位置权重（需要翻转）
+    for (let piece of [PIECES.W_PAWN, PIECES.W_KNIGHT, PIECES.W_BISHOP, PIECES.W_ROOK, PIECES.W_QUEEN, PIECES.W_KING]) {
+        POSITION_WEIGHTS[piece + 6] = [...POSITION_WEIGHTS[piece]].reverse().map(row => [...row].reverse());
+    }
+
+    // ==================== 游戏状态 ====================
+    class ChessGame {
+        constructor() {
+            this.reset();
+        }
+
+        reset() {
+            this.board = this.createInitialBoard();
+            this.currentPlayer = 'white';
+            this.selectedSquare = null;
+            this.legalMoves = [];
+            this.moveHistory = [];
+            this.capturedPieces = { white: [], black: [] };
+            this.gameOver = false;
+            this.lastMove = null;
+            this.scores = { white: 0, black: 0 };
+            
+            // 王车易位权利
+            this.castlingRights = {
+                whiteKingside: true,
+                whiteQueenside: true,
+                blackKingside: true,
+                blackQueenside: true
+            };
+            
+            // 过路兵
+            this.enPassantSquare = null;
+            
+            // 将军状态
+            this.isInCheck = false;
+        }
+
+        createInitialBoard() {
+            const board = Array(8).fill(null).map(() => Array(8).fill(PIECES.EMPTY));
+            
+            // 黑方
+            board[0] = [PIECES.B_ROOK, PIECES.B_KNIGHT, PIECES.B_BISHOP, PIECES.B_QUEEN,
+                       PIECES.B_KING, PIECES.B_BISHOP, PIECES.B_KNIGHT, PIECES.B_ROOK];
+            board[1] = Array(8).fill(PIECES.B_PAWN);
+            
+            // 白方
+            board[6] = Array(8).fill(PIECES.W_PAWN);
+            board[7] = [PIECES.W_ROOK, PIECES.W_KNIGHT, PIECES.W_BISHOP, PIECES.W_QUEEN,
+                       PIECES.W_KING, PIECES.W_BISHOP, PIECES.W_KNIGHT, PIECES.W_ROOK];
+            
+            return board;
+        }
+
+        isWhitePiece(piece) {
+            return piece >= 1 && piece <= 6;
+        }
+
+        isBlackPiece(piece) {
+            return piece >= 7 && piece <= 12;
+        }
+
+        getPieceColor(piece) {
+            if (piece === PIECES.EMPTY) return null;
+            return this.isWhitePiece(piece) ? 'white' : 'black';
+        }
+
+        findKing(color) {
+            const kingPiece = color === 'white' ? PIECES.W_KING : PIECES.B_KING;
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (this.board[row][col] === kingPiece) {
+                        return { row, col };
+                    }
+                }
+            }
+            return null;
+        }
+
+        isSquareAttacked(row, col, byColor) {
+            // 检查兵
+            const pawnDir = byColor === 'white' ? 1 : -1;
+            const pawnPiece = byColor === 'white' ? PIECES.W_PAWN : PIECES.B_PAWN;
+            if (row + pawnDir >= 0 && row + pawnDir < 8) {
+                if (col - 1 >= 0 && this.board[row + pawnDir][col - 1] === pawnPiece) return true;
+                if (col + 1 < 8 && this.board[row + pawnDir][col + 1] === pawnPiece) return true;
+            }
+
+            // 检查马
+            const knightPiece = byColor === 'white' ? PIECES.W_KNIGHT : PIECES.B_KNIGHT;
+            const knightMoves = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+            for (const [dr, dc] of knightMoves) {
+                const r = row + dr, c = col + dc;
+                if (r >= 0 && r < 8 && c >= 0 && c < 8 && this.board[r][c] === knightPiece) return true;
+            }
+
+            // 检查国王（周围8格）
+            const kingPiece = byColor === 'white' ? PIECES.W_KING :             const kingPiece = byColor === 'white' ? PIECES.W_KING : PIECES.B_KING;
+            for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                    if (dr === 0 && dc === 0) continue;
+                    const r = row + dr, c = col + dc;
+                    if (r >= 0 && r < 8 && c >= 0 && c < 8 && this.board[r][c] === kingPiece) return true;
+                }
+            }
+
+            // 检查车/皇后（直线）
+            const rookPiece = byColor === 'white' ? PIECES.W_ROOK : PIECES.B_ROOK;
+            const queenPiece = byColor === 'white' ? PIECES.W_QUEEN : PIECES.B_QUEEN;
+            const straightDirs = [[0,1],[0,-1],[1,0],[-1,0]];
+            for (const [dr, dc] of straightDirs) {
+                let r = row + dr, c = col + dc;
+                while (r >= 0 && r < 8 && c >= 0 && c < 8) {
+                    const piece = this.board[r][c];
+                    if (piece !== PIECES.EMPTY) {
+                        if (piece === rookPiece || piece === queenPiece) return true;
+                        break;
+                    }
+                    r += dr; c += dc;
+                }
+            }
+
+            // 检查象/皇后（斜线）
+            const bishopPiece = byColor === 'white' ? PIECES.W_BISHOP : PIECES.B_BISHOP;
+            const diagonalDirs = [[1,1],[1,-1],[-1,1],[-1,-1]];
+            for (const [dr, dc] of diagonalDirs) {
+                let r = row + dr, c = col + dc;
+                while (r >= 0 && r < 8 && c >= 0 && c < 8) {
+                    const piece = this.board[r][c];
+                    if (piece !== PIECES.EMPTY) {
+                        if (piece === bishopPiece || piece === queenPiece) return true;
+                        break;
+                    }
+                    r += dr; c += dc;
+                }
+            }
+
+            return false;
+        }
+
+        isKingInCheck(color) {
+            const kingPos = this.findKing(color);
+            if (!kingPos) return false;
+            const enemyColor = color === 'white' ? 'black' : 'white';
+            return this.isSquareAttacked(kingPos.row, kingPos.col, enemyColor);
+        }
+
+        getRawLegalMoves(row, col) {
+            const piece = this.board[row][col];
+            if (piece === PIECES.EMPTY) return [];
+            
+            const color = this.getPieceColor(piece);
+            const moves = [];
+            const isWhite = color === 'white';
+
+            switch (piece) {
+                case PIECES.W_PAWN:
+                case PIECES.B_PAWN:
+                    const dir = isWhite ? -1 : 1;
+                    const startRow = isWhite ? 6 : 1;
+                    
+                    // 前进一格
+                    if (this.board[row + dir]?.[col] === PIECES.EMPTY) {
+                        moves.push({ row: row + dir, col });
+                        // 初始位置可以走两格
+                        if (row === startRow && this.board[row + 2 * dir]?.[col] === PIECES.EMPTY) {
+                            moves.push({ row: row + 2 * dir, col });
+                        }
+                    }
+                    
+                    // 吃子
+                    for (const dc of [-1, 1]) {
+                        const target = this.board[row + dir]?.[col + dc];
+                        if (target !== undefined && target !== PIECES.EMPTY && this.getPieceColor(target) !== color) {
+                            moves.push({ row: row + dir, col: col + dc });
+                        }
+                        // 过路兵
+                        if (this.enPassantSquare && this.enPassantSquare.row === row + dir && this.enPassantSquare.col === col + dc) {
+                            moves.push({ row: row + dir, col: col + dc, enPassant: true });
+                        }
+                    }
+                    break;
+
+                case PIECES.W_KNIGHT:
+                case PIECES.B_KNIGHT:
+                    const knightOffsets = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+                    for (const [dr, dc] of knightOffsets) {
+                        const r = row + dr, c = col + dc;
+                        if (r >= 0 && r < 8 && c >= 0 && c < 8) {
+                            const target = this.board[r][c];
+                            if (target === PIECES.EMPTY || this.getPieceColor(target) !== color) {
+                                moves.push({ row: r, col: c });
+                            }
+                        }
+                    }
+                    break;
+
+                case PIECES.W_BISHOP:
+                case PIECES.B_BISHOP:
+                    const bishopDirs = [[1,1],[1,-1],[-1,1],[-1,-1]];
+                    for (const [dr, dc] of bishopDirs) {
+                        let r = row + dr, c = col + dc;
+                        while (r >= 0 && r < 8 && c >= 0 && c < 8) {
+                            const target = this.board[r][c];
+                            if (target === PIECES.EMPTY) {
+                                moves.push({ row: r, col: c });
+                            } else {
+                                if (this.getPieceColor(target) !== color) {
+                                    moves.push({ row: r, col: c });
+                                }
+                                break;
+                            }
+                            r += dr; c += dc;
+                        }
+                    }
+                    break;
+
+                case PIECES.W_ROOK:
+                case PIECES.B_ROOK:
+                    const rookDirs = [[0,1],[0,-1],[1,0],[-1,0]];
+                    for (const [dr, dc] of rookDirs) {
+                        let r = row + dr, c = col + dc;
+                        while (r >= 0 && r < 8 && c >= 0 && c < 8) {
+                            const target = this.board[r][c];
+                            if (target === PIECES.EMPTY) {
+                                moves.push({ row: r, col: c });
+                            } else {
+                                if (this.getPieceColor(target) !== color) {
+                                    moves.push({ row: r, col: c });
+                                }
+                                break;
+                            }
+                            r += dr; c += dc;
+                        }
+                    }
+                    break;
+
+                case PIECES.W_QUEEN:
+                case PIECES.B_QUEEN:
+                    const queenDirs = [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]];
+                    for (const [dr, dc] of queenDirs) {
+                        let r = row + dr, c = col + dc;
+                        while (r >= 0 && r < 8 && c >= 0 && c < 8) {
+                            const target = this.board[r][c];
+                            if (target === PIECES.EMPTY) {
+                                moves.push({ row: r, col: c });
+                            } else {
+                                if (this.getPieceColor(target) !== color) {
+                                    moves.push({ row: r, col: c });
+                                }
+                                break;
+                            }
+                            r += dr; c += dc;
+                        }
+                    }
+                    break;
+
+                case PIECES.W_KING:
+                case PIECES.B_KING:
+                    for (let dr = -1; dr <= 1; dr++) {
+                        for (let dc = -1; dc <= 1; dc++) {
+                            if (dr === 0 && dc === 0) continue;
+                            const r = row + dr, c = col + dc;
+                            if (r >= 0 && r < 8 && c >= 0 && c < 8) {
+                                const target = this.board[r][c];
+                                if (target === PIECES.EMPTY || this.getPieceColor(target) !== color) {
+                                    moves.push({ row: r, col: c });
+                                }
+                            }
+                        }
+                    }
+                    
+                    // 王车易位
+                    const enemyColor = color === 'white' ? 'black' : 'white';
+                    if (!this.isSquareAttacked(row, col, enemyColor)) {
+                        // 短易位
+                        const kingsideRight = isWhite ? this.castlingRights.whiteKingside : this.castlingRights.blackKingside;
+                        if (kingsideRight && 
+                            this.board[row][5] === PIECES.EMPTY && 
+                            this.board[row][6] === PIECES.EMPTY &&
+                            !this.isSquareAttacked(row, 5, enemyColor) &&
+                            !this.isSquareAttacked(row, 6, enemyColor)) {
+                            moves.push({ row, col: 6, castling: 'kingside' });
+                        }
+                        
+                        // 长易位
+                        const queensideRight = isWhite ? this.castlingRights.whiteQueenside : this.castlingRights.blackQueenside;
+                        if (queensideRight && 
+                            this.board[row][1] === PIECES.EMPTY && 
+                            this.board[row][2] === PIECES.EMPTY &&
+                            this.board[row][3] === PIECES.EMPTY &&
+                            !this.isSquareAttacked(row, 2, enemyColor) &&
+                            !this.isSquareAttacked(row, 3, enemyColor)) {
+                            moves.push({ row, col: 2, castling: 'queenside' });
+                        }
+                    }
+                    break;
+            }
+
+            return moves;
+        }
+
+        getLegalMoves(row, col) {
+            const piece = this.board[row][col];
+            if (piece === PIECES.EMPTY) return [];
+            
+            const color = this.getPieceColor(piece);
+            const rawMoves = this.getRawLegalMoves(row, col);
+            const legalMoves = [];
+
+            for (const move of rawMoves) {
+                // 模拟移动
+                const testGame = this.clone();
+                testGame.board[move.row][move.col] = piece;
+                testGame.board[row][col] = PIECES.EMPTY;
+                
+                // 处理过路兵
+                if (move.enPassant) {
+                    const capturedPawnRow = color === 'white' ? move.row + 1 : move.row - 1;
+                    testGame.board[capturedPawnRow][move.col] = PIECES.EMPTY;
+                }
+                
+                // 处理王车易位
+                if (move.castling) {
+                    if (move.castling === 'kingside') {
+                        testGame.board[row][5] = testGame.board[row][7];
+                        testGame.board[row][7] = PIECES.EMPTY;
+                    } else {
+                        testGame.board[row][3] = testGame.board[row][0];
+                        testGame.board[row][0] = PIECES.EMPTY;
+                    }
+                }
+
+                // 检查移动后国王是否被攻击
+                if (!testGame.isKingInCheck(color)) {
+                    legalMoves.push(move);
+                }
+            }
+
+            return legalMoves;
+        }
+
+        getAllLegalMoves(color) {
+            const moves = [];
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const piece = this.board[row][col];
+                    if (piece !== PIECES.EMPTY && this.getPieceColor(piece) === color) {
+                        const pieceMoves = this.getLegalMoves(row, col);
+                        for (const move of pieceMoves) {
+                            moves.push({ from: { row, col }, to: move });
+                        }
+                    }
+                }
+            }
+            return moves;
+        }
+
+        makeMove(fromRow, fromCol, toRow, toCol, moveData = {}) {
+            const piece = this.board[fromRow][fromCol];
+            const capturedPiece = this.board[toRow][toCol];
+            const color = this.getPieceColor(piece);
+            const isWhite = color === 'white';
+
+            // 记录历史
+            const historyEntry = {
+                from: { row: fromRow, col: fromCol },
+                to: { row: toRow, col: toCol },
+                piece,
+                captured: capturedPiece,
+                castlingRights: { ...this.castlingRights },
+                enPassantSquare: this.enPassantSquare,
+                promotion: false
+            };
+
+            // 处理吃子
+            if (capturedPiece !== PIECES.EMPTY) {
+                this.capturedPieces[color].push(capturedPiece);
+                historyEntry.wasCapture = true;
+            }
+
+            // 处理过路兵
+            if (moveData.enPassant) {
+                const capturedPawnRow = isWhite ? toRow + 1 : toRow - 1;
+                const capturedPawn = this.board[capturedPawnRow][toCol];
+                this.capturedPieces[color].push(capturedPawn);
+                this.board[capturedPawnRow][toCol] = PIECES.EMPTY;
+                historyEntry.enPassantCapture = { row: capturedPawnRow, col: toCol, piece: capturedPawn };
+            }
+
+            // 移动棋子
+            this.board[toRow][toCol] = piece;
+            this.board[fromRow][fromCol] = PIECES.EMPTY;
+
+            // 兵升变
+            if (piece === PIECES.W_PAWN && toRow === 0) {
+                this.board[toRow][toCol] = PIECES.W_QUEEN;
+                historyEntry.promotion = PIECES.W_QUEEN;
+            } else if (piece === PIECES.B_PAWN && toRow === 7) {
+                this.board[toRow][toCol] = PIECES.B_QUEEN;
+                historyEntry.promotion = PIECES.B_QUEEN;
+            }
+
+            // 处理王车易位
+            if (moveData.castling) {
+                if (moveData.castling === 'kingside') {
+                    this.board[fromRow][5] = this.board[fromRow][7];
+                    this.board[fromRow][7] = PIECES.EMPTY;
+                    historyEntry.rookFrom = { row: fromRow, col: 7 };
+                    historyEntry.rookTo = { row: fromRow, col: 5 };
+                } else {
+                    this.board[fromRow][3] = this.board[fromRow][0];
+                    this.board[fromRow][0] = PIECES.EMPTY;
+                    historyEntry.rookFrom = { row: fromRow, col: 0 };
+                    historyEntry.rookTo = { row: fromRow, col: 3 };
+                }
+            }
+
+            // 更新易位权利
+            if (piece === PIECES.W_KING) {
+                this.castlingRights.whiteKingside = false;
+                this.castlingRights.whiteQueenside = false;
+            } else if (piece === PIECES.B_KING) {
+                this.castlingRights.blackKingside = false;
+                this.castlingRights.blackQueenside = false;
+            } else if (piece === PIECES.W_ROOK) {
+                if (fromRow === 7 && fromCol === 0) this.castlingRights.whiteQueenside = false;
+                if (fromRow === 7 && fromCol === 7) this.castlingRights.whiteKingside = false;
+            } else if (piece === PIECES.B_ROOK) {
+                if (fromRow === 0 && fromCol === 0) this.castlingRights.blackQueenside = false;
+                if (fromRow === 0 && fromCol === 7) this.castlingRights.blackKingside = false;
+            }
+
+            // 更新过路兵标记
+            this.enPassantSquare = null;
+            if (piece === PIECES.W_PAWN && fromRow === 6 && toRow === 4) {
+                this.enPassantSquare = { row: 5, col: fromCol };
+            } else if (piece === PIECES.B_PAWN && fromRow === 1 && toRow === 3) {
+                this.enPassantSquare = { row: 2, col: fromCol };
+            }
+
+            this.lastMove = { from: { row: fromRow, col: fromCol }, to: { row: toRow, col: toCol } };
+            this.moveHistory.push(historyEntry);
+            
+            // 切换玩家
+            this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
+            this.isInCheck = this.isKingInCheck(this.currentPlayer);
+
+            return historyEntry;
+        }
+
+        undoMove() {
+            if (this.moveHistory.length === 0) return false;
+            
+            const history = this.moveHistory.pop();
+            const { from, to, piece, captured, castlingRights, enPassantSquare, promotion } = history;
+            
+            // 恢复棋子
+            const restoredPiece = promotion || piece;
+            this.board[from.row][from.col] = restoredPiece;
+            
+            if (captured !== PIECES.EMPTY) {
+                this.board[to.row][to.col] = captured;
+                const color = this.getPieceColor(piece);
+                const idx = this.capturedPieces[color].indexOf(captured);
+                if (idx > -1) this.capturedPieces[color].splice(idx, 1);
+            } else {
+                this.board[to.row][to.col] = PIECES.EMPTY;
+            }
+            
+            // 恢复过路兵
+            if (history.enPassantCapture) {
+                this.board[history.enPassantCapture.row][history.enPassantCapture.col] = history.enPassantCapture.piece;
+                const color = this.getPieceColor(piece);
+                const idx = this.capturedPieces[color].indexOf(history.enPassantCapture.piece);
+                if (idx > -1) this.capturedPieces[color].splice(idx, 1);
+            }
+            
+            // 恢复易位
+            if (history.rookFrom && history.rookTo) {
+                this.board[history.rookFrom.row][history.rookFrom.col] = this.board[history.rookTo.row][history.rookTo.col];
+                this.board[history.rookTo.row][history.rookTo.col] = PIECES.EMPTY;
+            }
+            
+            // 恢复状态
+            this.castlingRights = castlingRights;
+            this.enPassantSquare = enPassantSquare;
+            this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
+            this.isInCheck = this.isKingInCheck(this.currentPlayer);
+            
+            // 恢复最后一步
+            if (this.moveHistory.length > 0) {
+                const lastMove = this.moveHistory[this.moveHistory.length - 1];
+                this.lastMove = { from: lastMove.from, to: lastMove.to };
+            } else {
+                this.lastMove = null;
+            }
+            
+            return true;
+        }
+
+        checkGameOver() {
+            const legalMoves = this.getAllLegalMoves(this.currentPlayer);
+            
+            if (legalMoves.length === 0) {
+                if (this.isInCheck) {
+                    return { over: true, result: this.currentPlayer === 'white' ? 'black' : 'white', reason: 'checkmate' };
+                } else {
+                    return { over: true, result: 'draw', reason: 'stalemate' };
+                }
+            }
+            
+            // 50步规则简化版
+            if (this.moveHistory.length >= 100) {
+                return { over: true, result: 'draw', reason: '50-move rule' };
+            }
+            
+            return { over: false };
+        }
+
+        clone() {
+            const clone = new ChessGame();
+            clone.board = this.board.map(row => [...row]);
+            clone.currentPlayer = this.currentPlayer;
+            clone.castlingRights = { ...this.castlingRights };
+            clone.enPassantSquare = this.enPassantSquare ? { ...this.enPassantSquare } : null;
+            clone.moveHistory = this.moveHistory.map(m => ({ ...m }));
+            clone.capturedPieces = {
+                white: [...this.capturedPieces.white],
+                black: [...this.capturedPieces.black]
+            };
+            return clone;
+        }
+
+        evaluate() {
+            let score = 0;
+            
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const piece = this.board[row][col];
+                    if (piece !== PIECES.EMPTY) {
+                        const isWhite = this.isWhitePiece(piece);
+                        const pieceValue = PIECE_VALUES[piece];
+                        const positionValue = POSITION_WEIGHTS[piece]?.[row]?.[col] || 0;
+                        
+                        if (isWhite) {
+                            score += pieceValue + positionValue;
+                        } else {
+                            score -= pieceValue + position                    }
+                }
+            }
+            
+            // 将军惩罚/奖励
+            if (this.isKingInCheck('black')) score += 50;
+            if (this.isKingInCheck('white')) score -= 50;
+            
+            return score;
+        }
+    }
+
+    // ==================== AI ====================
+    class ChessAI {
+        constructor(depth = 3) {
+            this.depth = depth;
+            this.nodesSearched = 0;
+        }
+
+        getBestMove(game) {
+            this.nodesSearched = 0;
+            const maximizing = game.currentPlayer === 'white';
+            const result = this.minimax(game, this.depth, -Infinity, Infinity, maximizing);
+            return result.move;
+        }
+
+        minimax(game, depth, alpha, beta, maximizing) {
+            this.nodesSearched++;
+            
+            if (depth === 0 || game.checkGameOver().over) {
+                return { score: game.evaluate() };
+            }
+
+            const legalMoves = game.getAllLegalMoves(game.currentPlayer);
+            
+            if (maximizing) {
+                let maxScore = -Infinity;
+                let bestMove = null;
+                
+                for (const move of legalMoves) {
+                    const testGame = game.clone();
+                    testGame.makeMove(move.from.row, move.from.col, move.to.row, move.to.col, move.to);
+                    
+                    const result = this.minimax(testGame, depth - 1, alpha, beta, false);
+                    
+                    if (result.score > maxScore) {
+                        maxScore = result.score;
+                        bestMove = move;
+                    }
+                    alpha = Math.max(alpha, result.score);
+                    if (beta <= alpha) break;
+                }
+                
+                return { score: maxScore, move: bestMove };
+            } else {
+                let minScore = Infinity;
+                let bestMove = null;
+                
+                for (const move of legalMoves) {
+                    const testGame = game.clone();
+                    testGame.makeMove(move.from.row, move.from.col, move.to.row, move.to.col, move.to);
+                    
+                    const result = this.minimax(testGame, depth - 1, alpha, beta, true);
+                    
+                    if (result.score < minScore) {
+                        minScore = result.score;
+                        bestMove = move;
+                    }
+                    beta = Math.min(beta, result.score);
+                    if (beta <= alpha) break;
+                }
+                
+                return { score: minScore, move: bestMove };
+            }
+        }
+    }
+
+    // ==================== UI ====================
+    class ChessUI {
+        constructor() {
+            this.game = new ChessGame();
+            this.ai = new ChessAI(3);
+            this.boardElement = document.getElementById('board');
+            this.statusPanel = document.getElementById('status-panel');
+            this.statusText = document.getElementById('status-text');
+            this.aiThinking = document.getElementById('ai-thinking');
+            this.historyMoves = document.getElementById('history-moves');
+            this.undoBtn = document.getElementById('undo-btn');
+            this.restartBtn = document.getElementById('restart-btn');
+            this.difficultySelect = document.getElementById('difficulty');
+            this.modal = document.getElementById('game-over-modal');
+            this.modalTitle = document.getElementById('modal-title');
+            this.modalMessage = document.getElementById('modal-message');
+            this.modalRestart = document.getElementById('modal-restart');
+            this.whiteCaptured = document.getElementById('white-captured');
+            this.blackCaptured = document.getElementById('black-captured');
+            this.whiteScoreEl = document.getElementById('white-score');
+            this.blackScoreEl = document.getElementById('black-score');
+
+            this.init();
+        }
+
+        init() {
+            this.createBoard();
+            this.bindEvents();
+            this.updateUI();
+        }
+
+        createBoard() {
+            this.boardElement.innerHTML = '';
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const square = document.createElement('div');
+                    square.className = 'square ' + ((row + col) % 2 === 0 ? 'light' : 'dark');
+                    square.dataset.row = row;
+                    square.dataset.col = col;
+                    this.boardElement.appendChild(square);
+                }
+            }
+        }
+
+        bindEvents() {
+            this.boardElement.addEventListener('click', (e) => this.handleSquareClick(e));
+            this.undoBtn.addEventListener('click', () => this.undo());
+            this.restartBtn.addEventListener('click', () => this.restart());
+            this.difficultySelect.addEventListener('change', () => this.updateDifficulty());
+            this.modalRestart.addEventListener('click', () => {
+                this.hideModal();
+                this.restart();
+            });
+        }
+
+        handleSquareClick(e) {
+            if (this.game.gameOver) return;
+            if (this.game.currentPlayer !== 'white') return;
+            if (this.aiThinking.classList.contains('show')) return;
+
+            const square = e.target.closest('.square');
+            if (!square) return;
+
+            const row = parseInt(square.dataset.row);
+            const col = parseInt(square.dataset.col);
+
+            if (this.game.selectedSquare) {
+                const legalMoves = this.game.legalMoves;
+                const move = legalMoves.find(m => m.row === row && m.col === col);
+                
+                if (move) {
+                    this.makePlayerMove(row, col, move);
+                } else {
+                    const piece = this.game.board[row][col];
+                    if (piece !== PIECES.EMPTY && this.game.isWhitePiece(piece)) {
+                        this.selectSquare(row, col);
+                    } else {
+                        this.clearSelection();
+                    }
+                }
+            } else {
+                const piece = this.game.board[row][col];
+                if (piece !== PIECES.EMPTY && this.game.isWhitePiece(piece)) {
+                    this.selectSquare(row, col);
+                }
+            }
+        }
+
+        selectSquare(row, col) {
+            this.game.selectedSquare = { row, col };
+            this.game.legalMoves = this.game.getLegalMoves(row, col);
+            this.updateUI();
+        }
+
+        clearSelection() {
+            this.game.selectedSquare = null;
+            this.game.legalMoves = [];
+            this.updateUI();
+        }
+
+        makePlayerMove(toRow, toCol, moveData) {
+            const from = this.game.selectedSquare;
+            this.game.makeMove(from.row, from.col, toRow, toCol, moveData);
+            this.clearSelection();
+            this.updateUI();
+            
+            const gameOver = this.game.checkGameOver();
+            if (gameOver.over) {
+                this.showGameOver(gameOver);
+                return;
+            }
+            
+            this.makeAIMove();
+        }
+
+        makeAIMove() {
+            this.setThinking(true);
+            
+            setTimeout(() => {
+                const bestMove = this.ai.getBestMove(this.game);
+                
+                if (bestMove) {
+                    this.game.makeMove(bestMove.from.row, bestMove.from.col, bestMove.to.row, bestMove.to.col, bestMove.to);
+                }
+                
+                this.setThinking(false);
+                this.updateUI();
+                
+                const gameOver = this.game.checkGameOver();
+                if (gameOver.over) {
+                    this.showGameOver(gameOver);
+                }
+            }, 100);
+        }
+
+        undo() {
+            if (this.moveHistory.length < 2) return;
+            if (this.aiThinking.classList.contains('show')) return;
+            
+            this.game.undoMove();
+            this.game.undoMove();
+            
+            this.clearSelection();
+            this.updateUI();
+        }
+
+        restart() {
+            this.game.reset();
+            this.clearSelection();
+            this.updateUI();
+            this.hideModal();
+        }
+
+        updateDifficulty() {
+            this.ai.depth = parseInt(this.difficultySelect.value);
+        }
+
+        setThinking(thinking) {
+            this.aiThinking.classList.toggle('show', thinking);
+            this.statusPanel.classList.toggle('thinking', thinking);
+            this.undoBtn.disabled = thinking;
+        }
+
+        updateUI() {
+            const squares = this.boardElement.querySelectorAll('.square');
+            squares.forEach(square => {
+                const row = parseInt(square.dataset.row);
+                const col = parseInt(square.dataset.col);
+                const piece = this.game.board[row][col];
+                
+                square.classList.remove('selected', 'legal-move', 'legal-capture', 'check', 'last-move');
+                
+                if (piece !== PIECES.EMPTY) {
+                    square.innerHTML = `<span class="piece ${this.game.isWhitePiece(piece) ? 'white' : 'black'}">${PIECE_SYMBOLS[piece]}</span>`;
+                } else {
+                    square.innerHTML = '';
+                }
+                
+                if (this.game.lastMove) {
+                    if ((row === this.game.lastMove.from.row && col === this.game.lastMove.from.col) ||
+                        (row === this.game.lastMove.to.row && col === this.game.lastMove.to.col)) {
+                        square.classList.add('last-move');
+                    }
+                }
+                
+                if (this.game.isInCheck) {
+                    const kingPos = this.game.findKing(this.game.currentPlayer);
+                    if (kingPos && row === kingPos.row && col === kingPos.col) {
+                        square.classList.add('check');
+                    }
+                }
+            });
+
+            if (this.game.selectedSquare) {
+                const { row, col } = this.game.selectedSquare;
+                const selectedSquareEl = this.boardElement.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                selectedSquareEl.classList.add('selected');
+                
+                for (const move of this.game.legalMoves) {
+                    const moveSquareEl = this.boardElement.querySelector(`[data-row="${move.row}"][data-col="${move.col}"]`);
+                    if (this.game.board[move.row][move.col] !== PIECES.EMPTY || move.enPassant) {
+                        moveSquareEl.classList.add('legal-capture');
+                    } else {
+                        moveSquareEl.classList.add('legal-move');
+                    }
+                }
+            }
+
+            let status = this.game.currentPlayer === 'white' ? '白方回合' : '黑方回合';
+            if (this.game.isInCheck) {
+                status = this.game.currentPlayer === 'white' ? '白方被将军!' : '黑方被将军!';
+            }
+            this.statusText.textContent = status;
+
+            this.updateHistory();
+            this.updateCapturedPieces();
+            this.updateScores();
+        }
+
+        updateHistory() {
+            this.historyMoves.innerHTML = '';
+            
+            for (let i = 0; i < this.game.moveHistory.length; i += 2) {
+                const moveNum = Math.floor(i / 2) + 1;
+                const whiteMove = this.game.moveHistory[i];
+                const blackMove = this.game.moveHistory[i + 1];
+                
+                const row = document.createElement('div');
+                row.className = 'move-row';
+                row.innerHTML = `<span class="move-num">${moveNum}.</span>`;
+                
+                if (whiteMove) {
+                    row.innerHTML += `<span class="move">${this.formatMove(whiteMove)}</span>`;
+                }
+                if (blackMove) {
+                    row.innerHTML += `<span class="move">${this.formatMove(blackMove)}</span>`;
+                }
+                
+                this.historyMoves.appendChild(row);
+            }
+            
+            this.historyMoves.scrollTop = this.historyMoves.scrollHeight;
+        }
+
+        formatMove(history) {
+            const cols = 'abcdefgh';
+            const from = cols[history.from.col] + (8 - history.from.row);
+            const to = cols[history.to.col] + (8 - history.to.row);
+            
+            let move = from + to;
+            if (history.promotion) {
+                move += '=' + this.getPieceSymbol(history.promotion);
+            }
+            if (history.castling) {
+                move = history.castling === 'kingside' ? 'O-O' : 'O-O-O';
+            }
+            
+            return move;
+        }
+
+        getPieceSymbol(piece) {
+            const symbols = {
+                [PIECES.W_KING]: 'K', [PIECES.W_QUEEN]: 'Q', [PIECES.W_ROOK]: 'R',
+                [PIECES.W_BISHOP]: 'B', [PIECES.W_KNIGHT]: 'N',
+                [PIECES.B_KING]: 'K', [PIECES.B_QUEEN]: 'Q', [PIECES.B_ROOK]: 'R',
+                [PIECES.B_BISHOP]: 'B', [PIECES.B_KNIGHT]: 'N'
+            };
+            return symbols[piece] || '';
+        }
+
+        updateCapturedPieces() {
+            this.blackCaptured.innerHTML = this.game.capturedPieces.white
+                .map(p => `<span class="piece black">${PIECE_SYMBOLS[p]}</span>`)
+                .join('');
+            
+            this.whiteCaptured.innerHTML = this.game.capturedPieces.black
+                .map(p => `<span class="piece white">${PIECE_SYMBOLS[p]}</span>`)
+                .join('');
+        }
+
+        updateScores() {
+            const calcScore = (pieces) => {
+                return pieces.reduce((sum, p) => sum + PIECE_VALUES[p], 0) / 100;
+            };
+            
+            this.game.scores.white = calcScore(this.game.capturedPieces.white);
+            this.game.scores.black = calcScore(this.game.capturedPieces.black);
+            
+            this.whiteScoreEl.textContent = this.game.scores.white.toFixed(1);
+            this.blackScoreEl.textContent = this.game.scores.black.toFixed(1);
+        }
+
+        showGameOver(gameOver) {
+            this.game.gameOver = true;
+            
+            if (gameOver.result === 'draw') {
+                this.modalTitle.textContent = '平局!';
+                this.modalMessage.textContent = gameOver.reason === 'stalemate' ? '双方都无法将死对方 - 困毙' : '50步和棋规则';
+            } else {
+                const winner = gameOver.result === 'white' ? '白方' : '黑方';
+                this.modalTitle.textContent = winner + '获胜!';
+                this.modalMessage.textContent = gameOver.reason === 'checkmate' ? '将死对方' : '';
+            }
+            
+            this.modal.classList.add('show');
+        }
+
+        hideModal() {
+            this.modal.classList.remove('show');
+        }
+
+        get moveHistory() {
+            return this.game.moveHistory;
+        }
+    }
+
+    // 启动游戏
+    const ui = new ChessUI();
+    </script>
+</body>
+</html>
