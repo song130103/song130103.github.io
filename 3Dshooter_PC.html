@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D射击游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            overflow: hidden;
+            background: #000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* 瞄准镜 */
+        #crosshair {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        #crosshair::before,
+        #crosshair::after {
+            content: '';
+            position: absolute;
+            background: rgba(0, 255, 0, 0.8);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        #crosshair::before {
+            width: 20px;
+            height: 2px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        #crosshair::after {
+            width: 2px;
+            height: 20px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .crosshair-ring {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 2px solid rgba(0, 255, 0, 0.6);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+        }
+
+        /* HUD界面 */
+        #hud {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            color: #0f0;
+            font-size: 24px;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        #hud .stat {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            border-radius: 5px;
+        }
+
+        /* 开始/结束界面 */
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            color: #0f0;
+        }
+
+        #overlay.hidden {
+            display: none;
+        }
+
+        #overlay h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(0, 255, 0, 0.8);
+            letter-spacing: 5px;
+        }
+
+        #overlay p {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #0a0;
+        }
+
+        #overlay .final-score {
+            font-size: 36px;
+            margin: 20px 0;
+            color: #ff0;
+            text-shadow: 0 0 15px rgba(255, 255, 0, 0.8);
+        }
+
+        #startBtn {
+            margin-top: 30px;
+            padding: 15px 50px;
+            font-size: 24px;
+            background: transparent;
+            border: 2px solid #0f0;
+            color: #0f0;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        #startBtn:hover, #startBtn:active {
+            background: #0f0;
+            color: #000;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.6);
+        }
+
+        .controls-info {
+            margin-top: 40px;
+            text-align: center;
+            color: #080;
+            font-size: 14px;
+            line-height: 2;
+        }
+
+        .controls-info span {
+            display: inline-block;
+            background: rgba(0, 255, 0, 0.1);
+            padding: 5px 15px;
+            margin: 5px;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            border-radius: 3px;
+        }
+
+        /* 横屏提示 */
+        #landscapeHint {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 500;
+            color: #0f0;
+        }
+
+        #landscapeHint.show {
+            display: flex;
+        }
+
+        #landscapeHint .rotate-icon {
+            font-size: 80px;
+            animation: rotateHint 2s ease-in-out infinite;
+        }
+
+        #landscapeHint p {
+            margin-top: 20px;
+            font-size: 20px;
+            text-align: center;
+        }
+
+        @keyframes rotateHint {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(90deg); }
+        }
+
+        /* 射击闪光效果 */
+        #muzzleFlash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, rgba(255, 200, 100, 0.3), transparent 50%);
+            pointer-events: none;
+            opacity: 0;
+            z-index: 50;
+            transition: opacity 0.05s;
+        }
+
+        #muzzleFlash.active {
+            opacity: 1;
+        }
+
+        /* 命中提示 */
+        #hitMarker {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 30px;
+            color: #f00;
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 150;
+        }
+
+        #hitMarker.show {
+            animation: hitMarkerAnim 0.3s ease-out;
+        }
+
+        @keyframes hitMarkerAnim {
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+        }
+
+        /* 加载提示 */
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #0f0;
+            font-size: 24px;
+            z-index: 300;
+        }
+
+        /* ============ 手机触控控件 ============ */
+
+        /* 虚拟摇杆容器 */
+        #joystickContainer {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            width: 140px;
+            height: 140px;
+            z-index: 150;
+            display: none;
+        }
+
+        #joystickContainer.active {
+            display: block;
+        }
+
+        /* 摇杆背景 */
+        #joystickBase {
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            background: radial-gradient(circle, rgba(0, 255, 0, 0.15) 0%, rgba(0, 255, 0, 0.05) 100%);
+            border: 3px solid rgba(0, 255, 0, 0.4);
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+        }
+
+        /* 摇杆把手 */
+        #joystickThumb {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, rgba(0, 255, 0, 0.6) 0%, rgba(0, 200, 0, 0.4) 100%);
+            border: 2px solid rgba(0, 255, 0, 0.8);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+            transition: transform 0.05s ease-out;
+        }
+
+        /* 射击按钮 */
+        #shootBtn {
+            position: fixed;
+            bottom: 50px;
+            right: 50px;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, rgba(255, 50, 50, 0.5) 0%, rgba(200, 0, 0, 0.3) 100%);
+            border: 4px solid rgba(255, 100, 100, 0.7);
+            border-radius: 50%;
+            z-index: 150;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.4);
+            cursor: pointer;
+        }
+
+        #shootBtn.active {
+            display: flex;
+            background: radial-gradient(circle, rgba(255, 100, 100, 0.7) 0%, rgba(255, 50, 50, 0.5) 100%);
+            transform: scale(0.95);
+        }
+
+        /* 瞄准区域指示 */
+        #aimHint {
+            position: fixed;
+            bottom: 170px;
+            right: 40px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.4);
+            z-index: 150;
+            display: none;
+            text-align: center;
+        }
+
+        #aimHint.active {
+            display: block;
+        }
+
+        /* 触控时隐藏提示 */
+        .hide-on-touch #aimHint {
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">加载中...</div>
+    
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="crosshair">
+        <div class="crosshair-ring"></div>
+    </div>
+    
+    <div id="muzzleFlash"></div>
+    
+    <div id="hitMarker">✕</div>
+    
+    <div id="hud">
+        <div class="stat">分数: <span id="score">0</span></div>
+        <div class="stat">时间: <span id="time">60</span>s</div>
+    </div>
+
+    <!-- 横屏提示 -->
+    <div id="landscapeHint">
+        <div class="rotate-icon">📱</div>
+        <p>请横屏游玩<br>以获得最佳体验</p>
+    </div>
+    
+    <!-- 虚拟摇杆 -->
+    <div id="joystickContainer">
+        <div id="joystickBase">
+            <div id="joystickThumb"></div>
+        </div>
+    </div>
+
+    <!-- 射击按钮 -->
+    <div id="shootBtn">射击</div>
+
+    <!-- 瞄准提示 -->
+    <div id="aimHint">滑动屏幕<br>控制瞄准</div>
+    
+    <div id="overlay">
+        <h1>3D 射击训练</h1>
+        <p>在时间耗尽前尽可能多地击中目标</p>
+        <div class="controls-info" id="controlsInfo">
+            <span>W A S D</span> 移动
+            <br>
+            <span>鼠标</span> 瞄准
+            <br>
+            <span>左键点击</span> 射击
+            <br>
+            <span>ESC</span> 暂停
+        </div>
+        <button id="startBtn">开始游戏</button>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+
+        // 游戏状态
+        const GameState = {
+            MENU: 'menu',
+            PLAYING: 'playing',
+            GAMEOVER: 'gameover',
+            PAUSED: 'paused'
+        };
+
+        let state = GameState.MENU;
+        let score = 0;
+        let timeLeft = 60;
+        let gameTimer = null;
+
+        // Three.js 变量
+        let scene, camera, renderer;
+        let targets = [];
+        let bullets = [];
+        let particles = [];
+        let stars = [];
+
+        // 控制
+        const keys = { w: false, a: false, s: false, d: false };
+        let isPointerLocked = false;
+        let isMobile = false;
+        let euler = new THREE.Euler(0, 0, 0, 'YXZ');
+        const MOVE_SPEED = 0.15;
+        const MOUSE_SENSITIVITY = 0.002;
+        const TOUCH_SENSITIVITY = 0.004;
+
+        // 虚拟摇杆状态
+        const joystick = {
+            active: false,
+            touchId: null,
+            baseX: 0,
+            baseY: 0,
+            thumbX: 0,
+            thumbY: 0,
+            inputX: 0,
+            inputY: 0
+        };
+
+        // 触摸瞄准状态
+        const touchAim = {
+            active: false,
+            touchId: null,
+            lastX: 0,
+            lastY: 0
+        };
+
+        // DOM元素
+        const canvas = document.getElementById('gameCanvas');
+        const overlay = document.getElementById('overlay');
+        const startBtn = document.getElementById('startBtn');
+        const scoreEl = document.getElementById('score');
+        const timeEl = document.getElementById('time');
+        const loadingEl = document.getElementById('loading');
+        const muzzleFlash = document.getElementById('muzzleFlash');
+        const hitMarker = document.getElementById('hitMarker');
+        const hudEl = document.getElementById('hud');
+        const landscapeHint = document.getElementById('landscapeHint');
+        const controlsInfo = document.getElementById('controlsInfo');
+        const joystickContainer = document.getElementById('joystickContainer');
+        const joystickThumb = document.getElementById('joystickThumb');
+        const shootBtn = document.getElementById('shootBtn');
+        const aimHint = document.getElementById('aimHint');
+
+        // 检测是否为移动设备
+        function detectMobile() {
+            isMobile = 'ontouchstart' in window || navigator.maxTouch            glow.scale.set(1.3, 1.3, 1.3);
+            target.add(glow);
+        }
+
+        // 生成多个目标
+        function spawnTargets(count) {
+            for (let i = 0; i < count; i++) {
+                createTarget();
+            }
+        }
+
+        // 射击
+        function shoot() {
+            if (state !== GameState.PLAYING) return;
+
+            // 枪口闪光
+            muzzleFlash.classList.add('active');
+            setTimeout(() => muzzleFlash.classList.remove('active'), 50);
+
+            // 创建子弹光线
+            const bulletGeometry = new THREE.BufferGeometry();
+            const positions = new Float32Array([
+                0, 0, 0,
+                0, 0, -100
+            ]);
+            bul
+            bulletGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+            const bulletMaterial = new THREE.LineBasicMaterial({
+                color: 0xffff00,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            const bullet = new THREE.Line(bulletGeometry, bulletMaterial);
+            bullet.position.copy(camera.position);
+            
+            // 获取相机朝向
+            const direction = new THREE.Vector3();
+            camera.getWorldDirection(direction);
+            
+            // 计算子弹方向
+            const quaternion = new THREE.Quaternion();
+            quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
+            bullet.setRotationFromQuaternion(quaternion);
+            
+            bullet.userData = {
+                startTime: Date.now(),
+                direction: direction.clone()
+            };
+
+            scene.add(bullet);
+            bullets.push(bullet);
+
+            // 检测命中
+            checkHit(direction);
+        }
+
+        // 检测命中
+        function checkHit(direction) {
+            const raycaster = new THREE.Raycaster();
+            raycaster.set(camera.position, direction);
+
+            const intersects = raycaster.intersectObjects(targets);
+
+            if (intersects.length > 0) {
+                const hitTarget = intersects[0].object;
+                const hitPoint = intersects[0].point;
+                
+                // 创建爆炸效果
+                createExplosion(hitPoint, hitTarget.userData.color);
+                
+                // 显示命中标记
+                hitMarker.classList.remove('show');
+                void hitMarker.offsetWidth;
+                hitMarker.classList.add('show');
+
+                // 移除目标
+                scene.remove(hitTarget);
+                const index = targets.indexOf(hitTarget);
+                if (index > -1) {
+                    targets.splice(index, 1);
+                }
+
+                // 更新分数
+                score += 100;
+                scoreEl.textContent = score;
+
+                // 生成新目标
+                setTimeout(() => {
+                    if (state === GameState.PLAYING) {
+                        createTarget();
+                    }
+                }, 500);
+            }
+        }
+
+        // 创建爆炸粒子效果
+        function createExplosion(position, color) {
+            const particleCount = 30;
+
+            for (let i = 0; i < particleCount; i++) {
+                const geometry = new THREE.SphereGeometry(0.1 + Math.random() * 0.2, 8, 8);
+                const material = new THREE.MeshBasicMaterial({
+                    color: color,
+                    transparent: true,
+                    opacity: 1
+                });
+
+                const particle = new THREE.Mesh(geometry, material);
+                particle.position.copy(position);
+
+                particle.userData = {
+                    velocity: new THREE.Vector3(
+                        (Math.random() - 0.5) * 0.5,
+                        (Math.random() - 0.5) * 0.5,
+                        (Math.random() - 0.5) * 0.5
+                    ),
+                    life: 1,
+                    decay: 0.02 + Math.random() * 0.02
+                };
+
+                scene.add(particle);
+                particles.push(particle);
+            }
+        }
+
+        // 更新目标动画
+        function updateTargets(time) {
+            targets.forEach(target => {
+                const ud = target.userData;
+                
+                // 旋转
+                target.rotation.x += ud.rotationSpeed.x;
+                target.rotation.y += ud.rotationSpeed.y;
+                target.rotation.z += ud.rotationSpeed.z;
+
+                // 上下浮动
+                target.position.y = ud.originalY + Math.sin(time * ud.floatSpeed + ud.floatOffset) * 0.5;
+            });
+        }
+
+        // 更新子弹
+        function updateBullets() {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                const age = Date.now() - bullet.userData.startTime;
+
+                if (age > 100) {
+                    scene.remove(bullet);
+                    bullets.splice(i, 1);
+                }
+            }
+        }
+
+        // 更新粒子
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const particle = particles[i];
+                const ud = particle.userData;
+
+                particle.position.add(ud.velocity);
+                ud.velocity.y -= 0.01; // 重力
+                ud.life -= ud.decay;
+                particle.material.opacity = ud.life;
+                particle.scale.setScalar(ud.life);
+
+                if (ud.life <= 0) {
+                    scene.remove(particle);
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+        // 移动相机
+        function updateMovement() {
+            if (state !== GameState.PLAYING) return;
+
+            const
+            const direction = new THREE.Vector3();
+            camera.getWorldDirection(direction);
+            direction.y = 0;
+            direction.normalize();
+
+            const right = new THREE.Vector3();
+            right.crossVectors(direction, new THREE.Vector3(0, 1, 0));
+
+            // 键盘控制
+            if (keys.w) camera.position.addScaledVector(direction, MOVE_SPEED);
+            if (keys.s) camera.position.addScaledVector(direction, -MOVE_SPEED);
+            if (keys.a) camera.position.addScaledVector(right, -MOVE_SPEED);
+            if (keys.d) camera.position.addScaledVector(right, MOVE_SPEED);
+
+            // 虚拟摇杆控制
+            if (isMobile && joystick.active) {
+                const joyX = joystick.inputX;
+                const joyY = joystick.inputY;
+                
+                if (joyY < -0.1) camera.position.addScaledVector(direction, MOVE_SPEED * Math.abs(joyY));
+                if (joyY > 0.1) camera.position.addScaledVector(direction, -MOVE_SPEED * joyY);
+                if (joyX < -0.1) camera.position.addScaledVector(right, -MOVE_SPEED * Math.abs(joyX));
+                if (joyX > 0.1) camera.position.addScaledVector(right, MOVE_SPEED * joyX);
+            }
+
+            // 边界限制
+            camera.position.x = Math.max(-90, Math.min(90, camera.position.x));
+            camera.position.z = Math.max(-90, Math.min(90, camera.position.z));
+        }
+
+        // 鼠标控制
+        function onMouseMove(event) {
+            if (!isPointerLocked || state !== GameState.PLAYING) return;
+
+            euler.setFromQuaternion(camera.quaternion);
+            euler.y -= event.movementX * MOUSE_SENSITIVITY;
+            euler.x -= event.movementY * MOUSE_SENSITIVITY;
+            euler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, euler.x));
+            camera.quaternion.setFromEuler(euler);
+        }
+
+        // 触摸瞄准
+        function onTouchAimMove(event) {
+            if (!touchAim.active || state !== GameState.PLAYING) return;
+
+            for (let touch of event.changedTouches) {
+                if (touch.identifier === touchAim.touchId) {
+                    const deltaX = touch.clientX - touchAim.lastX;
+                    const deltaY = touch.clientY - touchAim.lastY;
+
+                    euler.setFromQuaternion(camera.quaternion);
+                    euler.y -= deltaX * TOUCH_SENSITIVITY;
+                    euler.x -= deltaY * TOUCH_SENSITIVITY;
+                    euler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, euler.x));
+                    camera.quaternion.setFromEuler(euler);
+
+                    touchAim.lastX = touch.clientX;
+                    touchAim.lastY = touch.clientY;
+                    break;
+                }
+            }
+        }
+
+        // 点击射击
+        function onClick(event) {
+            if (event.button === 0) {
+                shoot();
+            }
+        }
+
+        // 锁定指针
+        function lockPointer() {
+            if (!isMobile) {
+                canvas.requestPointerLock();
+            }
+        }
+
+        // 设置事件监听
+        function setupEventListeners() {
+            // 键盘
+            document.addEventListener('keydown', (e) => {
+                const key = e.key.toLowerCase();
+                if (keys.hasOwnProperty(key)) {
+                    keys[key] = true;
+                }
+                if (e.key === 'Escape' && state === GameState.PLAYING) {
+                    document.exitPointerLock();
+                }
+            });
+
+            document.addEventListener('keyup', (e) => {
+                const key = e.key.toLowerCase();
+                if (keys.hasOwnProperty(key)) {
+                    keys[key] = false;
+                }
+            });
+
+            // 鼠标移动
+            document.addEventListener('mousemove', onMouseMove);
+
+            // 点击
+            document.addEventListener('mousedown', onClick);
+
+            // 指针锁定状态
+            document.addEventListener('pointerlockchange', () => {
+                isPointerLocked = document.pointerLockElement === canvas;
+            });
+
+            // 点击画布锁定
+            canvas.addEventListener('click', () => {
+                if (state === GameState.PLAYING && !isMobile && !isPointerLocked) {
+                    lockPointer();
+                }
+            });
+
+            // ========== 移动端触控事件 ==========
+            
+            // 射击按钮
+            shootBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                shoot();
+                shootBtn.classList.add('active');
+            });
+
+            shootBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                shootBtn.classList.remove('active');
+            });
+
+            // 全局触摸开始
+            document.addEventListener('touchstart', (e) => {
+                if (state !== GameState.PLAYING) return;
+
+                for (let touch of e.changedTouches) {
+                    const x = touch.clientX;
+                    const y = touch.clientY;
+
+                    // 检查是否点击了射击按钮
+                    const shootBtnRect = shootBtn.getBoundingClientRect();
+                    if (x >= shootBtnRect.left && x <= shootBtnRect.right &&
+                        y >= shootBtnRect.top && y <= shootBtnRect.bottom) {
+                        continue; // 射击按钮由专门的事件处理
+                    }
+
+                    // 左半边屏幕 - 虚拟摇杆
+                    if (x < window.innerWidth / 2 && !joystick.active) {
+                        joystick.active = true;
+                        joystick.touchId = touch.identifier;
+                        joystick.baseX = x;
+                        joystick.baseY = y;
+                        joystick.lastX = x;
+                        joystick.lastY = y;
+                        joystick.inputX = 0;
+                        joystick.inputY = 0;
+                        
+                        // 更新摇杆位置
+                        joystickContainer.style.left = (x - 70) + 'px';
+                        joystickContainer.style.bottom = (window.innerHeight - y - 70) + 'px';
+                        joystickThumb.style.transform = 'translate(-50%, -50%)';
+                        
+                        // 隐藏瞄准提示
+                        aimHint.classList.remove('active');
+                    }
+                    // 右半边屏幕 - 瞄准
+                    else if (x >= window.innerWidth / 2 && !touchAim.active) {
+                        touchAim.active = true;
+                        touchAim.touchId = touch.identifier;
+                        touchAim.lastX = x;
+                        touchAim.lastY = y;
+                    }
+                }
+            }, { passive: false });
+
+            // 全局触摸移动
+            document.addEventListener('touchmove', (e) => {
+                if (state !== GameState.PLAYING) return;
+
+                for (let touch of e.changedTouches) {
+                    // 摇杆移动
+                    if (touch.identifier === joystick.touchId) {
+                        const deltaX = touch.clientX - joystick.baseX;
+                        const deltaY = touch.clientY - joystick.baseY;
+                        
+                        const maxDistance = 50;
+                        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                        
+                        let clampedX, clampedY;
+                        if (distance > maxDistance) {
+                            clampedX = (deltaX / distance) * maxDistance;
+                            clampedY = (deltaY / distance) * maxDistance;
+                        } else {
+                            clampedX = deltaX;
+                            clampedY = deltaY;
+                        }
+                        
+                        // 更新摇杆位置
+                        joystickThumb.style.transform = `translate(calc(-50% + ${clampedX}px), calc(-50% + ${clampedY}px))`;
+                        
+                        // 计算输入值 (-1 到 1)
+                        joystick.inputX = clampedX / maxDistance;
+                        joystick.inputY = clampedY / maxDistance;
+                    }
+
+                    // 瞄准移动
+                    if (touch.identifier === touchAim.touchId) {
+                        const deltaX = touch.clientX - touchAim.lastX;
+                        const deltaY = touch.clientY - touchAim.lastY;
+
+                        euler.setFromQuaternion(camera.quaternion);
+                        euler.y -= deltaX * TOUCH_SENSITIVITY;
+                        euler.x -= deltaY * TOUCH_SENSITIVITY;
+                        euler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, euler.x));
+                        camera.quaternion.setFromEuler(euler);
+
+                        touchAim.lastX = touch.clientX;
+                        touchAim.lastY = touch.clientY;
+                    }
+                }
+            }, { passive: false });
+
+            // 全局触摸结束
+            document.addEventListener('touchend', (e) => {
+                for (let touch of e.changedTouches) {
+                    // 摇杆释放
+                    if (touch.identifier === joystick.touchId) {
+                        joystick.active = false;
+                        joystick.touchId = null;
+                        joystick.inputX = 0;
+                        joystick.inputY = 0;
+                        joystickThumb.style.transform = 'translate(-50%, -50%)';
+                    }
+
+                    // 瞄准释放
+                    if (touch.identifier === touchAim.touchId) {
+                        touchAim.active = false;
+                        touchAim.touchId = null;
+                        
+                        // 延迟显示瞄准提示
+                        if (state === GameState.PLAYING) {
+                            setTimeout(() => {
+                                if (!touchAim.active) {
+                                    aimHint.classList.add('active');
+                                }
+                            }, 2000);
+                        }
+                    }
+                }
+            }, { passive: false });
+
+            // 触摸取消
+            document.addEventListener('touchcancel', (e) => {
+                joystick.active = false;
+                joystick.touchId = null;
+                joystick.inputX = 0;
+                joystick.inputY = 0;
+                touchAim.active = false;
+                touchAim.touchId = null;
+                joystickThumb.style.transform = 'translate(-50%, -50%)';
+            });
+
+            // 开始按钮
+            startBtn.addEventListener('click', startGame);
+            startBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                startGame();
+            });
+
+            // 窗口大小
+            window.addEventListener('resize', onWindowResize);
+            window.addEventListener('orientationchange', () => {
+                setTimeout(checkLandscape, 100);
+            });
+        }
+
+        // 开始游戏
+        function startGame() {
+            state = GameState.PLAYING;
+            score = 0;
+            timeLeft = 60;
+            scoreEl.textContent = '0';
+            timeEl.textContent = '60';
+            overlay.classList.add('hidden');
+            hudEl.style.display = 'flex';
+
+            // 显示移动端控件
+            if (isMobile) {
+                joystickContainer.classList.add('active');
+                shootBtn.classList.add('active');
+                aimHint.classList.add('active');
+            }
+
+            // 检查横屏
+            checkLandscape();
+
+            // 重置相机
+            camera.position.set(0, 1.6, 0);
+            camera.rotation.set(0, 0, 0);
+            euler.set(0, 0, 0);
+
+            // 清空目标和粒子
+            targets.forEach(t => scene.remove(t));
+            targets = [];
+            particles.forEach(p => scene.remove(p));
+            particles = [];
+
+            // 生成目标
+            spawnTargets(10);
+
+            // 锁定指针（非移动端）
+            if (!isMobile) {
+                lockPointer();
+            }
+
+            // 开始计时
+            gameTimer = setInterval(() => {
+                timeLeft--;
+                timeEl.textContent = timeLeft;
+
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        // 结束游戏
+        function endGame() {
+            state = GameState.GAMEOVER;
+            clearInterval(gameTimer);
+            document.exitPointerLock();
+
+            // 隐藏移动端控件
+            joystickContainer.classList.remove('active');
+            shootBtn.classList.remove('active');
+            aimHint.classList.remove('active');
+            landscapeHint.classList.remove('show');
+
+            overlay.innerHTML = `
+                <h1>游戏结束</h1>
+                <p>时间到!</p>
+                <div class="final-score">最终得分: ${score}</div>
+                <p>你击中了 ${score / 100} 个目标</p>
+                <button id="startBtn">再来一局</button>
+            `;
+            overlay.classList.remove('hidden');
+
+            const newStartBtn = document.getElementById('startBtn');
+            newStartBtn.addEventListener('click', startGame);
+            newStartBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                startGame();
+            });
+        }
+
+        // 窗口大小变化
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            checkLandscape();
+        }
+
+        // 动画循环
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = Date.now() * 0.001;
+
+            updateTargets(time);
+            updateBullets();
+            updateParticles();
+            updateMovement();
+
+            // 星空缓慢旋转
+            if (stars.length > 0) {
+                stars[0].rotation.y += 0.0001;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // 启动
+        init();
+    </script>
+</body>
+</html>
