@@ -70,9 +70,7 @@
     </style>
 </head>
 <body>
-    <button id="langBtn">English</button>
-
-    <div id="modal">
+     <div id="modal">
         <div id="modalContent">
             <h2 id="modalTitle">欢迎你来到我的网站</h2>
             <p id="modalText">这里有着各种各样的内容，你可以自由探索</p>
@@ -81,10 +79,6 @@
     </div>
 
     <script>
-        let isZh = true;
-        
-        const zh = { title: '欢迎你来到我的网站（song.zreamer.top）', text: '这里有着各种各样的内容，你可以自由探索', readBtn: '已阅读', langBtn: 'English' };
-        const en = { title: 'Welcome to My Website (song.zreamer.top)', text: 'There are all kinds of content here, feel free to explore', readBtn: 'I have read it', langBtn: '中文' };
 
         document.getElementById('langBtn').onclick = () => {
             isZh = !isZh;
@@ -92,10 +86,7 @@
             document.getElementById('modalTitle').textContent = t.title;
             document.getElementById('modalText').textContent = t.text;
             document.getElementById('readBtn').textContent = t.readBtn;
-            document.getElementById('langBtn').textContent = t.langBtn;
-        };
-
-        document.getElementById('readBtn').onclick = () => {
+document.getElementById('readBtn').onclick = () => {
             document.getElementById('modal').classList.add('hidden');
         };
     </script>    
