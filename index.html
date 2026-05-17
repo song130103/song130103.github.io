@@ -15,24 +15,12 @@
     <title>Song's Website|Mainpage</title>                <script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
 <script>LA.init({id:"3PWw56riQLlb0j24",ck:"3PWw56riQLlb0j24",autoTrack:true,hashMode:true,screenRecord:true})</script>
   </script>
-<title>欢迎</title>
-    <style>
+  <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             min-height: 100vh;
             background: #f5f5f5;
             font-family: Arial, sans-serif;
-        }
-        #langBtn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 10px 20px;
-            background: #333;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
         }
         #modal {
             position: fixed;
@@ -70,23 +58,16 @@
     </style>
 </head>
 <body>
-     <div id="modal">
+    <div id="modal">
         <div id="modalContent">
-            <h2 id="modalTitle">欢迎你来到我的网站</h2>
-            <p id="modalText">这里有着各种各样的内容，你可以自由探索</p>
+            <h2>欢迎你来到我的网站</h2>
+            <p>这里有着各种各样的内容，你可以自由探索</p>
             <button id="readBtn">已阅读</button>
         </div>
     </div>
 
     <script>
-
-        document.getElementById('langBtn').onclick = () => {
-            isZh = !isZh;
-            const t = isZh ? zh : en;
-            document.getElementById('modalTitle').textContent = t.title;
-            document.getElementById('modalText').textContent = t.text;
-            document.getElementById('readBtn').textContent = t.readBtn;
-document.getElementById('readBtn').onclick = () => {
+        document.getElementById('readBtn').onclick = () => {
             document.getElementById('modal').classList.add('hidden');
         };
     </script>    
