@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>登月挑战 - Lunar Lander</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(180deg, #0a0a1a 0%, #1a1a3a 50%, #2d1b69 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            touch-action: none;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            max-width: 1100px;
+            aspect-ratio: 16/10;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(100, 100, 255, 0.3);
+        }
+        
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            text-shadow: 0 0 5px #0f0;
+            pointer-events: none;
+        }
+        
+        .uiItem {
+            background: rgba(0, 20, 0, 0.8);
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #0f0;
+        }
+        
+        #message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #fff;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        #message .sub {
+            font-size: 14px;
+            color: #aaa;
+            margin-top: 10px;
+        }
+        
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+        }
+        
+        #startScreen h1 {
+            color: #fff;
+            font-size: 36px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 30px rgba(100, 200, 255, 0.8);
+        }
+        
+        #startScreen .info {
+            color: #aaa;
+            font-size: 14px;
+            margin-bottom: 30px;
+            text-align: center;
+            line-height: 1.8;
+            max-width: 400px;
+        }
+        
+        #startScreen .info span {
+            color: #0f0;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+        }
+        
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.6);
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
+        
+        #controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .control-group {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px 25px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .control-group h3 {
+            color: #8a9;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .key {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 5px 12px;
+            margin: 2px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-family: monospace;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        #mobileControls {
+            display: none;
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            justify-content: space-between;
+            z-index: 15;
+        }
+        
+        .mobileBtn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+        
+        .mobileBtn:active {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .mobileBtn.thrust {
+            width: 90px;
+            height: 90px;
+            background: rgba(255, 100, 50, 0.2);
+            border-color: rgba(255, 100, 50, 0.5);
+        }
+        
+        .mobileBtn.thrust:active {
+            background: rgba(255, 100, 50, 0.4);
+        }
+        
+        @media (max-width: 768px) {
+            #controls {
+                display: none;
+            }
+            #mobileControls {
+                display: flex;
+            }
+            #ui {
+                font-size: 11px;
+            }
+            #startScreen h1 {
+                font-size: 28px;
+            }
+        }
+        
+        @media (min-width: 769px) {
+            #mobileControls {
+                display: none !important;
+            }
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        #restartOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 25;
+        }
+        
+        #restartOverlay.show {
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="ui">
+            <div>
+                <span class="uiItem">高度: <span id="altitude">0</span>m</span>
+                <span class="uiItem">燃料: <span id="fuel">100</span>%</span>
+            </div>
+            <div>
+                <span class="uiItem">水平速度: <span id="hSpeed">0</span></span>
+                <span class="uiItem">垂直速度: <span id="vSpeed">0</span></span>
+            </div>
+        </div>
+        
+        <div id="message"></div>
+        
+        <div id="restartOverlay">
+            <button id="restartBtn" class="btn">再来一次</button>
+        </div>
+        
+        <div id="startScreen">
+            <h1>🚀 登月挑战</h1>
+            <div class="info">
+                驾驶登月舱安全降落在月球表面<br>
+                <span>着陆速度必须 < 2m/s</span><br>
+                <span>燃料有限，谨慎操作！</span>
+            </div>
+            <button class="btn" onclick="startGame()">开始任务</button>
+            <div id="controls">
+                <div class="control-group">
+                    <h3>🖥️ 桌面端</h3>
+                    <span class="key">↑</span> 推进<br>
+                    <span class="key">←</span> <span class="key">→</span> 旋转
+                </div>
+                <div class="control-group">
+                    <h3>📱 移动端</h3>
+                    屏幕下方按钮控制
+                </div>
+            </div>
+        </div>
+        
+        <div id="mobileControls">
+            <div style="display: flex; gap: 15px;">
+                <div class="mobileBtn" id="btnLeft">←</div>
+                <div class="mobileBtn" id="btnRight">→</div>
+            </div>
+            <div class="mobileBtn thrust" id="btnThrust">🚀</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('startScreen');
+        const message = document.getElementById('message');
+        const mobileControls = document.getElementById('mobileControls');
+        const restartOverlay = document.getElementById('restartOverlay');
+        const restartBtn = document.getElementById('restartBtn');
+        
+        const altitudeEl = document.getElementById('altitude');
+        const fuelEl = document.getElementById('fuel');
+        const hSpeedEl = document.getElementById('hSpeed');
+        const vSpeedEl = document.getElementById('vSpeed');
+        
+        let gameState = 'start';
+        let animationId;
+        
+        const GRAVITY = 0.025;
+        const THRUST_POWER = 0.06;
+        const ROTATION_SPEED = 0.05;
+        const MAX_LANDING_SPEED = 2;
+        const MAX_LANDING_ANGLE = 0.3;
+        
+        const lander = {
+            x: 0, y: 0, vx: 0, vy: 0, angle: 0,
+            fuel: 100, thrusting: false, width: 20, height: 30
+        };
+        
+        let terrain = [];
+        let landingZones = [];
+        let stars = [];
+        const keys = { up: false, left: false, right: false };
+        let particles = [];
+        let score = 0;
+        
+        function resizeCanvas() {
+            const container = document.getElementById('gameContainer');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+        
+        function generateStars() {
+            stars = [];
+            for (let i = 0; i < 150; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height * 0.7,
+                    size: Math.random() * 2 + 0.5,
+                    brightness: Math.random()
+                });
+            }
+        }
+        
+        function generateTerrain() {
+            terrain = [];
+            landingZones = [];
+            const segments = 40;
+            const segmentWidth = canvas.width / segments;
+            let currentY = canvas.height * 0.75;
+            
+            for (let i = 0; i <= segments; i++) {
+                let y = currentY;
+                if (i > 0 && i < segments) {
+                    const change = (Math.random() - 0.5) * 60;
+                    y = Math.max(canvas.height * 0.5, Math.min(canvas.height - 30, currentY + change));
+                }
+                
+                if (i > 5 && i < segments - 5 && Math.random() < 0.25 && landingZones.length < 3) {
+                    const flatWidth = 3 + Math.floor(Math.random() * 3);
+                    const zoneY = y;
+                    
+                    for (let j = 0; j <= flatWidth && i + j <= segments; j++) {
+                        terrain.push({ x: (i + j) * segmentWidth, y: zoneY, isLanding: true });
+                    }
+                    
+                    landingZones.push({ x: i * segmentWidth, y: zoneY, width: flatWidth * segmentWidth });
+                    i += flatWidth;
+                    currentY = zoneY;
+                } else {
+                    terrain.push({ x: i * segmentWidth, y: y, isLanding: false });
+                    currentY = y;
+                }
+            }
+        }
+        
+        function initGame() {
+            resizeCanvas();
+            generateStars();
+            generateTerrain();
+            lander.x = canvas.width / 2;
+            lander.y = 80;
+            lander.vx = (Math.random() - 0.5) * 1;
+            lander.vy = 0;
+            lander.angle = 0;
+            lander.fuel = 100;
+            lander.thrusting = false;
+            particles = [];
+            score = 0;
+            updateUI();
+        }
+        
+        function updateUI() {
+            const groundY = getGroundYAt(lander.x);
+            const altitude = Math.max(0, Math.floor((groundY - lander.y - 15) / 2));
+            altitudeEl.textContent = altitude;
+            fuelEl.textContent = Math.floor(lander.fuel);
+            hSpeedEl.textContent = lander.vx.toFixed(1);
+            vSpeedEl.textContent = lander.vy.toFixed(1);
+            fuelEl.style.color = lander.fuel < 20 ? '#f44' : '#0f0';
+            vSpeedEl.style.color = lander.vy > MAX_LANDING_SPEED ? '#f44' : '#0f0';
+        }
+        
+        function getGroundYAt(x) {
+            for (let i = 0; i < terrain.length - 1; i++) {
+                if (x >= terrain[i].x && x <= terrain[i + 1].x) {
+                    const t = (x - terrain[i].x) / (terrain[i + 1].x - terrain[i].x);
+                    return terrain[i].y * (1 - t) + terrain[i + 1].y * t;
+                }
+            }
+            return canvas.height;
+        }
+        
+        function isInLandingZone(x) {
+            for (let zone of landingZones) {
+                if (x >= zone.x && x <= zone.x + zone.width) return true;
+            }
+            return false;
+        }
+        
+        function createThrustParticles() {
+            const angle = lander.angle + Math.PI / 2;
+            for (let i = 0; i < 3; i++) {
+                particles.push({
+                    x: lander.x - Math.cos(angle) * 15 + (Math.random() - 0.5) * 10,
+                    y: lander.y - Math.sin(angle) * 15 + (Math.random() - 0.5) * 10,
+                    vx: -Math.cos(angle) * 2 + (Math.random() - 0.5) * 1,
+                    vy: -Math.sin(angle) * 2 + (Math.random() - 0.5) * 1,
+                    life: 20 + Math.random() * 15,
+                    color: `hsl(${20 + Math.random() * 40}, 100%, ${50 + Math.random() * 30}%)`
+                });
+            }
+        }
+        
+        function createExplosion(x, y) {
+            for (let i = 0; i < 30; i++) {
+                const angle = (Math.PI * 2 * i) / 30;
+                const speed = 2 + Math.random() * 3;
+                particles.push({
+                    x, y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    life: 40 + Math.random() * 20,
+                    color: `hsl(${Math.random() * 60}, 100%, 50%)`
+                });
+            }
+        }
+        
+        function update() {
+            if (gameState !== 'playing') return;
+            
+            if (keys.left) lander.angle -= ROTATION_SPEED;
+            if (keys.right) lander.angle += ROTATION_SPEED;
+            lander.angle = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, lander.angle));
+            
+            lander.thrusting = keys.up && lander.fuel > 0;
+            if (lander.thrusting) {
+                const thrustAngle = lander.angle - Math.PI / 2;
+                lander.vx += Math.cos(thrustAngle) * THRUST_POWER;
+                lander.vy += Math.sin(thrustAngle) * THRUST_POWER;
+                lander.fuel = Math.max(0, lander.fuel - 0.3);
+                createThrustParticles();
+            }
+            
+            lander.vy += GRAVITY;
+            lander.x += lander.vx;
+            lander.y += lander.vy;
+            
+            if (lander.x < 0) { lander.x = 0; lander.vx = -lander.vx * 0.5; }
+            if (lander.x > canvas.width) { lander.x = canvas.width; lander.vx = -lander.vx * 0.5; }
+            
+            const groundY = getGroundYAt(lander.x);
+            if (lander.y + 15 >= groundY) checkLanding();
+            
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+            
+            updateUI();
+        }
+        
+        function checkLanding() {
+            const speed = Math.sqrt(lander.vx * lander.vx + lander.vy * lander.vy);
+            const inZone = isInLandingZone(lander.x);
+            
+            if (speed <= MAX_LANDING_SPEED && Math.abs(lander.angle) <= MAX_LANDING_ANGLE && inZone) {
+                gameState = 'landed';
+                lander.y = getGroundYAt(lander.x) - 15;
+                lander.vx = 0;
+                lander.vy = 0;
+                
+                const fuelBonus = Math.floor(lander.fuel * 10);
+                const speedBonus = Math.floor((MAX_LANDING_SPEED - speed) * 100);
+                score = 1000 + fuelBonus + speedBonus;
+                
+                showMessage(`🎉 完美着陆！<br><span class="sub">得分: ${score} | 燃料奖励: ${fuelBonus}</span>`);
+                
+                setTimeout(() => {
+                    hideMessage();
+                    restartBtn.textContent = '再来一次';
+                    restartOverlay.classList.add('show');
+                }, 2500);
+            } else {
+                gameState = 'crashed';
+                createExplosion(lander.x, lander.y);
+                
+                let reason = '';
+                if (speed > MAX_LANDING_SPEED) reason = '速度过快';
+                else if (Math.abs(lander.angle) > MAX_LANDING_ANGLE) reason = '角度不正';
+                else if (!inZone) reason = '不在着陆区';
+                
+                showMessage(`💥 坠毁！<br><span class="sub">原因: ${reason}</span>`);
+                
+                setTimeout(() => {
+                    hideMessage();
+                    restartBtn.textContent = '重试';
+                    restartOverlay.classList.add('show');
+                }, 2500);
+            }
+        }
+        
+        function showMessage(html) {
+            message.innerHTML = html;
+            message.style.display = 'block';
+        }
+        
+        function hideMessage() {
+            message.style.display = 'none';
+        }
+        
+        function draw() {
+            ctx.fillStyle = '#0a0a1a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            for (let star of stars) {
+                ctx.fillStyle = `rgba(255, 255, 255, ${star.brightness})`;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            ctx.fillStyle = '#1a3a6a';
+            ctx.beginPath();
+            ctx.arc(canvas.width * 0.8, 100, 40, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#2a5a8a';
+            ctx.beginPath();
+            ctx.arc(canvas.width * 0.8 - 5, 95, 35, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#444';
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height);
+            for (let point of terrain) ctx.lineTo(point.x, point.y);
+            ctx.lineTo(canvas.width, canvas.height);
+            ctx.closePath();
+            ctx.fill();
+            
+            for (let zone of landingZones) {
+                ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
+                ctx.fillRect(zone.x, zone.y - 5, zone.width, 10);
+                
+                ctx.strokeStyle = '#0f0';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(zone.x, zone.y);
+                ctx.lineTo(zone.x + zone.width, zone.y);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                ctx.fillStyle = '#0f0';
+                ctx.font = '12px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('着陆区', zone.x + zone.width / 2, zone.y - 15);
+            }
+            
+            for (let p of particles) {
+                            ctx.fillStyle = p.color;
+            ctx.globalAlpha = p.life / 40;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        
+        if (gameState !== 'crashed') drawLander();
+    }
+    
+    function drawLander() {
+        ctx.save();
+        ctx.translate(lander.x, lander.y);
+        ctx.rotate(lander.angle);
+        
+        ctx.fillStyle = '#ccc';
+        ctx.beginPath();
+        ctx.ellipse(0, -5, 12, 18, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = '#48f';
+        ctx.beginPath();
+        ctx.arc(0, -10, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#888';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        ctx.strokeStyle = '#888';
+        ctx.lineWidth = 3;
+        
+        ctx.beginPath();
+        ctx.moveTo(-8, 8);
+        ctx.lineTo(-15, 20);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(-15, 20);
+        ctx.lineTo(-20, 22);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(8, 8);
+        ctx.lineTo(15, 20);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(15, 20);
+        ctx.lineTo(20, 22);
+        ctx.stroke();
+        
+        if (lander.thrusting) {
+            ctx.fillStyle = `hsl(${20 + Math.random() * 30}, 100%, 50%)`;
+            ctx.beginPath();
+            ctx.moveTo(-6, 12);
+            ctx.lineTo(0, 12 + 15 + Math.random() * 10);
+            ctx.lineTo(6, 12);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.fillStyle = `hsl(${40 + Math.random() * 20}, 100%, 60%)`;
+            ctx.beginPath();
+            ctx.moveTo(-3, 12);
+            ctx.lineTo(0, 12 + 10 + Math.random() * 5);
+            ctx.lineTo(3, 12);
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        ctx.restore();
+    }
+    
+    function gameLoop() {
+        update();
+        draw();
+        animationId = requestAnimationFrame(gameLoop);
+    }
+    
+    function startGame() {
+        gameState = 'playing';
+        hideMessage();
+        restartOverlay.classList.remove('show');
+        startScreen.style.display = 'none';
+        initGame();
+    }
+    
+    document.addEventListener('keydown', (e) => {
+        if (gameState !== 'playing') return;
+        switch(e.key) {
+            case 'ArrowUp': case 'w': case 'W': keys.up = true; e.preventDefault(); break;
+            case 'ArrowLeft': case 'a': case 'A': keys.left = true; e.preventDefault(); break;
+            case 'ArrowRight': case 'd': case 'D': keys.right = true; e.preventDefault(); break;
+        }
+    });
+    
+    document.addEventListener('keyup', (e) => {
+        switch(e.key) {
+            case 'ArrowUp': case 'w': case 'W': keys.up = false; break;
+            case 'ArrowLeft': case 'a': case 'A': keys.left = false; break;
+            case 'ArrowRight': case 'd': case 'D': keys.right = false; break;
+        }
+    });
+    
+    const btnLeft = document.getElementById('btnLeft');
+    const btnRight = document.getElementById('btnRight');
+    const btnThrust = document.getElementById('btnThrust');
+    
+    function setupMobileButton(btn, key) {
+        const startHandler = (e) => { e.preventDefault(); keys[key] = true; };
+        const endHandler = (e) => { e.preventDefault(); keys[key] = false; };
+        btn.addEventListener('touchstart', startHandler);
+        btn.addEventListener('touchend', endHandler);
+        btn.addEventListener('touchcancel', endHandler);
+        btn.addEventListener('mousedown', startHandler);
+        btn.addEventListener('mouseup', endHandler);
+        btn.addEventListener('mouseleave', endHandler);
+    }
+    
+    setupMobileButton(btnLeft, 'left');
+    setupMobileButton(btnRight, 'right');
+    setupMobileButton(btnThrust, 'up');
+    
+    window.addEventListener('resize', () => { resizeCanvas(); generateStars(); });
+    restartBtn.addEventListener('click', startGame);
+    resizeCanvas();
+    generateStars();
+    gameLoop();
+</script>
+</body>
+</html>
