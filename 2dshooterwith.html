@@ -179,20 +179,17 @@
         
         <div id="start-screen">
             <div class="title">🔫 像素枪战</div>
-            
             <div class="guide">
                 <h3>🎮 电脑操作</h3>
                 <p><span class="key">W</span> <span class="key">A</span> <span class="key">S</span> <span class="key">D</span> 移动</p>
                 <p><span class="key">鼠标</span> 瞄准 + 左键射击</p>
                 <p><span class="key">Q</span> 切换武器</p>
             </div>
-            
             <div class="guide">
                 <h3>📱 手机操作</h3>
                 <p>左侧按钮 移动</p>
                 <p>右侧 🔫 射击 | 🔄 切换武器</p>
             </div>
-            
             <div class="guide">
                 <h3>🔫 武器说明</h3>
                 <div class="weapon-list">
@@ -202,7 +199,6 @@
                     <div class="weapon-item" style="color:#ff00ff"><span>狙击</span> 高伤</div>
                 </div>
             </div>
-            
             <button class="btn" onclick="startGame()">确定开始</button>
         </div>
         
@@ -410,8 +406,22 @@ function update() {
     });
     
     particles = particles.filter(p => { p.x += p.vx; p.y += p.vy; p.vx *= 0.95; p.vy *= 0.95; p.life--; return p.life > 0; });
-    
-    if (enemies.length < 2 + Math.floor(kills / 10)) enemies.push(spawnEnemy());
+}
+
+// 敌人生成计时器 - 每3.5秒生成一个敌人
+let enemySpawnTimer = 0;
+const ENEMY_SPAWN_INTERVAL = 3500;
+
+function spawnEnemyTimer() {
+    if (!gameRunning) return;
+    enemySpawnTimer += 16;
+    if (enemySpawnTimer >= ENEMY_SPAWN_INTERVAL) {
+        enemySpawnTimer = 0;
+        const maxEnemies = 3 + Math.floor(kills / 10);
+        if (enemies.length < maxEnemies) {
+            enemies.push(spawnEnemy());
+        }
+    }
 }
 
 function draw() {
@@ -465,7 +475,12 @@ function draw() {
     }
 }
 
-function loop() { update(); draw(); requestAnimationFrame(loop); }
+function loop() {
+    update();
+    spawnEnemyTimer();
+    draw();
+    requestAnimationFrame(loop);
+}
 
 function startGame() {
     document.getElementById('start-screen').style.display = 'none';
@@ -475,6 +490,7 @@ function startGame() {
     bullets = [];
     particles = [];
     kills = 0;
+    enemySpawnTimer = 0;
     weapons.forEach((w, i) => { if (w.ammo !== Infinity) w.ammo = i === 1 ? 60 : i === 2 ? 20 : 10; });
     gameRunning = true;
     updateUI();
