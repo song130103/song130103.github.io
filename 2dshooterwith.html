@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>像素枪战</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #1a1a2e;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: sans-serif;
+            overflow: hidden;
+        }
+        #game {
+            position: relative;
+            background: #2d2d44;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        canvas { display: block; }
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #fff;
+            font-size: 14px;
+            text-shadow: 1px 1px 2px #000;
+        }
+        #hp-bar {
+            width: 150px;
+            height: 16px;
+            background: #333;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        #hp-fill {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #e94560, #ff6b6b);
+            transition: width 0.2s;
+        }
+        #enemies-count {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #ff6b6b;
+            font-size: 14px;
+        }
+        #weapon-info {
+            position: absolute;
+            top: 70px;
+            left: 10px;
+            color: #38ef7d;
+            font-size: 12px;
+        }
+        #start-screen, #game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            z-index: 10;
+        }
+        #game-over { display: none; }
+        .title {
+            font-size: 32px;
+            margin-bottom: 15px;
+            background: linear-gradient(90deg, #e94560, #667eea);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .guide {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 20px 30px;
+            margin: 15px 0;
+            max-width: 400px;
+        }
+        .guide h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .guide p {
+            color: #aaa;
+            font-size: 14px;
+            line-height: 1.8;
+            margin: 5px 0;
+        }
+        .guide .key {
+            background: #333;
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: #fff;
+            font-family: monospace;
+        }
+        .weapon-list {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .weapon-item {
+            background: rgba(255,255,255,0.1);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+        .weapon-item span { font-weight: bold; }
+        .btn {
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+            color: #fff;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .btn:hover { transform: scale(1.05); }
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            display: none;
+            justify-content: space-between;
+            z-index: 5;
+        }
+        @media (max-width: 768px) { #controls { display: flex; } }
+        .ctrl-group { display: flex; gap: 10px; }
+        .ctrl-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: #fff;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .ctrl-btn:active { background: rgba(255,255,255,0.4); }
+        .ctrl-btn.fire {
+            width: 80px;
+            height: 80px;
+            background: rgba(233,69,96,0.3);
+            border-color: #e94560;
+        }
+    </style>
+</head>
+<body>
+    <div id="game">
+        <canvas id="canvas"></canvas>
+        <div id="ui">
+            <div>HP: <span id="hp-text">100</span></div>
+            <div id="hp-bar"><div id="hp-fill"></div></div>
+        </div>
+        <div id="enemies-count">击杀: <span id="kills">0</span></div>
+        <div id="weapon-info">
+            <div>武器: <span id="weapon-name">手枪</span></div>
+            <div>弹药: <span id="ammo">∞</span></div>
+        </div>
+        
+        <div id="start-screen">
+            <div class="title">🔫 像素枪战</div>
+            
+            <div class="guide">
+                <h3>🎮 电脑操作</h3>
+                <p><span class="key">W</span> <span class="key">A</span> <span class="key">S</span> <span class="key">D</span> 移动</p>
+                <p><span class="key">鼠标</span> 瞄准 + 左键射击</p>
+                <p><span class="key">Q</span> 切换武器</p>
+            </div>
+            
+            <div class="guide">
+                <h3>📱 手机操作</h3>
+                <p>左侧按钮 移动</p>
+                <p>右侧 🔫 射击 | 🔄 切换武器</p>
+            </div>
+            
+            <div class="guide">
+                <h3>🔫 武器说明</h3>
+                <div class="weapon-list">
+                    <div class="weapon-item" style="color:#ffd700"><span>手枪</span> 无限弹</div>
+                    <div class="weapon-item" style="color:#00ff00"><span>步枪</span> 连发</div>
+                    <div class="weapon-item" style="color:#ff6600"><span>散弹</span> 范围</div>
+                    <div class="weapon-item" style="color:#ff00ff"><span>狙击</span> 高伤</div>
+                </div>
+            </div>
+            
+            <button class="btn" onclick="startGame()">确定开始</button>
+        </div>
+        
+        <div id="game-over">
+            <div class="title">💀 游戏结束</div>
+            <p>击杀数: <span id="final-kills">0</span></p>
+            <button class="btn" onclick="startGame()">再来一局</button>
+        </div>
+        
+        <div id="controls">
+            <div class="ctrl-group">
+                <div class="ctrl-btn" id="btn-up">↑</div>
+                <div class="ctrl-btn" id="btn-left">←</div>
+                <div class="ctrl-btn" id="btn-down">↓</div>
+                <div class="ctrl-btn" id="btn-right">→</div>
+            </div>
+            <div class="ctrl-group">
+                <div class="ctrl-btn" id="btn-reload">🔄</div>
+                <div class="ctrl-btn fire" id="btn-fire">🔫</div>
+            </div>
+        </div>
+    </div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+    const maxW = Math.min(window.innerWidth - 20, 900);
+    const maxH = Math.min(window.innerHeight - 20, 600);
+    canvas.width = maxW;
+    canvas.height = maxH;
+    document.getElementById('game').style.width = maxW + 'px';
+    document.getElementById('game').style.height = maxH + 'px';
+}
+resize();
+window.addEventListener('resize', resize);
+
+let gameRunning = false;
+let player, enemies, bullets, particles;
+let kills = 0;
+
+const weapons = [
+    { name: '手枪', color: '#ffd700', damage: 15, fireRate: 300, bulletSpeed: 12, ammo: Infinity, spread: 0 },
+    { name: '步枪', color: '#00ff00', damage: 12, fireRate: 120, bulletSpeed: 18, ammo: 60, spread: 0.1 },
+    { name: '散弹', color: '#ff6600', damage: 8, fireRate: 600, bulletSpeed: 10, ammo: 20, spread: 0.3, pellets: 5 },
+    { name: '狙击', color: '#ff00ff', damage: 50, fireRate: 1000, bulletSpeed: 25, ammo: 10, spread: 0 }
+];
+
+function createPlayer() {
+    return { x: canvas.width / 2, y: canvas.height / 2, size: 20, hp: 100, maxHp: 100, speed: 4, angle: 0, weapon: 0, lastShot: 0, vx: 0, vy: 0 };
+}
+
+function spawnEnemy() {
+    const side = Math.floor(Math.random() * 4);
+    let x, y;
+    if (side === 0) { x = Math.random() * canvas.width; y = -20; }
+    else if (side === 1) { x = canvas.width + 20; y = Math.random() * canvas.height; }
+    else if (side === 2) { x = Math.random() * canvas.width; y = canvas.height + 20; }
+    else { x = -20; y = Math.random() * canvas.height; }
+    return { x, y, size: 18 + Math.random() * 8, hp: 30 + Math.random() * 30, speed: 1 + Math.random() * 1.5, color: `hsl(${Math.random() * 360}, 70%, 50%)`, lastShot: 0, fireRate: 800 + Math.random() * 1000, vx: 0, vy: 0 };
+}
+
+function createBullet(x, y, angle, isEnemy = false, damage = 10) {
+    return { x, y, angle, speed: isEnemy ? 6 : 12, damage, isEnemy, size: 4 };
+}
+
+function createParticle(x, y, color) {
+    return { x, y, vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6, life: 20 + Math.random() * 20, color, size: 2 + Math.random() * 3 };
+}
+
+const keys = {};
+const mouse = { x: 0, y: 0, down: false };
+
+document.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; if (e.key === 'q' || e.key === 'Q') switchWeapon(); });
+document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+canvas.addEventListener('mousemove', e => { const rect = canvas.getBoundingClientRect(); mouse.x = e.clientX - rect.left; mouse.y = e.clientY - rect.top; });
+canvas.addEventListener('mousedown', () => mouse.down = true);
+canvas.addEventListener('mouseup', () => mouse.down = false);
+
+function setupBtn(id, key) {
+    const btn = document.getElementById(id);
+    btn.addEventListener('touchstart', e => { e.preventDefault(); keys[key] = true; });
+    btn.addEventListener('touchend', e => { e.preventDefault(); keys[key] = false; });
+    btn.addEventListener('mousedown', () => keys[key] = true);
+    btn.addEventListener('mouseup', () => keys[key] = false);
+}
+setupBtn('btn-up', 'w');
+setupBtn('btn-down', 's');
+setupBtn('btn-left', 'a');
+setupBtn('btn-right', 'd');
+
+const btnFire = document.getElementById('btn-fire');
+btnFire.addEventListener('touchstart', e => { e.preventDefault(); mouse.down = true; });
+btnFire.addEventListener('touchend', e => { e.preventDefault(); mouse.down = false; });
+btnFire.addEventListener('mousedown', () => mouse.down = true);
+btnFire.addEventListener('mouseup', () => mouse.down = false);
+document.getElementById('btn-reload').addEventListener('click', () => switchWeapon());
+
+function switchWeapon() { player.weapon = (player.weapon + 1) % weapons.length; updateUI(); }
+
+function updateUI() {
+    const w = weapons[player.weapon];
+    document.getElementById('hp-text').textContent = Math.max(0, Math.floor(player.hp));
+    document.getElementById('hp-fill').style.width = (player.hp / player.maxHp * 100) + '%';
+    document.getElementById('kills').textContent = kills;
+    document.getElementById('weapon-name').textContent = w.name;
+    document.getElementById('ammo').textContent = w.ammo === Infinity ? '∞' : w.ammo;
+}
+
+function shoot() {
+    const w = weapons[player.weapon];
+    const now = Date.now();
+    if (now - player.lastShot < w.fireRate) return;
+    if (w.ammo !== Infinity && w.ammo <= 0) return;
+    player.lastShot = now;
+    if (w.ammo !== Infinity) w.ammo--;
+    updateUI();
+    const pellets = w.pellets || 1;
+    for (let i = 0; i < pellets; i++) {
+        const spread = (Math.random() - 0.5) * w.spread;
+        bullets.push(createBullet(player.x, player.y, player.angle + spread, false, w.damage));
+    }
+}
+
+function enemyShoot(enemy) {
+    const now = Date.now();
+    if (now - enemy.lastShot < enemy.fireRate) return;
+    enemy.lastShot = now;
+    const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+    bullets.push(createBullet(enemy.x, enemy.y, angle, true, 10));
+}
+
+function update() {
+    if (!gameRunning) return;
+    
+    let dx = 0, dy = 0;
+    if (keys['w'] || keys['arrowup']) dy -= 1;
+    if (keys['s'] || keys['arrowdown']) dy += 1;
+    if (keys['a'] || keys['arrowleft']) dx -= 1;
+    if (keys['d'] || keys['arrowright']) dx += 1;
+    
+    if (dx !== 0 || dy !== 0) {
+        const len = Math.sqrt(dx*dx + dy*dy);
+        player.vx = dx/len * player.speed;
+        player.vy = dy/len * player.speed;
+    } else {
+        player.vx *= 0.8;
+        player.vy *= 0.8;
+    }
+    
+    player.x = Math.max(player.size, Math.min(canvas.width - player.size, player.x + player.vx));
+    player.y = Math.max(player.size, Math.min(canvas.height - player.size, player.y + player.vy));
+    player.angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+    
+    if (mouse.down) shoot();
+    
+    enemies.forEach(enemy => {
+        const dx = player.x - enemy.x;
+        const dy = player.y - enemy.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        
+        if (dist > 150) {
+            enemy.vx = dx/dist * enemy.speed;
+            enemy.vy = dy/dist * enemy.speed;
+        } else {
+            enemy.vx *= 0.9;
+            enemy.vy *= 0.9;
+        }
+        
+        enemy.x = Math.max(enemy.size, Math.min(canvas.width - enemy.size, enemy.x + enemy.vx));
+        enemy.y = Math.max(enemy.size, Math.min(canvas.height - enemy.size, enemy.y + enemy.vy));
+        if (dist < 400 && Math.random() < 0.02) enemyShoot(enemy);
+    });
+    
+    bullets = bullets.filter(bullet => {
+        bullet.x += Math.cos(bullet.angle) * bullet.speed;
+        bullet.y += Math.sin(bullet.angle) * bullet.speed;
+        if (bullet.x < 0 || bullet.x > canvas.width || bullet.y < 0 || bullet.y > canvas.height) return false;
+        
+        if (bullet.isEnemy) {
+            const dx = bullet.x - player.x;
+            const dy = bullet.y - player.y;
+            if (Math.sqrt(dx*dx + dy*dy) < player.size) {
+                player.hp -= bullet.damage;
+                for (let i = 0; i < 5; i++) particles.push(createParticle(bullet.x, bullet.y, '#ff0000'));
+                updateUI();
+                if (player.hp <= 0) gameOver();
+                return false;
+            }
+        } else {
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
+                const dx = bullet.x - enemy.x;
+                const dy = bullet.y - enemy.y;
+                if (Math.sqrt(dx*dx + dy*dy) < enemy.size) {
+                    enemy.hp -= bullet.damage;
+                    for (let j = 0; j < 5; j++) particles.push(createParticle(bullet.x, bullet.y, enemy.color));
+                    if (enemy.hp <= 0) { enemies.splice(i, 1); kills++; updateUI(); }
+                    return false;
+                }
+            }
+        }
+        return true;
+    });
+    
+    particles = particles.filter(p => { p.x += p.vx; p.y += p.vy; p.vx *= 0.95; p.vy *= 0.95; p.life--; return p.life > 0; });
+    
+    if (enemies.length < 2 + Math.floor(kills / 10)) enemies.push(spawnEnemy());
+}
+
+function draw() {
+    ctx.fillStyle = '#2d2d44';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.strokeStyle = '#3d3d54';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < canvas.width; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
+    for (let y = 0; y < canvas.height; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
+    
+    particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = p.life / 40; ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size); });
+    ctx.globalAlpha = 1;
+    
+    enemies.forEach(enemy => {
+        ctx.save();
+        ctx.translate(enemy.x, enemy.y);
+        ctx.fillStyle = enemy.color;
+        ctx.fillRect(-enemy.size/2, -enemy.size/2, enemy.size, enemy.size);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(-enemy.size/4, -enemy.size/4, enemy.size/5, enemy.size/5);
+        ctx.fillRect(enemy.size/8, -enemy.size/4, enemy.size/5, enemy.size/5);
+        ctx.fillStyle = '#333';
+        ctx.fillRect(-enemy.size/2, -enemy.size/2 - 8, enemy.size, 4);
+        ctx.fillStyle = '#e94560';
+        ctx.fillRect(-enemy.size/2, -enemy.size/2 - 8, enemy.size * (enemy.hp / 50), 4);
+        ctx.restore();
+    });
+    
+    bullets.forEach(bullet => {
+        ctx.save();
+        ctx.translate(bullet.x, bullet.y);
+        ctx.rotate(bullet.angle);
+        ctx.fillStyle = bullet.isEnemy ? '#ff6b6b' : weapons[player.weapon].color;
+        ctx.fillRect(-bullet.size, -bullet.size/2, bullet.size * 2, bullet.size);
+        ctx.restore();
+    });
+    
+    if (gameRunning) {
+        ctx.save();
+        ctx.translate(player.x, player.y);
+        ctx.fillStyle = '#667eea';
+        ctx.fillRect(-player.size/2, -player.size/2, player.size, player.size);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(-player.size/4, -player.size/4, player.size/5, player.size/5);
+        ctx.fillRect(player.size/8, -player.size/4, player.size/5, player.size/5);
+        ctx.rotate(player.angle);
+        ctx.fillStyle = weapons[player.weapon].color;
+        ctx.fillRect(player.size/2, -3, player.size, 6);
+        ctx.restore();
+    }
+}
+
+function loop() { update(); draw(); requestAnimationFrame(loop); }
+
+function startGame() {
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('game-over').style.display = 'none';
+    player = createPlayer();
+    enemies = [];
+    bullets = [];
+    particles = [];
+    kills = 0;
+    weapons.forEach((w, i) => { if (w.ammo !== Infinity) w.ammo = i === 1 ? 60 : i === 2 ? 20 : 10; });
+    gameRunning = true;
+    updateUI();
+}
+
+function gameOver() {
+    gameRunning = false;
+    document.getElementById('final-kills').textContent = kills;
+    document.getElementById('game-over').style.display = 'flex';
+}
+
+enemies = [];
+bullets = [];
+particles = [];
+player = createPlayer();
+loop();
+</script>
+</body>
+</html>
