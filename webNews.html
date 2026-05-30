@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全球新闻直播间</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+        
+        .header {
+            background: linear-gradient(90deg, #e94560 0%, #ff6b6b 100%);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(233, 69, 96, 0.3);
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo::before {
+            content: "📺";
+            font-size: 28px;
+        }
+        
+        .live-tag {
+            background: #ff0000;
+            color: #fff;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .time {
+            font-size: 18px;
+            color: #fff;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 20px;
+        }
+        
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .video-section {
+            background: #1a1a2e;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .video-header {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .channel-name {
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .quality-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 3px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        
+        .video-container {
+            position: relative;
+            aspect-ratio: 16/9;
+            background: #000;
+        }
+        
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        .video-placeholder {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+        }
+        
+        .video-placeholder .play-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .video-placeholder .play-icon:hover {
+            transform: scale(1.1);
+        }
+        
+        .video-placeholder p {
+            color: #888;
+            font-size: 16px;
+        }
+        
+        .channel-selector {
+            padding: 15px;
+            background: #252542;
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            flex-wrap: wrap;
+        }
+        
+        .channel-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        
+        .channel-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .channel-btn.active {
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+        }
+        
+        .news-panel {
+            background: #1a1a2e;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            max-height: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .news-header {
+            background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%);
+            padding: 15px 20px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .news-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        
+        .news-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .news-list::-webkit-scrollbar-track {
+            background: #1a1a2e;
+        }
+        
+        .news-list::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 3px;
+        }
+        
+        .news-item {
+            background: #252542;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+        }
+        
+        .news-item:hover {
+            background: #2d2d4a;
+            border-left-color: #e94560;
+            transform: translateX(5px);
+        }
+        
+        .news-item .tag {
+            display: inline-block;
+            background: #e94560;
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            margin-bottom: 8px;
+        }
+        
+        .news-item .tag.world { background: #667eea; }
+        .news-item .tag.tech { background: #11998e; }
+        .news-item .tag.sports { background: #ff6b6b; }
+        .news-item .tag.entertainment { background: #f093fb; }
+        
+        .news-item h4 {
+            font-size: 15px;
+            line-height: 1.5;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+        
+        .news-item .meta {
+            font-size: 12px;
+            color: #888;
+            display: flex;
+            gap: 15px;
+        }
+        
+        .category-tabs {
+            display: flex;
+            background: #252542;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+        
+        .category-tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            border: none;
+            background: transparent;
+            color: #888;
+        }
+        
+        .category-tab:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .category-tab.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+        }
+        
+        .quick-links {
+            margin-top: 20px;
+            background: #1a1a2e;
+            border-radius: 15px;
+            padding: 20px;
+        }
+        
+        .quick-links h3 {
+            margin-bottom: 15px;
+            color: #fff;
+        }
+        
+        .links-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .link-item {
+            background: #252542;
+            padding: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        
+        .link-item:hover {
+            background: #2d2d4a;
+            transform: translateY(-3px);
+        }
+        
+        .link-item .icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+        
+        .link-item .name {
+            font-size: 14px;
+            color: #fff;
+        }
+        
+        .link-item .desc {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+        
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: #888;
+        }
+        
+        .spinner {
+            width: 30px;
+            height: 30px;
+            border: 3px solid #333;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-size: 13px;
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+            .container {
+                padding: 10px;
+            }
+            .news-panel {
+                max-height: 400px;
+            }
+            .links-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">全球新闻直播间</div>
+        <div class="live-tag">● LIVE</div>
+        <div class="time" id="currentTime">--:--:--</div>
+    </header>
+    
+    <div class="container">
+        <div class="main-content">
+            <div class="video-section">
+                <div class="video-header">
+                    <span class="channel-name" id="currentChannel">选择一个频道</span>
+                    <span class="quality-badge">1080P</span>
+                </div>
+                <div class="video-container" id="videoContainer">
+                    <div class="video-placeholder" id="videoPlaceholder">
+                        <div class="play-icon" onclick="loadVideo()">▶</div>
+                        <p>点击选择一个新闻频道开始观看</p>
+                    </div>
+                </div>
+                <div class="channel-selector">
+                    <button class="channel-btn active" onclick="changeChannel('cctv', this)">🇨🇳 CCTV中文</button>
+                    <button class="channel-btn" onclick="changeChannel('nhk', this)">🇯🇵 NHK World</button>
+                    <button class="channel-btn" onclick="changeChannel('bbc', this)">🇬🇧 BBC World</button>
+                    <button class="channel-btn" onclick="changeChannel('aljazeera', this)">🇶🇦 Al Jazeera</button>
+                    <button class="channel-btn" onclick="changeChannel('france24', this)">🇫🇷 France 24</button>
+                    <button class="channel-btn" onclick="changeChannel('dw', this)">🇩🇪 DW News</button>
+                </div>
+            </div>
+            
+            <div class="news-panel">
+                <div class="news-header">📰 最新资讯</div>
+                <div class="news-list" id="newsList">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        正在加载新闻...
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="category-tabs">
+            <button class="category-tab active" onclick="filterNews('all')">全部</button>
+            <button class="category-tab" onclick="filterNews('world')">国际</button>
+            <button class="category-tab" onclick="filterNews('tech')">科技</button>
+            <button class="category-tab" onclick="filterNews('sports')">体育</button>
+            <button class="category-tab" onclick="filterNews('entertainment')">娱乐</button>
+        </div>
+        
+        <div class="quick-links">
+            <h3>🌐 新闻网站快速访问</h3>
+            <div class="links-grid">
+                <div class="link-item" onclick="openLink('https://news.sina.com.cn')">
+                    <div class="icon">📰</div>
+                    <div class="name">新浪新闻</div>
+                    <div class="desc">国内热点</div>
+                </div>
+                <div class="link-item" onclick="openLink('https://news.163.com')">
+                    <div class="icon">📰</div>
+                    <div class="name">网易新闻</div>
+                    <div class="desc">深度报道</div>
+                </div>
+                <div class="link-item" onclick="openLink('https://www.thepaper.cn')">
+                    <div class="icon">📰</div>
+                    <div class="name">澎湃新闻</div>
+                    <div class="desc">时事热点</div>
+                </div>
+                <div class="link-item" onclick="openLink('https://news.google.com')">
+                    <div class="icon">🌍</div>
+                    <div class="name">Google News</div>
+                    <div class="desc">全球资讯</div>
+                </div>
+                <div class="link-item" onclick="openLink('https://www.bbc.com/news')">
+                    <div class="icon">🇬🇧</div>
+                    <div class="name">BBC News</div>
+                    <div class="desc">国际频道</div>
+                </div>
+                <div class="link-item" onclick="openLink('https://www.reuters.com')">
+                    <div class="icon">🇺🇸</div>
+                    <div class="name">路透社</div>
+                    <div class="desc">财经快讯</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <p>本页面整合多个公开新闻源，仅供学习交流使用</p>
+    </footer>
+
+    <script>
+        const channels = {
+            cctv: { name: 'CCTV中文国际', embedUrl: 'https://www.youtube.com/embed/live_stream?channel=UC3InfHBj7Fp-xZczc8gZfKQ&autoplay=1' },
+            nhk: { name: 'NHK World', embedUrl: 'https://www.youtube.com/embed/live_stream?channel=UCgoNpXfuqXJfWQfRxcNWTpg&autoplay=1' },
+            bbc: { name: 'BBC World News', embedUrl: 'https://www.youtube.com/embed/hTb1x0c7PmQ&autoplay=1' },
+            aljazeera: { name: 'Al Jazeera English', embedUrl: 'https://www.youtube.com/embed/WmADr2f9C5g&autoplay=1' },
+            france24: { name: 'France 24 English', embedUrl: 'https://www.youtube.com/embed/2r9r6xCdLlY&autoplay=1' },
+            dw: { name: 'DW News', embedUrl: 'https://www.youtube.com/embed/Ws2u6j5c7aE&autoplay=1' }
+        };
+        
+        let currentChannelId = null;
+        let allNews = [];
+        
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString('zh-CN', { hour12: false });
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+        
+        function loadVideo() {
+            if (currentChannelId && channels[currentChannelId]) {
+                const channel = channels[currentChannelId];
+                document.getElementById('videoPlaceholder').style.display = 'none';
+                const iframe = document.createElement('iframe');
+                iframe.src = channel.embedUrl;
+                iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+                iframe.allowFullscreen = true;
+                document.getElementById('videoContainer').innerHTML = '';
+                document.getElementById('videoContainer').appendChild(iframe);
+            }
+        }
+        
+        function changeChannel(channelId, btn) {
+            currentChannelId = channelId;
+            document.querySelectorAll('.channel-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('currentChannel').textContent = channels[channelId].name;
+            document.getElementById('videoContainer').innerHTML = `
+                <div class="video-placeholder" id="videoPlaceholder">
+                    <div class="play-icon" onclick="loadVideo()">▶</div>
+                    <p>点击播放 ${channels[channelId].name}</p>
+                </div>
+            `;
+        }
+        
+        const newsData = [
+            { title: '全球领导人呼吁加强国际合作应对气候变化挑战', tag: 'world', tagName: '国际', source: '新华社', time: '10分钟前' },
+            { title: '人工智能技术在医疗领域取得重大突破', tag: 'tech', tagName: '科技', source: '科技日报', time: '25分钟前' },
+            { title: '世界杯预选赛精彩瞬间：多支球队锁定出线名额', tag: 'sports', tagName: '体育', source: '体育周刊', time: '40分钟前' },
+            { title: '第96届奥斯卡颁奖典礼圆满落幕，获奖名单揭晓', tag: 'entertainment', tagName: '娱乐', source: '影视资讯', time: '1小时前' },
+            { title: '全球金融市场波动，各国央行密切关注经济走势', tag: 'world', tagName: '国际', source: '经济观察', time: '1小时前' },
+            { title: '新一代量子计算机研发成功，计算能力提升百倍', tag: 'tech', tagName: '科技', source: '科学网', time: '2小时前' },
+            { title: '欧冠联赛半决赛：豪门对决，谁能晋级决赛', tag: 'sports', tagName: '体育', source: '足球之夜', time: '2小时前' },
+            { title: '热门科幻电影票房突破10亿美元大关', tag: 'entertainment', tagName: '娱乐', source: '票房统计', time: '3小时前' },
+            { title: '联合国安理会就地区冲突问题召开紧急会议', tag: 'world', tagName: '国际', source: '联合国新闻', time: '3小时前' },
+            { title: '5G网络覆盖进一步扩大，惠及更多偏远地区', tag: 'tech', tagName: '科技', source: '通信世界', time: '4小时前' },
+            { title: '东京奥运会官方周边产品正式发售', tag: 'sports', tagName: '体育', source: '奥运资讯', time: '5小时前' },
+            { title: '年度音乐盛典即将举办，多位巨星确认出席', tag: 'entertainment', tagName: '娱乐', source: '音乐周刊', time: '5小时前' },
+            { title: '全球疫苗接种工作持续推进，覆盖率显著提升', tag: 'world', tagName: '国际', source: '世界卫生组织', time: '6小时前' },
+            { title: '新能源汽车销量创新高，充电设施建设加速', tag: 'tech', tagName: '科技', source: '汽车之家', time: '6小时前' },
+            { title: '网球大满贯赛程公布，世界名将悉数参赛', tag: 'sports', tagName: '体育', source: '网球天地', time: '7小时前' }
+        ];
+        
+        function loadNews() {
+            allNews = newsData;
+            renderNews(allNews);
+        }
+        
+        function renderNews(news) {
+            const container = document.getElementById('newsList');
+            if (news.length === 0) {
+                container.innerHTML = '<div class="loading">暂无相关新闻</div>';
+                return;
+            }
+            container.innerHTML = news.map(item => `
+                <div class="news-item" onclick="openNews('${encodeURIComponent(item.title)}')">
+                    <span class="tag ${item.tag}">${item.tagName}</span>
+                    <h4>${item.title}</h4>
+                    <div class="meta">
+                        <span>📰 ${item.source}</span>
+                        <span>🕐 ${item.time}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function filterNews(category) {
+            document.querySelectorAll('.category-tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            if (category === 'all') {
+                renderNews(allNews);
+            } else {
+                renderNews(allNews.filter(item => item.tag === category));
+            }
+        }
+        
+        function openNews(title) {
+            window.open(`https://www.google.com/search?q=${encodeURIComponent(title)}&tbm=nws`, '_blank');
+        }
+        
+        function openLink(url) {
+            window.open(url, '_blank');
+        }
+        
+        loadNews();
+        setInterval(() => {
+            allNews.forEach(news => {
+                const minutes = parseInt(news.time) || 0;
+                if (minutes > 0) news.time = `${minutes + 1}分钟前`;
+            });
+            loadNews();
+        }, 30000);
+    </script>
+</body>
+</html>
