@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Calculator</title>
+<!-- KaTeX 核心样式&脚本 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<style>
+button{
+  height: fit-content;
+  width: 20%;
+  margin: 1vw;
+  border-radius: 10px;
+  border: none;
+  background: rgba(255, 255, 255,0.3);
+  box-shadow: 0px 2px 4px rgba(0,0,0,0.1);
+  font-size: 2em;
+  transition: all 0.3s ease;
+}
+button:hover{
+  height: fit-content;
+  margin: 1vw;
+  border-radius: 10px;
+  border: none;
+  background: rgba(230, 230, 255,0.3);
+  box-shadow: 0px 2px 4px rgba(0,0,0,0.6);
+  font-size: 2.1rem;
+  transition: all 0.3s ease;
+}
+input{
+  height: 2vh;
+  width:18%;
+  margin: 3vw;
+  border-radius: 10px;
+  border: none;
+  background: rgba(255, 255, 255,0.3);
+  box-shadow: 0px 2px 4px rgba(0,0,0,0.1);
+  font-size: 5rem;
+  transition: all 0.3s ease;
+}
+</style>
+</head>
+<body style="background-color: #BAE1FF;transition: all 0.3s ease;">
+  <div style="width:100%;height:6vh;background:#449944;color:white;padding:0"><center>Calculator</center></div>
+  <p id="l" style="line-height:0.3;width:95%;font-size:5vh;padding:5px;line-height:10vh;transition: all 0.3s ease;overflow:auto;"></p>
+  <h1 id="num" style="line-height:0.3;width:95%;font-size:8vh;padding:5px;line-height:10vh;transition: all 0.3s ease;overflow:auto;"></h1>
+
+  <button type="button" onclick="ipt('k')" style="font-size:2rem">var<br>$k$</button>
+  <button type="button" onclick="ipt('b')" style="font-size:2rem">var<br>$b$</button>
+  <button type="button" onclick="ipt('x')" style="font-size:2rem">var<br>$x$</button>
+  <button type="button" onclick="ipt('y')" style="font-size:2rem">var<br>$y$</button>
+
+  <input type="range" name="name" id="k" min="-50" max="50">
+  <input type="range" name="name" id="b" min="-50" max="50">
+  <input type="range" name="name" id="x">
+  <input type="range" name="name" id="y">
+
+  <button type="button" onclick="ipt('Math.PI')">$\pi$</button>
+  <button type="button" onclick="del()">C</button>
+  <button type="button" onclick="ipt('(')">(</button>
+  <button type="button" onclick="ipt(')')">)</button>
+
+  <button type="button" onclick="ipt('1')">1</button>
+  <button type="button" onclick="ipt('2')">2</button>
+  <button type="button" onclick="ipt('3')">3</button>
+  <button type="button" onclick="ipt('*')">×</button>
+  <button type="button" onclick="ipt('4')">4</button>
+  <button type="button" onclick="ipt('5')">5</button>
+  <button type="button" onclick="ipt('6')">6</button>
+  <button type="button" onclick="ipt('-')">-</button>
+  <button type="button" onclick="ipt('7')">7</button>
+  <button type="button" onclick="ipt('8')">8</button>
+  <button type="button" onclick="ipt('9')">9</button>
+  <button type="button" onclick="ipt('+')">+</button>
+  <button type="button" onclick="ipt('0')">0</button>
+  <button type="button" style="width:42%" onclick="equal()">=</button>
+  <button type="button" onclick="ipt('/')">÷</button>
+  <button type="button" onclick="ipt('**')"><i>$x^y$</sup></i></button>
+  <button type="button" onclick="ipt('Math.sin(')">$sin$</button>
+  <button type="button" onclick="ipt('Math.cos(')">$cos$</button>
+  <button type="button" onclick="ipt('Math.tan(')">$tan$</button>
+  <button type="button" onclick="ipt('299792458')" style="font-size:3rem;">c</button>
+  <button type="button" onclick="ipt('Math.sqrt(')">$\sqrt x$</button>
+  <button type="button" onclick="ipt('Math.E')">$e$</button>
+  <button type="button" onclick="ipt('Infinity')">∞</button>
+
+<script>
+const katexOpt = {
+  delimiters: [
+    {left: '$$', right: '$$', display: true},
+    {left: '$', right: '$', display: false}
+  ],
+  throwOnError: false
+};
+
+function renderAllMath(){
+  renderMathInElement(document.body, katexOpt);
+}
+
+window.addEventListener('load', renderAllMath);
+
+let k = 1;
+let x = 0;
+let y = 0;
+let b = 0;
+let g = '';
+
+function ipt(val) {
+  g += val;
+  // 界面展示替换：转数学公式符号，双反斜杠转义
+  let showStr = g
+    .replaceAll('Math.','')
+    .replaceAll('×','*')
+    .replaceAll('÷','/')
+    .replaceAll('PI','\\pi')
+    .replaceAll('E','\\mathrm{e}')
+    .replaceAll('Infinity','\\infty')
+    .replaceAll('sqrt','\\sqrt')
+    .replaceAll('sin','\\sin')
+    .replaceAll('cos','\\cos')
+    .replaceAll('tan','\\tan').replaceAll('**','^').replaceAll('sqrt','\\sqrt ');
+
+  document.getElementById('l').innerHTML = '$' + showStr + '$';
+  renderAllMath();
+  equal();
+}
+
+function del() {
+  document.getElementById('l').innerHTML = '';
+  document.getElementById('num').innerHTML = '';
+  g = '';
+  renderAllMath();
+}
+
+function equal() {
+  try{
+    let calcStr = g.replaceAll('×','*').replaceAll('÷','/');
+    // 滑块变量挂载到全局，表达式可直接调用 k b x y
+    const kVal = k;
+    const bVal = b;
+    const xVal = x;
+    const yVal = y;
+    let res = eval(calcStr);
+    document.getElementById('num').innerText = res;
+  }catch(e){
+    document.getElementById('num').innerText = '表达式错误';
+  }
+}
+
+window.onload = function(){
+  document.getElementById('k').oninput = function(){
+    k = Number(this.value);
+    equal();
+  }
+  document.getElementById('b').oninput = function(){
+    b = Number(this.value);
+    equal();
+  }
+  document.getElementById('x').oninput = function(){
+    x = Number(this.value);
+    equal();
+  }
+  document.getElementById('y').oninput = function(){
+    y = Number(this.value);
+    equal();
+  }
+}
+</script>
+</body>
+</html>
