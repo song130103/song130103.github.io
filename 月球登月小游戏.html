@@ -261,29 +261,30 @@
         
         <div id="ui">
             <div>
-                <span class="uiItem">高度: <span id="altitude">0</span>m</span>
-                <span class="uiItem">燃料: <span id="fuel">100</span>%</span>
+                <span class="uiItem">Altitude/高度: <span id="altitude">0</span>m</span>
+                <span class="uiItem">fuel/燃料: <span id="fuel">100</span>%</span>
             </div>
             <div>
-                <span class="uiItem">水平速度: <span id="hSpeed">0</span></span>
-                <span class="uiItem">垂直速度: <span id="vSpeed">0</span></span>
+                <span class="uiItem">horizontal velocity/水平速度: <span id="hSpeed">0</span></span>
+                <span class="uiItem">vertical velocity垂直速度: <span id="vSpeed">0</span></span>
             </div>
         </div>
         
         <div id="message"></div>
         
         <div id="restartOverlay">
-            <button id="restartBtn" class="btn">再来一次</button>
+            <button id="restartBtn" class="btn">once more/再来一次</button>
         </div>
         
         <div id="startScreen">
-            <h1>🚀 登月挑战</h1>
+            <h1>🚀 登月挑战
+Moon Landing Challenge </h1>
             <div class="info">
                 驾驶登月舱安全降落在月球表面<br>
                 <span>着陆速度必须 < 2m/s</span><br>
                 <span>燃料有限，谨慎操作！</span>
             </div>
-            <button class="btn" onclick="startGame()">开始任务</button>
+            <button class="btn" onclick="startGame()">Play/开始任务</button>
             <div id="controls">
                 <div class="control-group">
                     <h3>🖥️ 桌面端</h3>
@@ -534,7 +535,7 @@
                 
                 setTimeout(() => {
                     hideMessage();
-                    restartBtn.textContent = '重试';
+                    restartBtn.textContent = 'tautology/重试';
                     restartOverlay.classList.add('show');
                 }, 2500);
             }
