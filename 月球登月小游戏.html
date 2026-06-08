@@ -280,20 +280,20 @@
             <h1>🚀 登月挑战
 Moon Landing Challenge </h1>
             <div class="info">
-                驾驶登月舱安全降落在月球表面<br>
-                <span>着陆速度必须 < 2m/s</span><br>
+                驾驶登月舱安全降落在月球表面The lunar module landed safely on the surface of the moon. <br>
+                <span>The landing speed must be less than 2 meters per second. 着陆速度必须 < 2m/s</span><br>
                 <span>燃料有限，谨慎操作！</span>
             </div>
             <button class="btn" onclick="startGame()">Play/开始任务</button>
             <div id="controls">
                 <div class="control-group">
-                    <h3>🖥️ 桌面端</h3>
+                    <h3>🖥️ 桌面端Desktop version </h3>
                     <span class="key">↑</span> 推进<br>
                     <span class="key">←</span> <span class="key">→</span> 旋转
                 </div>
                 <div class="control-group">
-                    <h3>📱 移动端</h3>
-                    屏幕下方按钮控制
+                    <h3>📱 移动端Mobile device</h3>
+                    屏幕下方按钮控制Controls located at the bottom of the screen 
                 </div>
             </div>
         </div>
@@ -515,11 +515,11 @@ Moon Landing Challenge </h1>
                 const speedBonus = Math.floor((MAX_LANDING_SPEED - speed) * 100);
                 score = 1000 + fuelBonus + speedBonus;
                 
-                showMessage(`🎉 完美着陆！<br><span class="sub">得分: ${score} | 燃料奖励: ${fuelBonus}</span>`);
+                showMessage(`🎉 Perfect landing！完美着陆！<br><span class="sub">得分score: ${score} | 燃料奖励: ${fuelBonus}</span>`);
                 
                 setTimeout(() => {
                     hideMessage();
-                    restartBtn.textContent = '再来一次';
+                    restartBtn.textContent = '再来一次/do it again';
                     restartOverlay.classList.add('show');
                 }, 2500);
             } else {
