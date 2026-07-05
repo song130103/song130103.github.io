@@ -1,0 +1,57 @@
+<body style="padding-left:10%">
+<h1>Together , let's build a peaceful world!</h1>
+<p>Click the video below ,chase our dreams together!</p>
+<!-- UN公益HLS视频广告 | 全浏览器兼容+静音自动播放 --><a href="https://www.un.org/sustainabledevelopment" target="_blank" rel="noopener noreferrer">Official UN Site</a>
+<a href="https://www.un.org/">
+
+<div id="unVideoWrap">
+<video 
+id="unAdvVideo"
+autoplay 
+muted 
+loop 
+playsinline
+style="width:100%"
+></video>
+</div>
+</a>
+<!-- 联合国版权免责声明不可删除 -->
+<p style="font-size:12px;color:#666;margin-top:8px;line-height:1.4;">
+We support UN SDGs & ActNow Campaigns.
+<br>
+This promotional content is not endorsed by the United Nations and does not represent official UN views.
+<a href="https://www.un.org/sustainabledevelopment" target="_blank" rel="noopener noreferrer">Official UN Site</a>
+</p>
+</div>
+
+<!-- 引入hls.js CDN解析m3u8流 -->
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script>
+const videoDom = document.getElementById("unAdvVideo");
+// 你的m3u8完整播放地址
+const streamUrl = "https://cflive.kaltura.com/scf/env/d.live.nvp1/live/hls/p/2503451/e/1_gb6tjmle/tl/main/st/0/t/H4tcL3wAr3d1RwgMHpoF8A/index-s32.m3u8?Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9jZmxpdmUua2FsdHVyYS5jb20vc2NmL2Vudi9kLmxpdmUubnZwMS9saXZlL2hscy9wLzI1MDM0NTEvZS8xX2diNnRqbWxlL3RsL21haW4vc3QvMC90L0g0dGNMM3dBcjNkMVJ3Z01IcG9GOEEvKiIsIkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc4MjYyOTI5OH19fV19&Signature=OTHBdDPz3FwKG2~v6xeaZgb3X91CFskGpetGeAc2m6ta7Rm-SFglHwLG~PwlcKzo64SMMKqAFcAx0WrUfdrK8JpOObgk6pTqQFfW2d~9iYwAGYL~4-M5Z0L5eKwIrdZspxOcHs3JqKUVPDGBcpe8U8St1cYnjz3avhdqBY~1fFl-FKqKe~HQg04Vb73ukhneW5s--kbWwphuIgWA7slToF-8DjstfiCnw5d33ZAoAE10-ZcGHoEHJrirvpTxdt-UKYzTrUX0aUapRYuvJe7H1K45Mk1gIwBW53j7Fdr81VK1ZNHzXnkLp1HbDCtBkVKHEBaBcYm0vFZAvxKkSy~f1w__&Key-Pair-Id=K31ANTJBLNVBEC";
+
+// 兼容逻辑：有hls支持则加载m3u8，Safari原生直接赋值
+if (Hls.isSupported()) {
+const hlsPlayer = new Hls();
+hlsPlayer.loadSource(streamUrl);
+hlsPlayer.attachMedia(videoDom);
+// 流加载完成后触发自动播放
+hlsPlayer.on(Hls.Events.MANIFEST_PARSED, () => {
+videoDom.play().catch(err => console.log("自动播放拦截：", err));
+});
+// 网络错误自动重试
+hlsPlayer.on(Hls.Events.ERROR, (_, data) => {
+if (data.fatal) hlsPlayer.startLoad();
+});
+} else if (videoDom.canPlayType('application/vnd.apple.mpegurl')) {
+// Safari原生HLS支持
+videoDom.src = streamUrl;
+videoDom.play().catch(err => console.log("自动播放拦截：", err));
+}
+</script>
+
+
+<!-- <h2>Recording the theme music/录制主题曲/錄製主題曲</h2>
+<details>伴奏:《一路生花》伴奏<br>歌词参考:<br>远方的梦想像年少的画<br>让我们一起努力追寻它<br>艰难的路终究会到达<br>为梦想 再艰难 也不怕<br>逐梦之路去谁的天涯<br>我们都团结在开发<br>时间不知不觉前进啊<br>齐心力 共前进 正韶华<br>我希望未来的的梦想一路生花<br>护送那时的梦乘着风抵达<br>指尖的代码 如诗写谁的想法<br>疯狂的热爱不负青春年华<br>我愿科技发展一路生花<br>让未来祖国更加发达<br>时光在绽放一幅幅未来如画<br>让我们一起向未来出发</details> -->
+</body>

@@ -1,0 +1,59 @@
+<link rel="stylesheet" href="../style.css">
+<body style="u1">
+<div style="width:100%;height:6vh;background:#449944;color:white;padding:0"><center>App Store</center></div><div>
+    WeChat
+    <button onclick="add('weixin://','WeChat')">
+        Add to application list
+    </button>
+</div>
+<div>
+    QQ
+    <button onclick="add('mqq://','QQ')">
+        Add to application list
+    </button>
+</div>
+
+
+<div>
+    Douyin(TikTok)
+    <button onclick="add('douyin://','Douyin(TikTok)')">
+        Add to application list
+    </button>
+</div>
+<div>
+    Email
+    <button onclick="add('mailto://','Email')">
+        Add to application list
+    </button>
+</div>
+<div>
+    Call
+    <button onclick="add('tel://','Call')">
+        Add to application list
+    </button>
+</div>
+<div>
+    Message
+    <button onclick="add('sms://','Message')">
+        Add to application list
+    </button>
+</div>
+<div>
+    Image
+    <button onclick="add('content://media/external/images/media/','Image')">
+        Add to application list
+    </button>
+</div>
+<div>
+    System settings
+    <button onclick="add('settings://','System settings')">
+        Add to application list
+    </button>
+</div>
+<p>If you cannot find the application you want here, just send an email to 972059313@qq.com to tell us!</p>
+<script src="../script.js"></script>
+<script>
+    function add(uri,name){
+        const html = `<div class="appmore" id="${uri}" onclick="window.open('${uri}')" oncontextmenu="removeSelection(event, '${uri}', '${name}')">${name}</div><br>`;
+      getItem(1,res=>{saveItem(1,html+res)});alert('Add successfully.')}
+     </script></body>

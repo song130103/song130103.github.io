@@ -1,0 +1,79 @@
+<link rel="stylesheet" href="../style.css">
+<body style="padding:10px;padding-top:0;margin:0;">
+  <div style="width:calc(100% - 10px);height:6vh;background:#449944;color:white;padding:10px;box-sizing:border-box;">
+    <center>ZHUBUNTU Guide</center>
+  </div>
+
+  <!-- 三页容器，初始全部隐藏 -->
+  <div id="c1" class="page">
+    <h1>Welcome to use ZHUBUNTU!</h1>    
+    <p>Zhubuntu isn't the distribution of Ubuntu. It is just an open-source Android desktop environment, like GNOME's style. It is easy-to-use ,always for free, and safe. If you have any problems ,please send me an email 📧 to 972059313@qq.com. </p>
+    <img src="../favicon.png" style="width:80%;height:auto">
+  </div>
+  <div id="c2" class="page">
+    <h1>Plenty of Internal Applications for You</h1>    
+    <p>There are plenty internal apps  developed by us, such as calculator,  browser, and novel reader. They're free , stylish , open-source and safe, no advertisement,  no virus. You can also add your apps that have installed on your phone to ZHUBUNTU desktop. </p>
+    <img src="../img/3.webp" style="width:18%;height:auto">
+    <img src="../img/2.webp" style="width:18%;height:auto"><img src="../img/1.webp" style="width:18%;height:auto"><img src="../img/4.jpg" style="width:18%;height:auto"><img src="../img/5.png" style="width:18%;height:auto">
+  </div>
+  <div id="c3" class="page">
+    <h1>Together ,Chase Our Poetry and Beyond</h1>    
+    <p>This project is developed by two junior high students ,Zreamer and Song130103 .If you have some good ideas ,send us an email to 972059313@qq.com. This project belongs to everyone, you can download the source code and edit it .Let us build ZHUBUNTU together. </p>
+  </div>
+<div id="c4" class="page">
+    <h1>Now ,Start to Install It</h1>    
+    <p>1. First, click here to download and install ZHUBUNTU app and Any Launcher (by Tumuyan)
+        <br>2. Second, open Any Launcher, click 选择应用=>优先从后台切换到前台=>Zhubuntu. 
+        <br>3. Third ,click 设置桌面 (if it quit by flashing, please go to System settings=>Application settings=Default Desktop app =>AnyLauncher)<br>4. Lastly, return to desktop, success!</p>
+        <button onclick="alert('It will not show again. Please click ╳ button to to quit.');saveItem(2,1);">Don't show this guide again</button>
+  </div>
+  <!-- 修正函数名 forward -->
+  <button onclick="next()" style="position:fixed;bottom:0px;right:0px;">Next</button>
+  <button onclick="forward()" style="position:fixed;bottom:0px;left:0px;">Forward</button>
+<script src="../script.js"></script>
+<script>
+const content = ["c1", "c2", "c3","c4"];
+const totalPage = content.length;
+let n = 1; // 当前页码
+
+// 初始化：只显示第一页，其余全部隐藏
+window.onload = function() {
+  hideAll();
+  showCurrent();
+}
+
+// 隐藏所有页面
+function hideAll() {
+  content.forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  })
+}
+
+// 显示当前页码
+function showCurrent() {
+  document.getElementById(`c${n}`).style.display = 'block';
+}
+
+// 下一页
+function next() {
+  if (n < totalPage) {
+    hideAll();
+    n++;
+    showCurrent();
+  } else {
+    alert('No more contents, it is the last page.Click the x button to quit installing guide.');
+  }
+}
+
+// 上一页（修正拼写 foward → forward）
+function forward() {
+  if (n > 1) {
+    hideAll();
+    n--;
+    showCurrent();
+  } else {
+    alert('No more contents, it is the first page.');
+  }
+}
+</script>
+</body>

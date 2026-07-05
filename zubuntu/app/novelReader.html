@@ -1,0 +1,50 @@
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+	<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+		onload="renderMathInElement(document.body, {
+			delimiters: [
+				{left: '$$', right: '$$', display: true},
+				{left: '<formula>', right: '</formula>', display: false}
+			],
+			throwOnError: false
+		});">
+	</script><!-- HTML5最简标准 -->
+<meta charset="UTF-8">
+<!-- 兼容老旧浏览器写法 -->
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style>@font-face{
+font-family: 人间失格奶酪体;
+src:url('novel.ttf') format('truetype');font-display: swap;
+}</style>
+ <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+ <body style="background: linear-gradient(to bottom,#baffaa,#baffff);line-height: 2;font-size: 1.5em;font-family:人间失格奶酪体;"><br>
+<input type="file" onchange="read(this)"><br>
+<div id="ctt"><!--
+&emsp;&emsp;夏日的午后，阳光直直地照进屋里，把地板映成温暖的金色。窗外那棵桐树上的知了，
+也轻轻地唱着。夏日的午后，一切都是那样的轻松、惬意。程序员梦逐正开发着一个游戏
+。然而一条新闻推送，看似平常，却打破了这片宁静，改变了梦逐的人生走向，他的做法，更是改变
+了国家命运......--><h3>面朝大海，春暖花开</h1>
+从明天起，做一个幸福的人<br>
+喂马、劈柴，周游世界<br>
+从明天起，关心粮食和蔬菜<br>
+我有一所房子，面朝大海，春暖花开<br>
+从明天起，和每一个亲人通信<br>
+告诉他们我的幸福<br>
+那幸福的闪电告诉我的<br>
+我将告诉每一个人<br>
+给每一条河每一座山取一个温暖的名字<br>
+陌生人，我也为你祝福<br>
+愿你有一个灿烂的前程<br>
+愿你有情人终成眷属<br>
+愿你在尘世获得幸福<br>
+我只愿面朝大海，春暖花开<br>
+</div>
+<script>
+    
+function read(i){
+  const f=i.files[0],r=new FileReader();
+  r.onload=e=>ctt.innerHTML=document.body.innerHTML=marked.parse(e.target.result);
+r.readAsText(f);
+} </script>
+  
+
+</body>
