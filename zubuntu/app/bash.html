@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Hello World</title>
+  <style>
+@font-face{
+font-family: Consolas;
+	src:url('Consolas.ttf') format('truetype');font-display: swap;	}
+  </style>
+</head>
+<body style="color: white;background:black;font-family:Consolas,sans-serif;padding:0px"><div style="width:100%;height:6%;background:#449944;color:white;padding:0"><center>Terminal</center></div>
+  <div style="height:95%;width:100%;" id="output">Welcome to ZHUMENG JavaScript Terminal!<br>Type 'help()' for hrlp<br>(C)ZHUMENG(2024-2026) All right reserved.<br>$ </div>
+  <input placeholder="Type and edit your commands here." style="position:absolute;top:95%;left:0;width:80%;background:black;color:white;height:3%" id="ipt"></input>
+  <button style="position:absolute;top:95%;left:87%;width:10%;background:black;margin:0px;height:3%;color:white;font-size:0.6em;" onclick="send()">Send</button>
+ <script src="../script.js"></script>
+   <script>
+        const terminal={
+            echo:true,
+            output:document.getElementById('output'),
+            get content(){
+                return document.getElementById('output').innerHTML;
+            }
+            
+        };
+       
+       function send(){
+           try {
+               const inputText = ipt.value;
+               if(terminal.echo==true){
+                   terminal.output.innerHTML = terminal.output.innerHTML + inputText + '<br>' + eval(inputText) + '<br>$';
+                   ipt.value='';
+               }
+               else{
+                   eval(inputText);
+                   ipt.value='';
+               }
+           } catch(err) {
+               // 捕获代码错误，防止终端卡死
+               terminal.output.innerHTML += "An error occured: " + err.message + "<br>$";
+               ipt.value='';
+           }
+       }
+</script>
+</body>
+</html>
