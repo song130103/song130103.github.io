@@ -1,4 +1,14 @@
 // 页面加载执行
+const appWindow={
+    get full(){
+        fullWindow();
+    },
+    get unfull(){
+        unfullWindow();
+    },get close(){
+        closeWindow();
+    }
+};
 if (navigator.virtualKeyboard) {
     navigator.virtualKeyboard.overlaysContent = true;
 }
@@ -15,15 +25,15 @@ let removingAppIco; // 新增存储待删除应用图标
 // 修复1：多行HTML改用反引号``，解决换行语法错误
 const defaltApp = `
 <div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;display:flex;text-align:center;justify-content:center">
-<img src="img/3.webp" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" onclick="opn('firefox')">
+<img src="img/3.webp" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" onclick="opn('firefox','ChinaSo Browser')">
 </div>
 <hr>
 <div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;transition:all 0.3s ease;">
-<img src="img/4.jpg" style="width:100%;height:100%;object-fit:contain;border-radius:50%" onclick="opn('calc')">
+<img src="img/4.jpg" style="width:100%;height:100%;object-fit:contain;border-radius:50%" onclick="opn('calc','Professional Calculator')">
 </div>
 <hr>
 <div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;transition:all 0.3s ease;">
-<img src="img/2.webp" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" onclick="opn('bash')">
+<img src="img/2.webp" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" onclick="opn('bash','JS Terminal')">
 </div>
 <hr>
 <div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;transition:all 0.3s ease;">
@@ -34,13 +44,13 @@ const defaltApp = `
 <img src="img/add.svg" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" onclick="document.getElementById('maskAddApp').style.display='block'">
 </div>
 <hr>
-<div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;transition:all 0.3s ease;"><img src="img/5.png" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" onclick="opn('novelReader')"></div>
+<div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;transition:all 0.3s ease;"><img src="img/5.png" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" onclick="opn('novelReader','Poetry Ready')"></div>
 <hr>
-<div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;transition:all 0.3s ease;"><img src="img/6.png" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" onclick="opn('appstore')"></div>`;
+<div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;transition:all 0.3s ease;"><img src="img/6.png" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" onclick="opn('appstore','App Center')"></div>`;
 
 
 // 读取壁纸
-getItem(3, res => {
+getItem('/usr/zdesktop/preference/desktop_background_image.var', res => {
     if (!(res == '')) {
         document.getElementById('desktop').style.backgroundImage = res;
         document.getElementById('desktop').style.backgroundRepeat = 'no-repeat';
@@ -79,7 +89,7 @@ function start(o) {
 }
 
 // 读取引导弹窗开关记录
-getItem(2, res => {
+getItem('/usr/zdesktop/var/guide.var', res => {
     if (!(res == 1)) {
         opn('guide');
     }
@@ -93,7 +103,7 @@ setInterval(() => {
 }, 1);
 
 // 打开内嵌窗口
-function opn(a) {
+function opn(a,b) {
     wd.style.display = 'block';
     wds.src = `app/${a}.html`;
     wd.style.height = '70vh';
@@ -103,6 +113,8 @@ function opn(a) {
     wd.style.left = '18vw';
     wd.style.borderRadius = '5px';
     wds.style.borderRadius = '5px';
+    document.getElementById('windowTitle').innerHTML=b;
+    
 }
 
 // 关闭窗口
@@ -248,8 +260,8 @@ function sbmta() {
 <div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0.1);border-radius:50%;transition:all 0.3s ease;" oncontextmenu="removeSelection(event,&quot;${url}&quot;,&quot;${name}&quot;,&quot;${ico}&quot;)">
 <img src="${ico}" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%;" alt="${name}" onclick="${url}">
 </div>`;
-    getItem(1, res => {
-        saveItemLS(1, res + html);
+    getItem('/usr/zdesktop/preference/desktop_icon.html', res => {
+        saveItemLS('/usr/zdesktop/preference/desktop_icon.html', res + html);
         // 仅渲染一次，删除重复append
         document.getElementById('applist').innerHTML = defaltApp + res + html;
     });
@@ -257,7 +269,7 @@ function sbmta() {
     document.getElementById('maskAddApp').style.display = 'none';
 }
 // 页面初始化渲染应用列表
-getItem(1, res => {
+getItem('/usr/zdesktop/preference/desktop_icon.html', res => {
     document.getElementById('applist').innerHTML = defaltApp + res;
 });
 
@@ -277,9 +289,9 @@ function removeAppYes() {
 <div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0.1);border-radius:50%;transition:all 0.3s ease;" oncontextmenu="removeSelection(event,&quot;${removingAppURI}&quot;,&quot;${removingAppName}&quot;,&quot;${removingAppIco}&quot;)">
 <img src="${removingAppIco}" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%;" alt="${removingAppName}" onclick="${removingAppURI}">
 </div>`;
-    getItem(1, acti => {
+    getItem('/usr/zdesktop/preference/desktop_icon.html', acti => {
         const newHtml = acti.replace(rmvctt, '');
-        saveItemLS(1, newHtml);
+        saveItemLS('/usr/zdesktop/preference/desktop_icon.html', newHtml);
         document.getElementById('applist').innerHTML = defaltApp + newHtml;
     });
     document.getElementById('maskRemoveApp').style.display = 'none';
@@ -291,3 +303,35 @@ document.addEventListener('contextmenu', function(e) {
     if(e.target.closest('[oncontextmenu]')) return;
     e.preventDefault();
 }, false);
+/*function submitInstallLanyuePackage(){
+    document.getElementById('').addEventListener('change', async e => {
+   const file = e.target.files[0];
+   if (!file) return;
+   const reader = new FileReader();
+   reader.onload = function (event) {
+     // 按换行切割，取出第一行
+     let text = event.target.result;
+     const firstLine = text.split(/\r?\n/)[0];
+     const lanyueAppName=file.name;
+     saveItemLS('/usr/app/'+lanyueAppName,text);
+     const ico=firstLine.replace('<!--').replace('-->');
+     const html = `<hr>
+<div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0.1);border-radius:50%;transition:all 0.3s ease;" oncontextmenu="removeLanyueSelection(event,&quot;${'/usr/app/'+lanyueAppName}&quot;,&quot;${lanyueAppName}&quot;,&quot;${ico}&quot;)">
+<img src="${ico}" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%;" alt="${lanyueAppName.replace('.zap','')}" onclick="lanyueOpen(${lanyueAppName})">
+</div>`;
+    getItem('/usr/zdesktop/preference/desktop_icon.html', res => {
+        saveItemLS('/usr/zdesktop/preference/desktop_icon.html', res + html);
+        
+        
+        
+   };
+   reader.readAsText(file);
+ });
+}
+
+function lanyueOpen(a){
+    getItem('/usr/app/'+a, res => {let finalCode=res;});
+    const lanyueCodeList=[''];
+    
+    
+}}*/

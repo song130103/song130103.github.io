@@ -1,145 +1,132 @@
-
-
-<!DOCTYPE html><html lang="zh-CN"><head>
-<title>Zubuntu - 网页版Linux系统 | Web-based Linux OS</title>
-<meta name="description" content="Zubuntu是一个基于网页的Linux系统模拟器，提供Ubuntu风格的Web桌面体验，支持多应用窗口、文件管理和系统设置">
-<meta name="language" content="zh-CN">
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="keywords" content="=E7=BD=91=E9=A1=B5=E7=89=88=E7=B3=BB=E7=BB=9F=E3=80=81=E7=B3=BB=E7=BB=9Fzubuntu=E3=80=81zubuntu-web=E3=80=81Web-based system ">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=0.25, viewport-fit=cover, interactive-widget=overlays-content">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+;<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=0.25, viewport-fit=cover, interactive-widget=overlays-content">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="screen-orientation" content="portrait">
 <meta name="x5-orientation" content="portrait">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 
-<link rel="stylesheet" href="http://song.zreamer.top/zubuntu/style.css">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-<!-- =E5=90=AF=E5=8A=A8=E9=80=89=E6=8B=A9=E7=95=8C=E9=9D=A2 =E7=8B=AC=E7=AB=8Bscreen -->
-<div class="screen" style="background: rgb(186, 225, 255); display: none;" id="startSelection">
+<!-- 启动选择界面 独立screen -->
+<div class="screen" style="background:#bae1ff" id="startSelection">
 <div style="width:70vw;text-align:center;height:35px;position:fixed;top:15px;left:15vw;;transition:all 0.3s ease">
 GNU GURB Version zhubuntu 26.02
 </div>
 <div style="border:4px solid #000 ;width:70vw;height:400px;position:fixed;top:50px;left:15vw;transition:all 0.3s ease">
-<div class="startingChoice">zhubuntu</div>
-<div class="startingChoice">ubuntu</div>
-<div class="startingChoice">Windows14</div>
+<div class="startingChoice" onclick="start('zhubuntu')">zhubuntu</div>
+<div class="startingChoice" onclick="start('ubuntu')">ubuntu</div>
+<div class="startingChoice" onclick="start('Windows14')">Windows14</div>
 </div>
 <div style="width:70vw;text-align:center;height:35px;margin-top:20px;position:absolute;top:460px;left:15vw;transition:all 0.3s ease">Click the option you want to start</div>
 </div>
 
-<!-- =E5=8A=A0=E8=BD=BD=E7=95=8C=E9=9D=A2 =E7=8B=AC=E7=AB=8Bscreen -->
-<div class="screen" style="display: none; background: rgb(186, 225, 255); transition: 0.3s;" id="launching">
+<!-- 加载界面 独立screen -->
+<div class="screen" style="display:none;background:#bae1ff;transition:all 0.3s ease" id="launching">
 <div style="display: flex;height:4vh;width:30vw;position:absolute;top:46vh;left:35vw;font-family:u2">
-<img src="http://song.zreamer.top/zubuntu/favicon.png" style="height: 100%; margin-right: 20px; transform: rotate(192deg);" id="u" alt="Zubuntu Logo">
+<img src="favicon.png" style="height:100%;margin-right:20px" id="u"/>
 <h1>zhubuntu</h1>
 </div>
 </div>
 
-<!-- =E6=A1=8C=E9=9D=A2=E4=B8=BB=E7=95=8C=E9=9D=A2 =E7=8B=AC=E7=AB=8Bscreen=EF=BC=8C=E6=89=80=E6=9C=89=E6=A1=8C=E9=9D=A2=E5=AD=90=E5=85=83=E7=B4=A0=E5=85=A8=E9=83=A8=E5=8C=85=E5=90=AB=E5=9C=A8=E5=86=85 -->
-<div class="screen" style="display: block; background: rgb(186, 225, 255); transition: 0.3s;" id="desktop">
-<!-- =E9=A1=B6=E9=83=A8=E7=8A=B6=E6=80=81=E6=A0=8F -->
+<!-- 桌面主界面 独立screen，所有桌面子元素全部包含在内 -->
+<div class="screen" style="display:none;background:#bae1ff;transition:all 0.3s ease" id="desktop">
+<!-- 顶部状态栏 -->
 <div style="height:2vh;width:80vw;position:absolute;top:0;right:0;background:#aad1ef;padding:8px;transition:all 0.3s ease">
-<div style="position:absolute;top:8px;right:8px;transition:all 0.3s ease" id="time">17:33</div>
+<div style="position:absolute;top:8px;right:8px;transition:all 0.3s ease" id="time" onclick="options()">00:00</div>
 <!-- <div style="position:absolute;top:8px;transition:all 0.3s ease;background-color: #bae1ff;" id="act" onclick="document.getElementById('maskAllList').style.display='block';getItem(1, res => {
 document.getElementById('alst').innerHTML= res;
 });">Applications</div> -->
-<div style="position:absolute;top:8px;transition:all 0.3s ease">ZHUBUNTU</div>
+<div style="position:absolute;top:8px;transition:all 0.3s ease"  >ZHUBUNTU</div>
 </div>
 
-<!-- =E5=B7=A6=E4=BE=A7=E5=BA=94=E7=94=A8=E6=A0=8F -->
+<!-- 左侧应用栏 -->
 <div style="height:100vh;width:12vw;overflow:auto;padding:15px;transition:all 0.3s ease;background-color:#bae1ff99" id="applist">
 <div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;display:flex;text-align:center;justify-content:center">
-<img src="http://song.zreamer.top/zubuntu/img/3.webp" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" alt="App Icon 3">
+<img src="img/3.webp" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" onclick="opn('firefox')">
 </div>
 <hr>
 <div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;transition:all 0.3s ease;">
-<img src="http://song.zreamer.top/zubuntu/img/4.jpg" style="width:100%;height:100%;object-fit:contain;border-radius:50%" alt="App Icon 4">
+<img src="img/4.jpg" style="width:100%;height:100%;object-fit:contain;border-radius:50%" onclick="opn('calc')">
 </div>
 <hr>
 <div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;transition:all 0.3s ease;">
-<img src="http://song.zreamer.top/zubuntu/img/2.webp" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" alt="App Icon 2">
+<img src="img/2.webp" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" onclick="opn('bash')">
 </div>
 <hr>
 <div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;transition:all 0.3s ease;">
-<img src="http://song.zreamer.top/zubuntu/img/1.webp" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" alt="App Icon 1">
+<img src="img/1.webp" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" onclick="opn('bt')">
 </div>
 <hr>
 <div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;transition:all 0.3s ease;">
-<img src="http://song.zreamer.top/zubuntu/img/add.svg" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" alt="Add New Application">
+<img src="img/add.svg" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" onclick="document.getElementById('maskAddApp').style.display='block'">
 </div>
 <hr>
-<div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;transition:all 0.3s ease;"><img src="http://song.zreamer.top/zubuntu/img/5.png" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" alt="App Icon 5"></div>
+<div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;transition:all 0.3s ease;"><img src="img/5.png" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" onclick="opn('novelReader','Poetry Ready')"></div>
 <hr>
-<div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;transition:all 0.3s ease;"><img src="http://song.zreamer.top/zubuntu/img/6.png" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" alt="App Icon 6"></div></div>
-
-<!-- =E5=BA=94=E7=94=A8=E7=AA=97=E5=8F=A3 -->
-<div class="window" id="wd" style="display: none; height: 70vh; width: 70vw; z-index: 100; top: 50px; left: 18vw; border-radius: 5px;">
-<iframe src="cid:frame-D18CA0F6B0E36A0B91331561756EB0C4@mhtml.blink" style="height:100%;width:100%;border-radius: 5px;border:none;position: absolute;left:0;top:0;" id="wds"></iframe>
-<button type="button" style="right:6vh"><b>M</b></button>
-<button type="button" style="left:0"><b>M</b></button>
-<button type="button" style="right:0"><b>=E2=95=B3</b></button>
-<button type="button" style="left:3vh"><b>=E2=96=A1</b></button>
-<button type="button" style="right:3vh"><b>=E2=96=85</b></button>
+<div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;transition:all 0.3s ease;"><img src="img/6.png" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" onclick="opn('appstore')"></div>
 </div>
 
-<!-- =E5=8F=B3=E4=B8=8A=E8=A7=92=E4=B8=8B=E6=8B=89=E8=8F=9C=E5=8D=95 -->
+<!-- 应用窗口 -->
+<div class="window" id="wd" style="display:none;background-color:#bae1ff99"><div style="width:100%;height:6%;background:#449944;color:white;padding:10px;box-sizing:border-box;border-radius:5px 5px 0 0;">
+    <center id="windowTitle"></center>
+  </div>
+<iframe src="" style="height:94%;width:100%;border-radius:0 0 5px 5px;border:none;position: absolute;left:0;top:6%;" id="wds" ></iframe>
+<button type="button" onmouseup="mv()" style="right:6vh"><b>M</b></button>
+<button type="button" onmouseup="mv()" style="left:0"><b>M</b></button>
+<button type="button" onclick="closeWindow()" style="right:0"><b>╳</b></button>
+<button type="button" onclick="fullWindow()" style="left:3vh"><b>□</b></button>
+<button type="button" onclick="unfullWindow()" style="right:3vh"><b>▅</b></button>
+</div>
+
+<!-- 右上角下拉菜单 -->
 <div id="opt" style="width:25vw;background:white;position:absolute;top:3vh;right:5vw;display:none;border-radius:5px;z-index:900;">
-<button style="border:none;width:100%" class="opt">Hide</button>
-<button style="border:none;width:100%;transition:all 0.3s ease">Log Out</button>
-<button style="border:none;width:100%;transition:all 0.3s ease" class="opt">Lock</button>
-<button style="border:none;width:100%;transition:all 0.3s ease" class="opt">Settings</button>
-<button style="border:none;width:100%;transition:all 0.3s ease" class="opt">Landscape mode</button>
+<button style="border:none;width:100%" onclick="hide()" class="opt">Hide</button><!--
+<button style="border:none;width:100%;transition:all 0.3s ease" onclick="window.open('index.html')">Log Out</button>-->
+<button style="border:none;width:100%;transition:all 0.3s ease" class="opt" onclick="lc()">Lock</button>
+<button style="border:none;width:100%;transition:all 0.3s ease" class="opt" onclick="opn('settings');hide();">Settings</button>
+<button style="border:none;width:100%;transition:all 0.3s ease" class="opt" onclick="window.open('landscape.html')">Landscape mode</button>
 <p>Brightness<input type="range" name="name" id="y" style="width:80%"></p>
 <p>Voice<input type="range" name="name" id="y2" style="width:80%"></p>
 </div>
-</div> <!-- =E6=A1=8C=E9=9D=A2screen=E9=97=AD=E5=90=88 -->
+</div> <!-- 桌面screen闭合 -->
 
-<!-- =E5=85=A8=E5=B1=80=E5=BC=B9=E7=AA=97 -->
-<!-- =E5=BA=94=E7=94=A8=E5=88=97=E8=A1=A8=E5=BC=B9=E7=AA=97 -->
+<!-- 全局弹窗 -->
+<!-- 应用列表弹窗 -->
 <div class="modal-mask" id="maskAllList">
 <div class="modal-box" id="allllllst">
 <div class="modal-header">Application List</div>
 <div class="modal-content" id="alst"></div>
-<button type="button" class="sc" style="right:0"><b>=E2=95=B3</b></button>
+<button type="button" class="sc" onclick="document.getElementById('maskAllList').style.display='none';" style="right:0"><b>╳</b></button>
 </div>
 </div>
 
-<!-- =E6=B7=BB=E5=8A=A0=E5=BA=94=E7=94=A8=E5=BC=B9=E7=AA=97 -->
+<!-- 添加应用弹窗 -->
 <div class="modal-mask" id="maskAddApp">
 <div class="modal-box" id="aa">
 <div class="modal-header">Add application icons</div>
 <div class="modal-content">
-<input placeholder="Type your application name..." id="userAppName">
+    <h2>Add Android Applications</h2>
+<input placeholder="Type your application name..." id="userAppName"/>
 <br>
-<input placeholder="Type your application URI..." id="userAppURI"><input placeholder="Type your application icon url..." id="userAppIcon">
+<input placeholder="Type your application URI..." id="userAppURI"/><input placeholder="Type your application icon url..." id="userAppIcon"/>
 <br>
-<button>Submit</button>
-<button type="button">Cancel</button>
+<button onclick="sbmta()">Submit</button>
+<button type="button" onclick="document.getElementById('maskAddApp').style.display='none';">Cancel</button>
+<h2>Install Lanyue .zap Package</h2>
+<input type="file" id='LanyuePackage'>
+<button onclick="submitInstallLanyuePackage()">Submit</button>
 </div>
-<button type="button" class="sc" style="right:0"><b>=E2=95=B3</b></button>
+<button type="button" class="sc" onclick="document.getElementById('maskAddApp').style.display='none';" style="right:0"><b>╳</b></button>
 </div>
 </div>
 
-<!-- =E8=AE=BE=E7=BD=AE=E8=83=8C=E6=99=AF=E5=BC=B9=E7=AA=97 -->
-<div class="modal-mask" id="maskBgSet">
-<div class="modal-box" id="sts">
-<div class="modal-header">Settings-Background</div>
-<div class="modal-content">
-<div style="display:flex;width:100%;margin:5%;height:auto">
-<img src="http://song.zreamer.top/zubuntu/img/b1.jpg" style="width:20%;height:auto;margin:2.5%" alt="Wallpaper B1">
-<img src="http://song.zreamer.top/zubuntu/img/b2.jpg" style="width:20%;height:auto;margin:2.5%" alt="Wallpaper B2">
-<img src="http://song.zreamer.top/zubuntu/img/b3.jpg" style="width:20%;height:auto;margin:2.5%" alt="Wallpaper B3">
-<button style="width:10%;height:auto;margin:2.5%;background-color:#bae1ff"></button>
-</div>
-<p>If you have better background images , please send them to 972059313@qq.com</p>
-</div>
-<button type="button" class="sc" style="right:0"><b>=E2=95=B3</b></button>
-</div>
-</div>
+<!-- 设置背景弹窗 -->
 
-<!-- =E5=88=A0=E9=99=A4=E5=BA=94=E7=94=A8=E7=A1=AE=E8=AE=A4=E5=BC=B9=E7=AA=97 -->
+<!-- 删除应用确认弹窗 -->
 <div class="modal-mask" id="maskRemoveApp">
 <div class="modal-box" id="raa" style="height:30%;top:35%">
 <div class="modal-header">Remove Applications</div>
@@ -147,35 +134,68 @@ document.getElementById('alst').innerHTML= res;
 Are you sure you want to remove this application?<br>
 This action can only remove the link of this application in Zhubuntu ZDE Desktop. If you want to remove it completely, please go to System Settings.
 <br>
-<button style="width: 48%;">Yes</button>
-<button style="width: 48%;">Cancel</button>
+<button style="width: 48%;" onclick="removeAppYes()">Yes</button>
+<button style="width: 48%;" onclick="document.getElementById('maskRemoveApp').style.display='none';">Cancel</button>
 </div>
-<button type="button" class="sc" style="right:0"><b>=E2=95=B3</b></button>
+<button type="button" class="sc" onclick="document.getElementById('maskRemoveApp').style.display='none';" style="right:0"><b>╳</b></button>
 </div>
 </div>
 
-<!-- =E9=94=81=E5=B1=8F=E7=95=8C=E9=9D=A2 -->
-<div class="screen" style="z-index:4999;background-color:#bae1ff;display:none;text-align:center;justify-content:center;align-items:center;font-size:8vh;transition:all 0.3s ease" id="lockscreen">
+<!-- 锁屏界面 -->
+<div class="screen" style="z-index:4999;background-color:#bae1ff;display:none;text-align:center;justify-content:center;align-items:center;font-size:8vh;transition:all 0.3s ease" id="lockscreen" onclick="ulc()">
 <div style="display:block">
-<p id="tme">17:33</p>
+<p id="tme">00:00</p>
 <br>
 <p style="font-size:1rem;">Press anywhere or any key to unlock</p>
 </div>
 </div>
 
-<!-- =E5=85=A8=E5=B1=80=E5=8D=8A=E9=80=8F=E6=98=8E=E9=81=AE=E7=BD=A9 -->
+<!-- 全局半透明遮罩 -->
 <div style="height:100vh;width:100vw;z-index:5000;pointer-events:none;background-color:rgba(255,255,180,0.1);position:absolute;top:0;left:0;transition:all 0.3s ease"></div>
 
-<!-- =E5=85=A8=E5=B1=80Alert=E5=BC=B9=E7=AA=97 -->
+<!-- 全局Alert弹窗 -->
 <div style="height:100vh;width:100vw;z-index:15000;position:absolute;top:0;transition:all 0.3s ease;display:none;text-align:center;justify-content:center;align-items:center" id="allt">
-<div style="height:30%;width:30%;background:white;display:block;box-shadow:3px 3px 3px 3px #ddf;overflow:auto">
+<div style="height:30%;width:30%;background:white;display:block;box-shadow:3px 3px 3px 3px #ddf;overflow:auto" >
 <div style="width:100%;height:6%;background:#449944;color:white;padding:0;"><center>Alert</center></div>
 <p style="height:82%;width:100%;background:white;display:flex" id="alltctt">Content...</p>
-<button style="width:100%;height:6%;color:black;padding:0;"><center>OK</center></button>
+<button style="width:100%;height:6%;color:black;padding:0;" onclick="clsalt()"><center>OK</center></button>
 </div>
 </div>
 
 
 
 
-</body></html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="modal-mask" id="maskBgSet">
+<div class="modal-box" id="sts">
+<div class="modal-header">Settings-Background</div>
+<div class="modal-content">
+<div style="display:flex;width:100%;margin:5%;height:auto">
+<img src="img/b1.jpg" style="width:20%;height:auto;margin:2.5%" onclick="document.getElementById('desktop').style.backgroundImage='url(img/b1.jpg)';document.getElementById('desktop').style.backgroundRepeat='no-repeat';document.getElementById('desktop').style.backgroundSize='cover';saveItem(3,'url(img/b1.jpg)');"/>
+<img src="img/b2.jpg" style="width:20%;height:auto;margin:2.5%" onclick="document.getElementById('desktop').style.backgroundImage='url(img/b2.jpg)';document.getElementById('desktop').style.backgroundRepeat='no-repeat';document.getElementById('desktop').style.backgroundSize='cover';saveItem(3,'url(img/b2.jpg)');"/>
+<img src="img/b3.jpg" style="width:20%;height:auto;margin:2.5%" onclick="document.getElementById('desktop').style.backgroundImage='url(img/b3.jpg)';document.getElementById('desktop').style.backgroundRepeat='no-repeat';document.getElementById('desktop').style.backgroundSize='cover';saveItem(3,'url(img/b3.jpg)');"/>
+<button style="width:10%;height:auto;margin:2.5%;background-color:#bae1ff" onclick="document.getElementById('desktop').style.backgroundImage='none';document.getElementById('desktop').style.backgroundColor='#bae1ff';saveItem(3,'n');" ></button>
+</div>
+<p>If you have better background images , please send them to 972059313@qq.com</p>
+</div>
+<button type="button" class="sc" onclick="document.getElementById('maskBgSet').style.display='none';" style="right:0"><b>╳</b></button>
+</div>
+</div>
+<script src="script.js"></script>
+<script>
+
+</script>
+</body>
+</html>
