@@ -57,6 +57,13 @@ body { overflow: hidden; background: #0a0a0a; font-family: 'Segoe UI', 'Microsof
   font-size: 14px; text-shadow: 0 0 10px rgba(0,0,0,0.8); text-align: right;
 }
 
+/* 武器切换提示 */
+#weapon-switch-hint {
+  position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
+  color: rgba(255,255,255,0.6); font-size: 13px; pointer-events: none;
+  text-shadow: 0 0 5px rgba(0,0,0,0.8); display: none;
+}
+
 /* 虚拟摇杆 */
 .joystick {
   position: absolute; width: 120px; height: 120px;
@@ -71,6 +78,16 @@ body { overflow: hidden; background: #0a0a0a; font-family: 'Segoe UI', 'Microsof
 }
 #stick-left { background: rgba(233,69,96,0.6); }
 #stick-right { background: rgba(78,204,163,0.6); }
+
+/* 武器切换按钮（手机端） */
+#weapon-switch-btn {
+  position: absolute; bottom: 220px; right: 60px;
+  width: 60px; height: 60px; border-radius: 50%;
+  border: 3px solid rgba(255,255,255,0.3); display: none;
+  background: rgba(255,255,255,0.1); color: #fff;
+  font-size: 24px; cursor: pointer; pointer-events: auto;
+  align-items: center; justify-content: center; z-index: 60;
+}
 
 /* 游戏结束 */
 #game-over {
@@ -113,8 +130,8 @@ body { overflow: hidden; background: #0a0a0a; font-family: 'Segoe UI', 'Microsof
 
     <div id="controls-info">
       <p>🖱️ 鼠标移动瞄准 / 左键射击</p>
-      <p>⌨️ WASD 移动</p>
-      <p>📱 手机：左侧摇杆移动 / 右侧摇杆射击</p>
+      <p>⌨️ WASD 移动，数字键 1-5 切换武器</p>
+      <p>📱 手机：左侧摇杆移动 / 右侧摇杆射击 / 右下角按钮切换武器</p>
     </div>
   </div>
 
@@ -131,6 +148,8 @@ body { overflow: hidden; background: #0a0a0a; font-family: 'Segoe UI', 'Microsof
       <div>⏱️ <span id="hud-time">0:00</span></div>
     </div>
 
+    <div id="weapon-switch-hint">按 1-5 切换武器</div>
+
     <!-- 手机虚拟摇杆 -->
     <div class="joystick" id="joystick-left">
       <div class="stick" id="stick-left"></div>
@@ -138,6 +157,9 @@ body { overflow: hidden; background: #0a0a0a; font-family: 'Segoe UI', 'Microsof
     <div class="joystick" id="joystick-right">
       <div class="stick" id="stick-right"></div>
     </div>
+
+    <!-- 手机武器切换按钮 -->
+    <div id="weapon-switch-btn" onclick="switchWeaponMobile()">🔫</div>
   </div>
 
   <!-- 游戏结束 -->
@@ -145,8 +167,8 @@ body { overflow: hidden; background: #0a0a0a; font-family: 'Segoe UI', 'Microsof
     <h2 id="go-title">游戏结束</h2>
     <p class="score" id="go-score">击杀: 0</p>
     <p class="time" id="go-time">生存时间: 0:00</p>
-    <button onclick="restartGame()">再来一局</button>
-    <button class="back-btn" onclick="backToMenu()">返回主菜单</button>
+    <button id="btn-restart" onclick="restartGame()">再来一局</button>
+    <button class="back-btn" id="btn-back" onclick="backToMenu()">返回主菜单</button>
   </div>
 </div>
 
@@ -176,13 +198,15 @@ const texts = {
     subtitle: '无限地图 · 生存射击', easy: '🌱 简单', normal: '🔥 普通', hard: '💀 困难',
     wave: '第{0}波', goTitle: '游戏结束', goScore: '击杀: {0}', goTime: '生存时间: {0}',
     pistol: '手枪', smg: '冲锋枪', shotgun: '霰弹枪', rifle: '步枪', sniper: '狙击枪',
-    controls: '<p>🖱️ 鼠标移动瞄准 / 左键射击</p><p>⌨️ WASD 移动</p><p>📱 手机：左侧摇杆移动 / 右侧摇杆射击</p>'
+    controls: '<p>🖱️ 鼠标移动瞄准 / 左键射击</p><p>⌨️ WASD 移动，数字键 1-5 切换武器</p><p>📱 手机：左侧摇杆移动 / 右侧摇杆射击 / 右下角按钮切换武器</p>',
+    restart: '再来一局', backMenu: '返回主菜单', switchHint: '按 1-5 切换武器'
   },
   en: {
     subtitle: 'Infinite Map · Survival Shooter', easy: '🌱 Easy', normal: '🔥 Normal', hard: '💀 Hard',
     wave: 'Wave {0}', goTitle: 'Game Over', goScore: 'Kills: {0}', goTime: 'Survived: {0}',
     pistol: 'Pistol', smg: 'SMG', shotgun: 'Shotgun', rifle: 'Rifle', sniper: 'Sniper',
-    controls: '<p>🖱️ Mouse aim / Left click shoot</p><p>⌨️ WASD to move</p><p>📱 Mobile: Left stick move / Right stick shoot</p>'
+    controls: '<p>🖱️ Mouse aim / Left click shoot</p><p>⌨️ WASD move, keys 1-5 switch weapon</p><p>📱 Mobile: Left stick move / Right stick shoot / Bottom-right button switch weapon</p>',
+    restart: 'Play Again', backMenu: 'Back to Menu', switchHint: 'Press 1-5 to switch weapon'
   }
 };
 
@@ -193,6 +217,8 @@ const weaponTypes = {
   rifle: { name: 'rifle', damage: 35, speed: 16, fireRate: 150, spread: 0.03, ammo: 90, color: '#00d2ff', range: 800, pellets: 1 },
   sniper: { name: 'sniper', damage: 100, speed: 20, fireRate: 1200, spread: 0.0, ammo: 15, color: '#a855f7', range: 1200, pellets: 1 }
 };
+
+const weaponKeys = ['pistol', 'smg', 'shotgun', 'rifle', 'sniper'];
 
 // ============ 初始化 ============
 function resize() {
@@ -213,6 +239,9 @@ function switchLang(l) {
   document.getElementById('btn-normal').textContent = texts[lang].normal;
   document.getElementById('btn-hard').textContent = texts[lang].hard;
   document.getElementById('controls-info').innerHTML = texts[lang].controls;
+  document.getElementById('weapon-switch-hint').textContent = texts[lang].switchHint;
+  document.getElementById('btn-restart').textContent = texts[lang].restart;
+  document.getElementById('btn-back').textContent = texts[lang].backMenu;
 }
 
 // ============ 游戏核心 ============
@@ -226,9 +255,18 @@ function startGame(diff) {
 
   player = {
     x: 0, y: 0, radius: 15, hp: 100, maxHp: 100, speed: 200,
-    weapon: { ...weaponTypes.pistol, ammo: Infinity },
+    weapons: [
+      { ...weaponTypes.pistol, ammo: Infinity },
+      { ...weaponTypes.smg, ammo: 0 },
+      { ...weaponTypes.shotgun, ammo: 0 },
+      { ...weaponTypes.rifle, ammo: 0 },
+      { ...weaponTypes.sniper, ammo: 0 }
+    ],
+    currentWeaponIndex: 0,
     fireCooldown: 0, angle: 0, invincible: 0
   };
+  player.weapon = player.weapons[0];
+
   camera = { x: 0, y: 0 };
   bullets = [];
   enemies = [];
@@ -241,11 +279,14 @@ function startGame(diff) {
   document.getElementById('start-screen').style.display = 'none';
   document.getElementById('hud').style.display = 'block';
   document.getElementById('game-over').style.display = 'none';
+  document.getElementById('weapon-switch-hint').style.display = 'block';
 
   const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || ('ontouchstart' in window);
   if (isMobile) {
     document.getElementById('joystick-left').style.display = 'block';
     document.getElementById('joystick-right').style.display = 'block';
+    document.getElementById('weapon-switch-btn').style.display = 'flex';
+    document.getElementById('weapon-switch-hint').style.display = 'none';
   }
 
   lastTime = performance.now();
@@ -263,7 +304,51 @@ function backToMenu() {
   document.getElementById('game-over').style.display = 'none';
   document.getElementById('joystick-left').style.display = 'none';
   document.getElementById('joystick-right').style.display = 'none';
+  document.getElementById('weapon-switch-btn').style.display = 'none';
+  document.getElementById('weapon-switch-hint').style.display = 'none';
 }
+
+// ============ 武器切换 ============
+function switchWeapon(index) {
+  if (index < 0 || index >= player.weapons.length) return;
+  const w = player.weapons[index];
+  if (w.ammo <= 0 && w.ammo !== Infinity) return; // 没弹药不能切换
+  player.currentWeaponIndex = index;
+  player.weapon = w;
+}
+
+function switchWeaponMobile() {
+  let next = (player.currentWeaponIndex + 1) % player.weapons.length;
+  let attempts = 0;
+  while ((player.weapons[next].ammo <= 0 && player.weapons[next].ammo !== Infinity) && attempts < 5) {
+    next = (next + 1) % player.weapons.length;
+    attempts++;
+  }
+  if (player.weapons[next].ammo > 0 || player.weapons[next].ammo === Infinity) {
+    player.currentWeaponIndex = next;
+    player.weapon = player.weapons[next];
+  }
+}
+
+// 键盘切换武器
+window.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (e.code >= 'Digit1' && e.code <= 'Digit5') {
+    const idx = parseInt(e.code.replace('Digit', '')) - 1;
+    switchWeapon(idx);
+  }
+  // 滚轮切换
+  if (e.code === 'KeyQ') {
+    let prev = player.currentWeaponIndex - 1;
+    if (prev < 0) prev = player.weapons.length - 1;
+    switchWeapon(prev);
+  }
+  if (e.code === 'KeyE') {
+    let next = player.currentWeaponIndex + 1;
+    if (next >= player.weapons.length) next = 0;
+    switchWeapon(next);
+  }
+});
 
 // ============ 伪随机生成 ============
 function seededRandom(seed) {
@@ -302,7 +387,6 @@ function generateObstacles(cx, cy, radius) {
 }
 
 // ============ 输入处理 ============
-window.addEventListener('keydown', e => { keys[e.code] = true; });
 window.addEventListener('keyup', e => { keys[e.code] = false; });
 window.addEventListener('mousemove', e => {
   mouse.x = e.clientX;
@@ -310,6 +394,21 @@ window.addEventListener('mousemove', e => {
 });
 window.addEventListener('mousedown', e => { if (e.button === 0) mouse.down = true; });
 window.addEventListener('mouseup', e => { if (e.button === 0) mouse.down = false; });
+
+// 滚轮切换武器
+window.addEventListener('wheel', e => {
+  if (!gameRunning) return;
+  e.preventDefault();
+  if (e.deltaY > 0) {
+    let next = player.currentWeaponIndex + 1;
+    if (next >= player.weapons.length) next = 0;
+    switchWeapon(next);
+  } else {
+    let prev = player.currentWeaponIndex - 1;
+    if (prev < 0) prev = player.weapons.length - 1;
+    switchWeapon(prev);
+  }
+}, { passive: false });
 
 const jLeft = document.getElementById('joystick-left');
 const stickLeft = document.getElementById('stick-left');
@@ -404,7 +503,14 @@ function update(dt) {
   if ((mouse.down || touchState.right.active) && player.fireCooldown <= 0 && player.weapon.ammo !== 0) {
     shoot();
     player.fireCooldown = player.weapon.fireRate;
-    if (player.weapon.ammo !== Infinity) player.weapon.ammo--;
+    if (player.weapon.ammo !== Infinity) {
+      player.weapon.ammo--;
+      if (player.weapon.ammo <= 0) {
+        // 自动切换到手枪
+        player.currentWeaponIndex = 0;
+        player.weapon = player.weapons[0];
+      }
+    }
   }
 
   // 障碍物碰撞
@@ -424,15 +530,18 @@ function update(dt) {
   // 拾取武器
   for (let i = weaponsOnGround.length - 1; i >= 0; i--) {
     const w = weaponsOnGround[i];
-    if (Math.hypot(player.x - w.x, player.y - w.y) < player.radius + 20) {
-      if (player.weapon.name !== 'pistol') {
-        weaponsOnGround.push({
-          x: player.x, y: player.y,
-          weapon: { ...player.weapon },
-          life: 30
-        });
+    if (Math.hypot(player.x - w.x, player.y - w.y) < player.radius + 25) {
+      // 给对应武器补充弹药
+      const weaponIdx = weaponKeys.indexOf(w.weapon.name);
+      if (weaponIdx >= 0) {
+        player.weapons[weaponIdx].ammo += w.weapon.ammo;
+        // 如果当前武器没弹药了，自动切换
+        if (player.weapon.ammo <= 0 && player.weapon.ammo !== Infinity) {
+          player.currentWeaponIndex = weaponIdx;
+          player.weapon = player.weapons[weaponIdx];
+        }
       }
-      player.weapon = { ...weaponTypes[w.weapon.name], ammo: w.weapon.ammo };
+      createParticles(w.x, w.y, w.weapon.color, 8);
       weaponsOnGround.splice(i, 1);
     }
   }
@@ -468,13 +577,13 @@ function update(dt) {
           createParticles(e.x, e.y, '#e94560', 15);
           enemies.splice(j, 1);
           kills++;
-          if (Math.random() < 0.15) {
+          if (Math.random() < 0.2) {
             const types = ['smg', 'shotgun', 'rifle', 'sniper'];
             const type = types[Math.floor(Math.random() * types.length)];
             weaponsOnGround.push({
               x: e.x, y: e.y,
-              weapon: { ...weaponTypes[type], ammo: weaponTypes[type].ammo },
-              life: 20
+              weapon: { ...weaponTypes[type], ammo: Math.floor(weaponTypes[type].ammo * 0.3) + 5 },
+              life: 25
             });
           }
         }
@@ -620,6 +729,8 @@ function gameOver() {
   document.getElementById('game-over').style.display = 'flex';
   document.getElementById('joystick-left').style.display = 'none';
   document.getElementById('joystick-right').style.display = 'none';
+  document.getElementById('weapon-switch-btn').style.display = 'none';
+  document.getElementById('weapon-switch-hint').style.display = 'none';
 }
 
 function updateHUD() {
