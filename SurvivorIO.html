@@ -64,6 +64,26 @@ body { overflow: hidden; background: #0a0a0a; font-family: 'Segoe UI', 'Microsof
   text-shadow: 0 0 5px rgba(0,0,0,0.8); display: none;
 }
 
+/* 血条动画 */
+.hp-bar-container {
+  position: absolute; top: 50px; left: 15px; width: 150px; height: 12px;
+  background: #333; border-radius: 6px; overflow: hidden; display: none;
+}
+.hp-bar-fill {
+  height: 100%; border-radius: 6px; transition: width 0.3s;
+}
+.hp-bar-text {
+  position: absolute; top: 50px; left: 170px; color: #fff; font-size: 12px;
+  text-shadow: 0 0 5px rgba(0,0,0,0.8); display: none;
+}
+
+/* 回血提示 */
+#heal-hint {
+  position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+  color: #4ecca3; font-size: 14px; pointer-events: none;
+  text-shadow: 0 0 5px rgba(0,0,0,0.8); opacity: 0; transition: opacity 0.5s;
+}
+
 /* 虚拟摇杆 */
 .joystick {
   position: absolute; width: 120px; height: 120px;
@@ -130,7 +150,8 @@ body { overflow: hidden; background: #0a0a0a; font-family: 'Segoe UI', 'Microsof
 
     <div id="controls-info">
       <p>🖱️ 鼠标移动瞄准 / 左键射击</p>
-      <p>⌨️ WASD 移动，数字键 1-5 切换武器</p>
+      <p>⌨️ WASD 移动，数字键 1-5 切换武器，滚轮切换</p>
+      <p>❤️ 静止 3 秒自动回血 / 击败敌人概率掉落血包</p>
       <p>📱 手机：左侧摇杆移动 / 右侧摇杆射击 / 右下角按钮切换武器</p>
     </div>
   </div>
@@ -138,7 +159,7 @@ body { overflow: hidden; background: #0a0a0a; font-family: 'Segoe UI', 'Microsof
   <!-- HUD -->
   <div id="hud">
     <div class="hud-left">
-      <div>❤️ <span id="hud-hp">100</span></div>
+      <div>❤️ <span id="hud-hp">100</span> / <span id="hud-maxhp">100</span></div>
       <div>🔫 <span id="hud-weapon">手枪</span></div>
       <div>📦 <span id="hud-ammo">∞</span></div>
       <div>💀 <span id="hud-kills">0</span></div>
@@ -149,6 +170,7 @@ body { overflow: hidden; background: #0a0a0a; font-family: 'Segoe UI', 'Microsof
     </div>
 
     <div id="weapon-switch-hint">按 1-5 切换武器</div>
+    <div id="heal-hint">正在回血...</div>
 
     <!-- 手机虚拟摇杆 -->
     <div class="joystick" id="joystick-left">
@@ -189,7 +211,7 @@ const keys = {};
 const mouse = { x: 0, y: 0, down: false, worldX: 0, worldY: 0 };
 const touchState = { left: { active: false, dx: 0, dy: 0 }, right: { active: false, dx: 0, dy: 0 } };
 
-let player, camera, bullets, enemies, particles, obstacles, weaponsOnGround;
+let player, camera, bullets, enemies, particles, obstacles, weaponsOnGround, healthPacks;
 let enemySpawnTimer = 0;
 let obstacleSeed = Math.random() * 10000;
 
@@ -198,15 +220,17 @@ const texts = {
     subtitle: '无限地图 · 生存射击', easy: '🌱 简单', normal: '🔥 普通', hard: '💀 困难',
     wave: '第{0}波', goTitle: '游戏结束', goScore: '击杀: {0}', goTime: '生存时间: {0}',
     pistol: '手枪', smg: '冲锋枪', shotgun: '霰弹枪', rifle: '步枪', sniper: '狙击枪',
-    controls: '<p>🖱️ 鼠标移动瞄准 / 左键射击</p><p>⌨️ WASD 移动，数字键 1-5 切换武器</p><p>📱 手机：左侧摇杆移动 / 右侧摇杆射击 / 右下角按钮切换武器</p>',
-    restart: '再来一局', backMenu: '返回主菜单', switchHint: '按 1-5 切换武器'
+    controls: '<p>🖱️ 鼠标移动瞄准 / 左键射击</p><p>⌨️ WASD 移动，数字键 1-5 切换武器，滚轮切换</p><p>❤️ 静止 3 秒自动回血 / 击败敌人概率掉落血包</p><p>📱 手机：左侧摇杆移动 / 右侧摇杆射击 / 右下角按钮切换武器</p>',
+    restart: '再来一局', backMenu: '返回主菜单', switchHint: '按 1-5 切换武器',
+    healing: '正在回血...', healed: '已恢复！', fullHp: '生命值已满'
   },
   en: {
     subtitle: 'Infinite Map · Survival Shooter', easy: '🌱 Easy', normal: '🔥 Normal', hard: '💀 Hard',
     wave: 'Wave {0}', goTitle: 'Game Over', goScore: 'Kills: {0}', goTime: 'Survived: {0}',
     pistol: 'Pistol', smg: 'SMG', shotgun: 'Shotgun', rifle: 'Rifle', sniper: 'Sniper',
-    controls: '<p>🖱️ Mouse aim / Left click shoot</p><p>⌨️ WASD move, keys 1-5 switch weapon</p><p>📱 Mobile: Left stick move / Right stick shoot / Bottom-right button switch weapon</p>',
-    restart: 'Play Again', backMenu: 'Back to Menu', switchHint: 'Press 1-5 to switch weapon'
+    controls: '<p>🖱️ Mouse aim / Left click shoot</p><p>⌨️ WASD move, keys 1-5 switch weapon, scroll wheel</p><p>❤️ Stand still 3s to auto-heal / Enemies drop health packs</p><p>📱 Mobile: Left stick move / Right stick shoot / Bottom-right button switch weapon</p>',
+    restart: 'Play Again', backMenu: 'Back to Menu', switchHint: 'Press 1-5 to switch weapon',
+    healing: 'Healing...', healed: 'Healed!', fullHp: 'Full Health'
   }
 };
 
@@ -253,8 +277,11 @@ function startGame(diff) {
   kills = 0;
   enemySpawnTimer = 0;
 
+  const healMultipliers = { easy: 1.5, normal: 1, hard: 0.7 };
+  const maxHp = Math.floor(100 * healMultipliers[difficulty]);
+
   player = {
-    x: 0, y: 0, radius: 15, hp: 100, maxHp: 100, speed: 200,
+    x: 0, y: 0, radius: 15, hp: maxHp, maxHp: maxHp, speed: 200,
     weapons: [
       { ...weaponTypes.pistol, ammo: Infinity },
       { ...weaponTypes.smg, ammo: 0 },
@@ -263,15 +290,25 @@ function startGame(diff) {
       { ...weaponTypes.sniper, ammo: 0 }
     ],
     currentWeaponIndex: 0,
-    fireCooldown: 0, angle: 0, invincible: 0
+    fireCooldown: 0, angle: 0, invincible: 0,
+    // 回血机制
+    stillTime: 0,          // 静止时间
+    lastX: 0, lastY: 0,    // 上一帧位置
+    healRate: 8,           // 每秒回血量
+    healDelay: 3,          // 静止几秒后开始回血
+    healCooldown: 0,       // 受伤后冷却
+    isHealing: false
   };
   player.weapon = player.weapons[0];
+  player.lastX = player.x;
+  player.lastY = player.y;
 
   camera = { x: 0, y: 0 };
   bullets = [];
   enemies = [];
   particles = [];
   weaponsOnGround = [];
+  healthPacks = [];
   obstacles = [];
 
   generateObstacles(0, 0, 2000);
@@ -312,7 +349,7 @@ function backToMenu() {
 function switchWeapon(index) {
   if (index < 0 || index >= player.weapons.length) return;
   const w = player.weapons[index];
-  if (w.ammo <= 0 && w.ammo !== Infinity) return; // 没弹药不能切换
+  if (w.ammo <= 0 && w.ammo !== Infinity) return;
   player.currentWeaponIndex = index;
   player.weapon = w;
 }
@@ -337,7 +374,6 @@ window.addEventListener('keydown', e => {
     const idx = parseInt(e.code.replace('Digit', '')) - 1;
     switchWeapon(idx);
   }
-  // 滚轮切换
   if (e.code === 'KeyQ') {
     let prev = player.currentWeaponIndex - 1;
     if (prev < 0) prev = player.weapons.length - 1;
@@ -464,6 +500,71 @@ function setupJoystick(elem, stick, side) {
 setupJoystick(jLeft, stickLeft, 'left');
 setupJoystick(jRight, stickRight, 'right');
 
+// ============ 回血机制 ============
+function updateHealing(dt) {
+  // 检测是否静止
+  const moved = Math.hypot(player.x - player.lastX, player.y - player.lastY);
+  player.lastX = player.x;
+  player.lastY = player.y;
+
+  // 受伤冷却递减
+  if (player.healCooldown > 0) {
+    player.healCooldown -= dt;
+    player.stillTime = 0;
+    player.isHealing = false;
+    showHealHint('');
+    return;
+  }
+
+  if (moved < 1) {
+    // 静止中
+    player.stillTime += dt;
+
+    if (player.stillTime >= player.healDelay) {
+      // 开始回血
+      if (player.hp < player.maxHp) {
+        player.isHealing = true;
+        const healAmount = player.healRate * dt;
+        player.hp = Math.min(player.hp + healAmount, player.maxHp);
+        showHealHint(texts[lang].healing);
+
+        // 回血粒子效果
+        if (Math.random() < 0.3) {
+          createParticles(player.x + (Math.random() - 0.5) * 20, player.y + (Math.random() - 0.5) * 20, '#4ecca3', 1);
+        }
+      } else {
+        player.isHealing = false;
+        showHealHint(texts[lang].fullHp);
+      }
+    } else {
+      player.isHealing = false;
+      showHealHint('');
+    }
+  } else {
+    // 移动中，重置静止时间
+    player.stillTime = 0;
+    player.isHealing = false;
+    showHealHint('');
+  }
+}
+
+function showHealHint(text) {
+  const hint = document.getElementById('heal-hint');
+  if (text) {
+    hint.textContent = text;
+    hint.style.opacity = '1';
+  } else {
+    hint.style.opacity = '0';
+  }
+}
+
+function onPlayerDamaged() {
+  player.healCooldown = 5; // 受伤后5秒不能回血
+  player.stillTime = 0;
+  player.isHealing = false;
+  showHealHint('');
+}
+
 // ============ 游戏逻辑 ============
 function update(dt) {
   if (!gameRunning) return;
@@ -506,7 +607,6 @@ function update(dt) {
     if (player.weapon.ammo !== Infinity) {
       player.weapon.ammo--;
       if (player.weapon.ammo <= 0) {
-        // 自动切换到手枪
         player.currentWeaponIndex = 0;
         player.weapon = player.weapons[0];
       }
@@ -531,11 +631,9 @@ function update(dt) {
   for (let i = weaponsOnGround.length - 1; i >= 0; i--) {
     const w = weaponsOnGround[i];
     if (Math.hypot(player.x - w.x, player.y - w.y) < player.radius + 25) {
-      // 给对应武器补充弹药
       const weaponIdx = weaponKeys.indexOf(w.weapon.name);
       if (weaponIdx >= 0) {
         player.weapons[weaponIdx].ammo += w.weapon.ammo;
-        // 如果当前武器没弹药了，自动切换
         if (player.weapon.ammo <= 0 && player.weapon.ammo !== Infinity) {
           player.currentWeaponIndex = weaponIdx;
           player.weapon = player.weapons[weaponIdx];
@@ -545,6 +643,25 @@ function update(dt) {
       weaponsOnGround.splice(i, 1);
     }
   }
+
+  // 拾取血包
+  for (let i = healthPacks.length - 1; i >= 0; i--) {
+    const pack = healthPacks[i];
+    if (Math.hypot(player.x - pack.x, player.y - pack.y) < player.radius + 20) {
+      const healAmount = Math.min(pack.heal, player.maxHp - player.hp);
+      player.hp += healAmount;
+      createParticles(pack.x, pack.y, '#ff6b6b', 10);
+      createParticles(pack.x, pack.y, '#4ecca3', 5);
+      healthPacks.splice(i, 1);
+
+      // 显示回血提示
+      showHealHint(texts[lang].healed + ' +' + Math.floor(healAmount));
+      setTimeout(() => showHealHint(''), 1500);
+    }
+  }
+
+  // 更新回血
+  updateHealing(dt);
 
   // 更新子弹
   for (let i = bullets.length - 1; i >= 0; i--) {
@@ -577,6 +694,8 @@ function update(dt) {
           createParticles(e.x, e.y, '#e94560', 15);
           enemies.splice(j, 1);
           kills++;
+
+          // 概率掉落武器
           if (Math.random() < 0.2) {
             const types = ['smg', 'shotgun', 'rifle', 'sniper'];
             const type = types[Math.floor(Math.random() * types.length)];
@@ -584,6 +703,18 @@ function update(dt) {
               x: e.x, y: e.y,
               weapon: { ...weaponTypes[type], ammo: Math.floor(weaponTypes[type].ammo * 0.3) + 5 },
               life: 25
+            });
+          }
+
+          // 概率掉落血包
+          if (Math.random() < 0.25) {
+            const healAmount = 15 + Math.floor(Math.random() * 20);
+            healthPacks.push({
+              x: e.x + (Math.random() - 0.5) * 30,
+              y: e.y + (Math.random() - 0.5) * 30,
+              heal: healAmount,
+              life: 20,
+              pulse: 0
             });
           }
         }
@@ -629,6 +760,7 @@ function update(dt) {
     if (dist < e.radius + player.radius && player.invincible <= 0) {
       player.hp -= e.damage;
       player.invincible = 0.5;
+      onPlayerDamaged(); // 触发受伤回血冷却
       createParticles(player.x, player.y, '#e94560', 8);
       if (player.hp <= 0) {
         gameOver();
@@ -653,6 +785,14 @@ function update(dt) {
   for (let i = weaponsOnGround.length - 1; i >= 0; i--) {
     weaponsOnGround[i].life -= dt;
     if (weaponsOnGround[i].life <= 0) weaponsOnGround.splice(i, 1);
+  }
+
+  // 更新血包
+  for (let i = healthPacks.length - 1; i >= 0; i--) {
+    const pack = healthPacks[i];
+    pack.life -= dt;
+    pack.pulse += dt * 3;
+    if (pack.life <= 0) healthPacks.splice(i, 1);
   }
 
   // 相机跟随
@@ -735,6 +875,7 @@ function gameOver() {
 
 function updateHUD() {
   document.getElementById('hud-hp').textContent = Math.ceil(player.hp);
+  document.getElementById('hud-maxhp').textContent = player.maxHp;
   document.getElementById('hud-weapon').textContent = texts[lang][player.weapon.name] || player.weapon.name;
   document.getElementById('hud-ammo').textContent = player.weapon.ammo === Infinity ? '∞' : player.weapon.ammo;
   document.getElementById('hud-kills').textContent = kills;
@@ -804,6 +945,34 @@ function draw() {
     ctx.globalAlpha = 1;
   }
 
+  // 血包
+  for (const pack of healthPacks) {
+    const pulseSize = 1 + Math.sin(pack.pulse) * 0.15;
+    ctx.save();
+    ctx.translate(pack.x, pack.y);
+    ctx.scale(pulseSize, pulseSize);
+
+    // 外圈光晕
+    ctx.fillStyle = 'rgba(255, 107, 107, 0.3)';
+    ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI * 2); ctx.fill();
+
+    // 血包主体
+    ctx.fillStyle = '#ff6b6b';
+    ctx.shadowColor = '#ff6b6b';
+    ctx.shadowBlur = 12;
+    ctx.fillRect(-10, -4, 20, 8);
+    ctx.fillRect(-4, -10, 8, 20);
+
+    ctx.shadowBlur = 0;
+    ctx.restore();
+
+    // 浮动文字
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('+' + pack.heal, pack.x, pack.y - 20);
+  }
+
   // 子弹
   for (const b of bullets) {
     ctx.save();
@@ -854,6 +1023,12 @@ function draw() {
   // 玩家
   ctx.save();
   ctx.translate(player.x, player.y);
+
+  // 回血光环
+  if (player.isHealing) {
+    ctx.fillStyle = 'rgba(78, 204, 163, 0.15)';
+    ctx.beginPath(); ctx.arc(0, 0, player.radius + 10 + Math.sin(gameTime * 4) * 5, 0, Math.PI * 2); ctx.fill();
+  }
 
   ctx.fillStyle = '#00d2ff';
   ctx.shadowColor = '#00d2ff';
