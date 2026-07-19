@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🔫 SURVIVOR.IO - 无限地图生存射击</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { overflow: hidden; background: #0a0a0a; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; user-select: none; -webkit-user-select: none; touch-action: none; }
+#game-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; }
+#game-canvas { display: block; width: 100%; height: 100%; }
+
+/* 开始界面 */
+#start-screen {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460); z-index: 100;
+}
+#start-screen h1 {
+  font-size: clamp(32px, 8vw, 64px); color: #e94560;
+  text-shadow: 0 0 20px rgba(233,69,96,0.5); margin-bottom: 10px;
+}
+#start-screen .subtitle { font-size: clamp(14px, 3vw, 20px); color: #a0a0a0; margin-bottom: 40px; }
+.lang-btns { display: flex; gap: 15px; margin-bottom: 30px; }
+.lang-btns button {
+  padding: 10px 20px; border: 2px solid #e94560; border-radius: 8px;
+  cursor: pointer; font-size: 16px; font-weight: bold; transition: all 0.3s;
+}
+.lang-btns .active { background: #e94560; color: #fff; }
+.lang-btns .inactive { background: transparent; color: #e94560; }
+
+.level-select { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; margin-bottom: 30px; max-width: 500px; }
+.level-select button {
+  padding: 15px 30px; border: 2px solid; border-radius: 12px;
+  cursor: pointer; font-size: 18px; font-weight: bold; transition: all 0.3s;
+  background: transparent;
+}
+.level-select button:hover { transform: scale(1.05); }
+#btn-easy { border-color: #4ecca3; color: #4ecca3; }
+#btn-normal { border-color: #f7b731; color: #f7b731; }
+#btn-hard { border-color: #e94560; color: #e94560; }
+
+#controls-info { color: #888; font-size: 14px; text-align: center; max-width: 400px; line-height: 1.8; }
+
+/* HUD */
+#hud {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; display: none; z-index: 50;
+}
+.hud-left {
+  position: absolute; top: 15px; left: 15px; color: #fff;
+  font-size: 18px; text-shadow: 0 0 10px rgba(0,0,0,0.8);
+}
+.hud-left div { margin-bottom: 5px; }
+.hud-right {
+  position: absolute; top: 15px; right: 15px; color: #fff;
+  font-size: 14px; text-shadow: 0 0 10px rgba(0,0,0,0.8); text-align: right;
+}
+
+/* 虚拟摇杆 */
+.joystick {
+  position: absolute; width: 120px; height: 120px;
+  border: 3px solid rgba(255,255,255,0.3); border-radius: 50%;
+  background: rgba(255,255,255,0.05); display: none; pointer-events: auto;
+}
+#joystick-left { bottom: 80px; left: 60px; }
+#joystick-right { bottom: 80px; right: 60px; }
+.stick {
+  position: absolute; top: 50%; left: 50%; width: 50px; height: 50px;
+  border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none;
+}
+#stick-left { background: rgba(233,69,96,0.6); }
+#stick-right { background: rgba(78,204,163,0.6); }
+
+/* 游戏结束 */
+#game-over {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.85); z-index: 100;
+}
+#game-over h2 { font-size: 48px; color: #e94560; margin-bottom: 20px; }
+#game-over .score { font-size: 24px; color: #fff; margin-bottom: 10px; }
+#game-over .time { font-size: 18px; color: #888; margin-bottom: 30px; }
+#game-over button {
+  padding: 15px 40px; border: 2px solid #e94560; background: #e94560;
+  color: #fff; border-radius: 12px; cursor: pointer; font-size: 20px; font-weight: bold;
+}
+#game-over .back-btn {
+  margin-top: 15px; padding: 12px 30px; border: 2px solid #888;
+  background: transparent; color: #888; border-radius: 12px; cursor: pointer; font-size: 16px;
+}
+</style>
+</head>
+<body>
+<div id="game-container">
+  <canvas id="game-canvas"></canvas>
+
+  <!-- 开始界面 -->
+  <div id="start-screen">
+    <h1>🔫 SURVIVOR.IO</h1>
+    <p class="subtitle" id="subtitle">无限地图 · 生存射击</p>
+
+    <div class="lang-btns">
+      <button id="btn-zh" class="active" onclick="switchLang('zh')">中文</button>
+      <button id="btn-en" class="inactive" onclick="switchLang('en')">English</button>
+    </div>
+
+    <div class="level-select">
+      <button id="btn-easy" onclick="startGame('easy')">🌱 简单</button>
+      <button id="btn-normal" onclick="startGame('normal')">🔥 普通</button>
+      <button id="btn-hard" onclick="startGame('hard')">💀 困难</button>
+    </div>
+
+    <div id="controls-info">
+      <p>🖱️ 鼠标移动瞄准 / 左键射击</p>
+      <p>⌨️ WASD 移动</p>
+      <p>📱 手机：左侧摇杆移动 / 右侧摇杆射击</p>
+    </div>
+  </div>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="hud-left">
+      <div>❤️ <span id="hud-hp">100</span></div>
+      <div>🔫 <span id="hud-weapon">手枪</span></div>
+      <div>📦 <span id="hud-ammo">∞</span></div>
+      <div>💀 <span id="hud-kills">0</span></div>
+    </div>
+    <div class="hud-right">
+      <div>🌊 <span id="hud-wave">第1波</span></div>
+      <div>⏱️ <span id="hud-time">0:00</span></div>
+    </div>
+
+    <!-- 手机虚拟摇杆 -->
+    <div class="joystick" id="joystick-left">
+      <div class="stick" id="stick-left"></div>
+    </div>
+    <div class="joystick" id="joystick-right">
+      <div class="stick" id="stick-right"></div>
+    </div>
+  </div>
+
+  <!-- 游戏结束 -->
+  <div id="game-over">
+    <h2 id="go-title">游戏结束</h2>
+    <p class="score" id="go-score">击杀: 0</p>
+    <p class="time" id="go-time">生存时间: 0:00</p>
+    <button onclick="restartGame()">再来一局</button>
+    <button class="back-btn" onclick="backToMenu()">返回主菜单</button>
+  </div>
+</div>
+
+<script>
+// ============ 全局变量 ============
+const canvas = document.getElementById('game-canvas');
+const ctx = canvas.getContext('2d');
+let W, H;
+let gameRunning = false;
+let lang = 'zh';
+let difficulty = 'normal';
+let lastTime = 0;
+let gameTime = 0;
+let wave = 1;
+let kills = 0;
+
+const keys = {};
+const mouse = { x: 0, y: 0, down: false, worldX: 0, worldY: 0 };
+const touchState = { left: { active: false, dx: 0, dy: 0 }, right: { active: false, dx: 0, dy: 0 } };
+
+let player, camera, bullets, enemies, particles, obstacles, weaponsOnGround;
+let enemySpawnTimer = 0;
+let obstacleSeed = Math.random() * 10000;
+
+const texts = {
+  zh: {
+    subtitle: '无限地图 · 生存射击', easy: '🌱 简单', normal: '🔥 普通', hard: '💀 困难',
+    wave: '第{0}波', goTitle: '游戏结束', goScore: '击杀: {0}', goTime: '生存时间: {0}',
+    pistol: '手枪', smg: '冲锋枪', shotgun: '霰弹枪', rifle: '步枪', sniper: '狙击枪',
+    controls: '<p>🖱️ 鼠标移动瞄准 / 左键射击</p><p>⌨️ WASD 移动</p><p>📱 手机：左侧摇杆移动 / 右侧摇杆射击</p>'
+  },
+  en: {
+    subtitle: 'Infinite Map · Survival Shooter', easy: '🌱 Easy', normal: '🔥 Normal', hard: '💀 Hard',
+    wave: 'Wave {0}', goTitle: 'Game Over', goScore: 'Kills: {0}', goTime: 'Survived: {0}',
+    pistol: 'Pistol', smg: 'SMG', shotgun: 'Shotgun', rifle: 'Rifle', sniper: 'Sniper',
+    controls: '<p>🖱️ Mouse aim / Left click shoot</p><p>⌨️ WASD to move</p><p>📱 Mobile: Left stick move / Right stick shoot</p>'
+  }
+};
+
+const weaponTypes = {
+  pistol: { name: 'pistol', damage: 25, speed: 12, fireRate: 300, spread: 0.05, ammo: Infinity, color: '#f7b731', range: 600, pellets: 1 },
+  smg: { name: 'smg', damage: 12, speed: 14, fireRate: 80, spread: 0.12, ammo: 120, color: '#4ecca3', range: 500, pellets: 1 },
+  shotgun: { name: 'shotgun', damage: 15, speed: 10, fireRate: 800, spread: 0.2, ammo: 24, color: '#e94560', range: 350, pellets: 6 },
+  rifle: { name: 'rifle', damage: 35, speed: 16, fireRate: 150, spread: 0.03, ammo: 90, color: '#00d2ff', range: 800, pellets: 1 },
+  sniper: { name: 'sniper', damage: 100, speed: 20, fireRate: 1200, spread: 0.0, ammo: 15, color: '#a855f7', range: 1200, pellets: 1 }
+};
+
+// ============ 初始化 ============
+function resize() {
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W;
+  canvas.height = H;
+}
+window.addEventListener('resize', resize);
+resize();
+
+function switchLang(l) {
+  lang = l;
+  document.getElementById('btn-zh').className = l === 'zh' ? 'active' : 'inactive';
+  document.getElementById('btn-en').className = l === 'en' ? 'active' : 'inactive';
+  document.getElementById('subtitle').textContent = texts[lang].subtitle;
+  document.getElementById('btn-easy').textContent = texts[lang].easy;
+  document.getElementById('btn-normal').textContent = texts[lang].normal;
+  document.getElementById('btn-hard').textContent = texts[lang].hard;
+  document.getElementById('controls-info').innerHTML = texts[lang].controls;
+}
+
+// ============ 游戏核心 ============
+function startGame(diff) {
+  difficulty = diff;
+  gameRunning = true;
+  gameTime = 0;
+  wave = 1;
+  kills = 0;
+  enemySpawnTimer = 0;
+
+  player = {
+    x: 0, y: 0, radius: 15, hp: 100, maxHp: 100, speed: 200,
+    weapon: { ...weaponTypes.pistol, ammo: Infinity },
+    fireCooldown: 0, angle: 0, invincible: 0
+  };
+  camera = { x: 0, y: 0 };
+  bullets = [];
+  enemies = [];
+  particles = [];
+  weaponsOnGround = [];
+  obstacles = [];
+
+  generateObstacles(0, 0, 2000);
+
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('hud').style.display = 'block';
+  document.getElementById('game-over').style.display = 'none';
+
+  const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || ('ontouchstart' in window);
+  if (isMobile) {
+    document.getElementById('joystick-left').style.display = 'block';
+    document.getElementById('joystick-right').style.display = 'block';
+  }
+
+  lastTime = performance.now();
+  requestAnimationFrame(gameLoop);
+}
+
+function restartGame() {
+  startGame(difficulty);
+}
+
+function backToMenu() {
+  gameRunning = false;
+  document.getElementById('start-screen').style.display = 'flex';
+  document.getElementById('hud').style.display = 'none';
+  document.getElementById('game-over').style.display = 'none';
+  document.getElementById('joystick-left').style.display = 'none';
+  document.getElementById('joystick-right').style.display = 'none';
+}
+
+// ============ 伪随机生成 ============
+function seededRandom(seed) {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
+function generateObstacles(cx, cy, radius) {
+  const gridSize = 300;
+  const gx = Math.floor(cx / gridSize);
+  const gy = Math.floor(cy / gridSize);
+
+  for (let dx = -2; dx <= 2; dx++) {
+    for (let dy = -2; dy <= 2; dy++) {
+      const cellX = gx + dx;
+      const cellY = gy + dy;
+      const cellKey = cellX + ',' + cellY;
+      if (obstacles.some(o => o.cellKey === cellKey)) continue;
+
+      const seed = obstacleSeed + cellX * 374761 + cellY * 668265;
+      const count = Math.floor(seededRandom(seed) * 4) + 1;
+
+      for (let i = 0; i < count; i++) {
+        const ox = cellX * gridSize + seededRandom(seed + i * 100) * gridSize;
+        const oy = cellY * gridSize + seededRandom(seed + i * 100 + 50) * gridSize;
+        const size = 20 + seededRandom(seed + i * 100 + 99) * 40;
+        obstacles.push({
+          x: ox, y: oy, radius: size,
+          type: seededRandom(seed + i * 100 + 150) > 0.5 ? 'rock' : 'tree',
+          cellKey: cellKey
+        });
+      }
+    }
+  }
+  obstacles = obstacles.filter(o => Math.hypot(o.x - cx, o.y - cy) < radius * 1.5);
+}
+
+// ============ 输入处理 ============
+window.addEventListener('keydown', e => { keys[e.code] = true; });
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+window.addEventListener('mousemove', e => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+});
+window.addEventListener('mousedown', e => { if (e.button === 0) mouse.down = true; });
+window.addEventListener('mouseup', e => { if (e.button === 0) mouse.down = false; });
+
+const jLeft = document.getElementById('joystick-left');
+const stickLeft = document.getElementById('stick-left');
+const jRight = document.getElementById('joystick-right');
+const stickRight = document.getElementById('stick-right');
+
+function setupJoystick(elem, stick, side) {
+  let startX, startY, active = false;
+
+  const start = (e) => {
+    e.preventDefault();
+    const t = e.touches[0];
+    const rect = elem.getBoundingClientRect();
+    startX = rect.left + rect.width / 2;
+    startY = rect.top + rect.height / 2;
+    active = true;
+    move(e);
+  };
+
+  const move = (e) => {
+    if (!active) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    let dx = t.clientX - startX;
+    let dy = t.clientY - startY;
+    const dist = Math.hypot(dx, dy);
+    const maxDist = 35;
+    if (dist > maxDist) {
+      dx = (dx / dist) * maxDist;
+      dy = (dy / dist) * maxDist;
+    }
+    stick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    touchState[side].active = true;
+    touchState[side].dx = dx / maxDist;
+    touchState[side].dy = dy / maxDist;
+  };
+
+  const end = (e) => {
+    e.preventDefault();
+    active = false;
+    stick.style.transform = 'translate(-50%, -50%)';
+    touchState[side].active = false;
+    touchState[side].dx = 0;
+    touchState[side].dy = 0;
+  };
+
+  elem.addEventListener('touchstart', start, { passive: false });
+  elem.addEventListener('touchmove', move, { passive: false });
+  elem.addEventListener('touchend', end, { passive: false });
+  elem.addEventListener('touchcancel', end, { passive: false });
+}
+
+setupJoystick(jLeft, stickLeft, 'left');
+setupJoystick(jRight, stickRight, 'right');
+
+// ============ 游戏逻辑 ============
+function update(dt) {
+  if (!gameRunning) return;
+  gameTime += dt;
+
+  // 玩家移动
+  let mx = 0, my = 0;
+  if (keys['KeyW'] || keys['ArrowUp']) my -= 1;
+  if (keys['KeyS'] || keys['ArrowDown']) my += 1;
+  if (keys['KeyA'] || keys['ArrowLeft']) mx -= 1;
+  if (keys['KeyD'] || keys['ArrowRight']) mx += 1;
+
+  if (touchState.left.active) {
+    mx = touchState.left.dx;
+    my = touchState.left.dy;
+  }
+
+  const moveLen = Math.hypot(mx, my);
+  if (moveLen > 0) {
+    mx /= moveLen;
+    my /= moveLen;
+    player.x += mx * player.speed * dt;
+    player.y += my * player.speed * dt;
+  }
+
+  // 瞄准
+  mouse.worldX = mouse.x + camera.x - W / 2;
+  mouse.worldY = mouse.y + camera.y - H / 2;
+  player.angle = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
+
+  if (touchState.right.active) {
+    player.angle = Math.atan2(touchState.right.dy, touchState.right.dx);
+  }
+
+  // 射击
+  player.fireCooldown -= dt * 1000;
+  if ((mouse.down || touchState.right.active) && player.fireCooldown <= 0 && player.weapon.ammo !== 0) {
+    shoot();
+    player.fireCooldown = player.weapon.fireRate;
+    if (player.weapon.ammo !== Infinity) player.weapon.ammo--;
+  }
+
+  // 障碍物碰撞
+  for (const obs of obstacles) {
+    const dx = player.x - obs.x;
+    const dy = player.y - obs.y;
+    const dist = Math.hypot(dx, dy);
+    const minDist = player.radius + obs.radius;
+    if (dist < minDist && dist > 0) {
+      const nx = dx / dist;
+      const ny = dy / dist;
+      player.x = obs.x + nx * minDist;
+      player.y = obs.y + ny * minDist;
+    }
+  }
+
+  // 拾取武器
+  for (let i = weaponsOnGround.length - 1; i >= 0; i--) {
+    const w = weaponsOnGround[i];
+    if (Math.hypot(player.x - w.x, player.y - w.y) < player.radius + 20) {
+      if (player.weapon.name !== 'pistol') {
+        weaponsOnGround.push({
+          x: player.x, y: player.y,
+          weapon: { ...player.weapon },
+          life: 30
+        });
+      }
+      player.weapon = { ...weaponTypes[w.weapon.name], ammo: w.weapon.ammo };
+      weaponsOnGround.splice(i, 1);
+    }
+  }
+
+  // 更新子弹
+  for (let i = bullets.length - 1; i >= 0; i--) {
+    const b = bullets[i];
+    b.x += Math.cos(b.angle) * b.speed;
+    b.y += Math.sin(b.angle) * b.speed;
+    b.life -= dt;
+
+    let hitObs = false;
+    for (const obs of obstacles) {
+      if (Math.hypot(b.x - obs.x, b.y - obs.y) < obs.radius) {
+        hitObs = true;
+        createParticles(b.x, b.y, '#888', 3);
+        break;
+      }
+    }
+
+    if (b.life <= 0 || hitObs || Math.hypot(b.x - player.x, b.y - player.y) > b.range) {
+      bullets.splice(i, 1);
+      continue;
+    }
+
+    for (let j = enemies.length - 1; j >= 0; j--) {
+      const e = enemies[j];
+      if (Math.hypot(b.x - e.x, b.y - e.y) < e.radius + 5) {
+        e.hp -= b.damage;
+        createParticles(e.x, e.y, '#e94560', 5);
+        bullets.splice(i, 1);
+        if (e.hp <= 0) {
+          createParticles(e.x, e.y, '#e94560', 15);
+          enemies.splice(j, 1);
+          kills++;
+          if (Math.random() < 0.15) {
+            const types = ['smg', 'shotgun', 'rifle', 'sniper'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            weaponsOnGround.push({
+              x: e.x, y: e.y,
+              weapon: { ...weaponTypes[type], ammo: weaponTypes[type].ammo },
+              life: 20
+            });
+          }
+        }
+        break;
+      }
+    }
+  }
+
+  // 生成敌人
+  const spawnRates = { easy: 2.5, normal: 1.5, hard: 0.8 };
+  enemySpawnTimer -= dt;
+  if (enemySpawnTimer <= 0) {
+    const count = Math.floor(wave / 3) + 1;
+    for (let i = 0; i < count; i++) spawnEnemy();
+    enemySpawnTimer = spawnRates[difficulty] + Math.random();
+  }
+
+  if (gameTime > wave * 30) wave++;
+
+  // 更新敌人
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    const e = enemies[i];
+    const dx = player.x - e.x;
+    const dy = player.y - e.y;
+    const dist = Math.hypot(dx, dy);
+
+    if (dist > 0) {
+      e.x += (dx / dist) * e.speed * dt;
+      e.y += (dy / dist) * e.speed * dt;
+    }
+
+    for (const obs of obstacles) {
+      const odx = e.x - obs.x;
+      const ody = e.y - obs.y;
+      const odist = Math.hypot(odx, ody);
+      const minDist = e.radius + obs.radius;
+      if (odist < minDist && odist > 0) {
+        e.x = obs.x + (odx / odist) * minDist;
+        e.y = obs.y + (ody / odist) * minDist;
+      }
+    }
+
+    if (dist < e.radius + player.radius && player.invincible <= 0) {
+      player.hp -= e.damage;
+      player.invincible = 0.5;
+      createParticles(player.x, player.y, '#e94560', 8);
+      if (player.hp <= 0) {
+        gameOver();
+        return;
+      }
+    }
+  }
+
+  player.invincible -= dt;
+  if (player.invincible < 0) player.invincible = 0;
+
+  // 更新粒子
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.life -= dt;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+
+  // 更新地面武器
+  for (let i = weaponsOnGround.length - 1; i >= 0; i--) {
+    weaponsOnGround[i].life -= dt;
+    if (weaponsOnGround[i].life <= 0) weaponsOnGround.splice(i, 1);
+  }
+
+  // 相机跟随
+  camera.x += (player.x - camera.x) * 0.1;
+  camera.y += (player.y - camera.y) * 0.1;
+
+  generateObstacles(player.x, player.y, Math.max(W, H));
+  updateHUD();
+}
+
+function shoot() {
+  const w = player.weapon;
+  for (let i = 0; i < w.pellets; i++) {
+    const spread = (Math.random() - 0.5) * w.spread * 2;
+    const angle = player.angle + spread;
+    bullets.push({
+      x: player.x + Math.cos(player.angle) * 20,
+      y: player.y + Math.sin(player.angle) * 20,
+      angle: angle, speed: w.speed, damage: w.damage,
+      life: w.range / w.speed / 60, range: w.range, color: w.color
+    });
+  }
+}
+
+function spawnEnemy() {
+  const angle = Math.random() * Math.PI * 2;
+  const dist = 600 + Math.random() * 400;
+  const hpMultipliers = { easy: 0.6, normal: 1, hard: 1.8 };
+  const speedMultipliers = { easy: 0.7, normal: 1, hard: 1.4 };
+
+  const types = [
+    { radius: 12, hp: 30, speed: 80, damage: 10, color: '#e94560' },
+    { radius: 18, hp: 60, speed: 55, damage: 15, color: '#f7b731' },
+    { radius: 10, hp: 20, speed: 130, damage: 8, color: '#4ecca3' },
+    { radius: 25, hp: 120, speed: 40, damage: 25, color: '#a855f7' }
+  ];
+
+  const type = types[Math.floor(Math.random() * types.length)];
+  enemies.push({
+    x: player.x + Math.cos(angle) * dist,
+    y: player.y + Math.sin(angle) * dist,
+    radius: type.radius,
+    hp: type.hp * hpMultipliers[difficulty] * (1 + wave * 0.1),
+    speed: type.speed * speedMultipliers[difficulty],
+    damage: type.damage,
+    color: type.color
+  });
+}
+
+function createParticles(x, y, color, count) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 50 + Math.random() * 150;
+    particles.push({
+      x: x, y: y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 0.3 + Math.random() * 0.3,
+      color: color,
+      size: 2 + Math.random() * 3
+    });
+  }
+}
+
+function gameOver() {
+  gameRunning = false;
+  const mins = Math.floor(gameTime / 60);
+  const secs = Math.floor(gameTime % 60);
+  const timeStr = mins + ':' + (secs < 10 ? '0' : '') + secs;
+
+  document.getElementById('go-title').textContent = texts[lang].goTitle;
+  document.getElementById('go-score').textContent = texts[lang].goScore.replace('{0}', kills);
+  document.getElementById('go-time').textContent = texts[lang].goTime.replace('{0}', timeStr);
+  document.getElementById('game-over').style.display = 'flex';
+  document.getElementById('joystick-left').style.display = 'none';
+  document.getElementById('joystick-right').style.display = 'none';
+}
+
+function updateHUD() {
+  document.getElementById('hud-hp').textContent = Math.ceil(player.hp);
+  document.getElementById('hud-weapon').textContent = texts[lang][player.weapon.name] || player.weapon.name;
+  document.getElementById('hud-ammo').textContent = player.weapon.ammo === Infinity ? '∞' : player.weapon.ammo;
+  document.getElementById('hud-kills').textContent = kills;
+  document.getElementById('hud-wave').textContent = texts[lang].wave.replace('{0}', wave);
+  const mins = Math.floor(gameTime / 60);
+  const secs = Math.floor(gameTime % 60);
+  document.getElementById('hud-time').textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+}
+
+// ============ 渲染 ============
+function draw() {
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.save();
+  ctx.translate(W / 2 - camera.x, H / 2 - camera.y);
+
+  // 网格背景
+  ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+  ctx.lineWidth = 1;
+  const gridSize = 100;
+  const startX = Math.floor((camera.x - W / 2) / gridSize) * gridSize;
+  const startY = Math.floor((camera.y - H / 2) / gridSize) * gridSize;
+  const endX = startX + W + gridSize * 2;
+  const endY = startY + H + gridSize * 2;
+
+  for (let x = startX; x < endX; x += gridSize) {
+    ctx.beginPath(); ctx.moveTo(x, startY); ctx.lineTo(x, endY); ctx.stroke();
+  }
+  for (let y = startY; y < endY; y += gridSize) {
+    ctx.beginPath(); ctx.moveTo(startX, y); ctx.lineTo(endX, y); ctx.stroke();
+  }
+
+  // 障碍物
+  for (const obs of obstacles) {
+    if (Math.hypot(obs.x - camera.x, obs.y - camera.y) > Math.max(W, H) * 0.8) continue;
+
+    if (obs.type === 'rock') {
+      ctx.fillStyle = '#555';
+      ctx.beginPath(); ctx.arc(obs.x, obs.y, obs.radius, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#777';
+      ctx.beginPath(); ctx.arc(obs.x - obs.radius * 0.2, obs.y - obs.radius * 0.2, obs.radius * 0.5, 0, Math.PI * 2); ctx.fill();
+    } else {
+      ctx.fillStyle = '#2d5016';
+      ctx.beginPath(); ctx.arc(obs.x, obs.y, obs.radius, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#3a6b1f';
+      ctx.beginPath(); ctx.arc(obs.x - 5, obs.y - 5, obs.radius * 0.6, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  // 地面武器
+  for (const w of weaponsOnGround) {
+    ctx.save();
+    ctx.translate(w.x, w.y);
+    ctx.fillStyle = w.weapon.color;
+    ctx.shadowColor = w.weapon.color;
+    ctx.shadowBlur = 15;
+    ctx.fillRect(-12, -6, 24, 12);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(8, -3, 6, 6);
+    ctx.restore();
+
+    ctx.globalAlpha = 0.5 + Math.sin(gameTime * 5) * 0.3;
+    ctx.strokeStyle = w.weapon.color;
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(w.x, w.y, 25, 0, Math.PI * 2); ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  // 子弹
+  for (const b of bullets) {
+    ctx.save();
+    ctx.translate(b.x, b.y);
+    ctx.rotate(b.angle);
+    ctx.fillStyle = b.color;
+    ctx.shadowColor = b.color;
+    ctx.shadowBlur = 8;
+    ctx.fillRect(-8, -2, 16, 4);
+    ctx.restore();
+  }
+
+  // 敌人
+  for (const e of enemies) {
+    ctx.save();
+    ctx.translate(e.x, e.y);
+
+    ctx.fillStyle = e.color;
+    ctx.shadowColor = e.color;
+    ctx.shadowBlur = 10;
+    ctx.beginPath(); ctx.arc(0, 0, e.radius, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+
+    const eyeAngle = Math.atan2(player.y - e.y, player.x - e.x);
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(Math.cos(eyeAngle - 0.3) * e.radius * 0.4, Math.sin(eyeAngle - 0.3) * e.radius * 0.4, 3, 0, Math.PI * 2);
+    ctx.arc(Math.cos(eyeAngle + 0.3) * e.radius * 0.4, Math.sin(eyeAngle + 0.3) * e.radius * 0.4, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    const hpPercent = e.hp / (e.maxHp || e.hp + 50);
+    ctx.fillStyle = '#333';
+    ctx.fillRect(-15, -e.radius - 10, 30, 5);
+    ctx.fillStyle = '#e94560';
+    ctx.fillRect(-15, -e.radius - 10, 30 * hpPercent, 5);
+
+    ctx.restore();
+  }
+
+  // 粒子
+  for (const p of particles) {
+    ctx.globalAlpha = p.life / 0.6;
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // 玩家
+  ctx.save();
+  ctx.translate(player.x, player.y);
+
+  ctx.fillStyle = '#00d2ff';
+  ctx.shadowColor = '#00d2ff';
+  ctx.shadowBlur = 15;
+  ctx.beginPath(); ctx.arc(0, 0, player.radius, 0, Math.PI * 2); ctx.fill();
+  ctx.shadowBlur = 0;
+
+  ctx.rotate(player.angle);
+  ctx.fillStyle = player.weapon.color;
+  ctx.fillRect(10, -4, 20, 8);
+
+  ctx.restore();
+
+  // 玩家血条
+  const hpPercent = player.hp / player.maxHp;
+  ctx.fillStyle = '#333';
+  ctx.fillRect(player.x - 20, player.y - 30, 40, 6);
+  ctx.fillStyle = hpPercent > 0.5 ? '#4ecca3' : hpPercent > 0.25 ? '#f7b731' : '#e94560';
+  ctx.fillRect(player.x - 20, player.y - 30, 40 * hpPercent, 6);
+
+  ctx.restore();
+}
+
+function gameLoop(timestamp) {
+  if (!gameRunning) return;
+  const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+  lastTime = timestamp;
+
+  update(dt);
+  draw();
+
+  requestAnimationFrame(gameLoop);
+}
+
+// 初始化
+switchLang('zh');
+</script>
+</body>
+</html>
