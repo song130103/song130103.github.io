@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <title>zubuntu-在线网页系统/Online web system</title>
-    <meta name="description" content="zubuntu，一个网页乌班图系统，自制/Zubuntu, a web-based Ubuntu system, is a self-developed product. ">
+    <title>zubuntu-在线网页系统/Online web system</title><script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3PWw56riQLlb0j24",ck:"3PWw56riQLlb0j24",autoTrack:true,hashMode:true,screenRecord:true})</script>
+    <meta name="description" content="Zhubuntu is a web Android desktop environment that imitated Ubuntu GNOME desktop environment's user interface">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=0.25, viewport-fit=cover, interactive-widget=overlays-content">
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="screen-orientation" content="portrait">
@@ -10,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
-
+<meta lang="en">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -120,8 +121,10 @@ document.getElementById('alst').innerHTML= res;
 <button onclick="sbmta()">Submit</button>
 <button type="button" onclick="document.getElementById('maskAddApp').style.display='none';">Cancel</button>
 <h2>Install Lanyue .zap Package</h2>
-<input type="file" id='LanyuePackage'>
-<button onclick="submitInstallLanyuePackage()">Submit</button>
+<!-- 微调ID为uploadInput匹配JS，保留原有元素 -->
+<input type="file" id='uploadInput'>
+<!-- 微调按钮功能：点击触发文件选择，避免重复绑定事件 -->
+<button onclick="document.getElementById('uploadInput').click()">Submit</button>
 </div>
 <button type="button" class="sc" onclick="document.getElementById('maskAddApp').style.display='none';" style="right:0"><b>╳</b></button>
 </div>
@@ -141,6 +144,21 @@ This action can only remove the link of this application in Zhubuntu ZDE Desktop
 <button style="width: 48%;" onclick="document.getElementById('maskRemoveApp').style.display='none';">Cancel</button>
 </div>
 <button type="button" class="sc" onclick="document.getElementById('maskRemoveApp').style.display='none';" style="right:0"><b>╳</b></button>
+</div>
+</div>
+
+<!-- 【新增】Lanyue应用删除确认弹窗 匹配JS函数 -->
+<div class="modal-mask" id="maskRemoveAppLanyue">
+<div class="modal-box" id="raaLanyue" style="height:30%;top:35%">
+<div class="modal-header">Remove Lanyue Application</div>
+<div class="modal-content">
+Are you sure you want to remove this Lanyue application?<br>
+This will delete both the desktop icon and the application package data.
+<br>
+<button style="width: 48%;" onclick="removeAppYesLanyue()">Yes</button>
+<button style="width: 48%;" onclick="document.getElementById('maskRemoveAppLanyue').style.display='none';">Cancel</button>
+</div>
+<button type="button" class="sc" onclick="document.getElementById('maskRemoveAppLanyue').style.display='none';" style="right:0"><b>╳</b></button>
 </div>
 </div>
 

@@ -20,9 +20,10 @@ let ir;
 let ctt;
 let removingAppName;
 let removingAppURI;
-let removingAppIco; // 新增存储待删除应用图标
+let removingAppIco;
+let removingAppPath;
 
-// 修复1：多行HTML改用反引号``，解决换行语法错误
+// 默认应用模板（和删除模板严格保持格式一致）
 const defaltApp = `
 <div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;display:flex;text-align:center;justify-content:center">
 <img src="img/3.webp" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" onclick="opn('firefox','ChinaSo Browser')">
@@ -95,12 +96,12 @@ getItem('/usr/zdesktop/var/guide.var', res => {
     }
 });
 
-// 旋转图标定时器（间隔1ms性能损耗极大，建议改为50）
+// 旋转图标定时器
 setInterval(() => {
     if (x == 360) x = 0;
     document.getElementById('u').style.transform = `rotate(${x}deg)`;
     x++;
-}, 1);
+}, 50);
 
 // 打开内嵌窗口
 function opn(a,b) {
@@ -171,7 +172,7 @@ setInterval(() => {
     }
 }, 1000);
 
-// 设置面板开关（仅保留一份，删除下方重复定义）
+// 设置面板开关
 function options() {
     document.getElementById('opt').style.display = 'block';
 }
@@ -196,8 +197,7 @@ function clsalt() {
     document.getElementById('allt').style.display = 'none';
 }
 
-// ===== IndexedDB 存储（重命名避免与localStorage函数重名冲突）=====
-// IndexedDB 写入
+// ===== IndexedDB 存储 =====
 function dbSet(id, val) {
     const request = indexedDB.open("simpleDB", 1);
     request.onupgradeneeded = (e) => {
@@ -216,7 +216,6 @@ function dbSet(id, val) {
     request.onerror = (err) => console.error("dbSet 数据库打开失败", err);
 }
 
-// IndexedDB 读取
 function dbGet(id, cb) {
     const request = indexedDB.open("simpleDB", 1);
     request.onupgradeneeded = (e) => {
@@ -240,40 +239,36 @@ function dbGet(id, cb) {
 }
 
 // ===== localStorage 存储 =====
-// localStorage 读取
 function getItem(key, callback) {
     let res = localStorage.getItem(key) || "";
     callback(res);
 }
-// localStorage 写入（重命名区分IndexedDB）
 function saveItemLS(key, val) {
     localStorage.setItem(key, val);
 }
 
-// 添加自定义应用弹窗确认
+// 添加自定义应用
 function sbmta() {
     const name = document.getElementById('userAppName').value.replace(/"/g, '&quot;');
     const url = document.getElementById('userAppURI').value.replace(/"/g, '&quot;');
     const ico = document.getElementById('userAppIcon').value.replace(/"/g, '&quot;');
-    // 修复2：函数参数字符串添加双引号包裹
     const html = `<hr>
 <div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0.1);border-radius:50%;transition:all 0.3s ease;" oncontextmenu="removeSelection(event,&quot;${url}&quot;,&quot;${name}&quot;,&quot;${ico}&quot;)">
 <img src="${ico}" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%;" alt="${name}" onclick="${url}">
 </div>`;
     getItem('/usr/zdesktop/preference/desktop_icon.html', res => {
         saveItemLS('/usr/zdesktop/preference/desktop_icon.html', res + html);
-        // 仅渲染一次，删除重复append
         document.getElementById('applist').innerHTML = defaltApp + res + html;
     });
     alert('App link saved');
     document.getElementById('maskAddApp').style.display = 'none';
 }
-// 页面初始化渲染应用列表
+// 初始化渲染应用列表
 getItem('/usr/zdesktop/preference/desktop_icon.html', res => {
     document.getElementById('applist').innerHTML = defaltApp + res;
 });
 
-// 选择待删除应用（保存图标变量）
+// 普通应用右键删除
 function removeSelection(event, uri, name, ico) {
     event.preventDefault();
     removingAppURI = uri;
@@ -281,10 +276,8 @@ function removeSelection(event, uri, name, ico) {
     removingAppIco = ico;
     document.getElementById('maskRemoveApp').style.display = 'block';
 }
-
-// 确认删除应用
+// 普通应用确认删除
 function removeAppYes() {
-    // 修复3：删除匹配模板同样添加引号转义，保证replace匹配原文
     const rmvctt = `<hr>
 <div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0.1);border-radius:50%;transition:all 0.3s ease;" oncontextmenu="removeSelection(event,&quot;${removingAppURI}&quot;,&quot;${removingAppName}&quot;,&quot;${removingAppIco}&quot;)">
 <img src="${removingAppIco}" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%;" alt="${removingAppName}" onclick="${removingAppURI}">
@@ -297,41 +290,87 @@ function removeAppYes() {
     document.getElementById('maskRemoveApp').style.display = 'none';
 }
 
-// 修复4：全局右键拦截改为冒泡阶段，放行元素自身绑定的oncontextmenu
+// 全局右键拦截
 document.addEventListener('contextmenu', function(e) {
-    // 判断触发源是否绑定了自定义右键函数，放行
     if(e.target.closest('[oncontextmenu]')) return;
     e.preventDefault();
 }, false);
-/*function submitInstallLanyuePackage(){
-    document.getElementById('').addEventListener('change', async e => {
-   const file = e.target.files[0];
-   if (!file) return;
-   const reader = new FileReader();
-   reader.onload = function (event) {
-     // 按换行切割，取出第一行
-     let text = event.target.result;
-     const firstLine = text.split(/\r?\n/)[0];
-     const lanyueAppName=file.name;
-     saveItemLS('/usr/app/'+lanyueAppName,text);
-     const ico=firstLine.replace('<!--').replace('-->');
-     const html = `<hr>
-<div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0.1);border-radius:50%;transition:all 0.3s ease;" oncontextmenu="removeLanyueSelection(event,&quot;${'/usr/app/'+lanyueAppName}&quot;,&quot;${lanyueAppName}&quot;,&quot;${ico}&quot;)">
-<img src="${ico}" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%;" alt="${lanyueAppName.replace('.zap','')}" onclick="lanyueOpen(${lanyueAppName})">
+
+// ========== Lanyue应用安装 ==========
+function submitInstallLanyuePackage(){
+    document.getElementById('uploadInput').addEventListener('change', async e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function (event) {
+            let text = event.target.result;
+            const firstLine = text.split(/\r?\n/)[0];
+            const lanyueAppName = file.name;
+            const savePath = '/usr/app/'+lanyueAppName;
+            saveItemLS(savePath,text);
+            const ico = firstLine.replace(/<!--/g,'').replace(/-->/g,'');
+            // 【重要】生成模板和删除模板严格保持格式、属性顺序、换行完全一致
+            const html = `<hr>
+<div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0.1);border-radius:50%;transition:all 0.3s ease;" oncontextmenu="removeLanyueSelection(event,&quot;${savePath}&quot;,&quot;${lanyueAppName}&quot;,&quot;${ico}&quot;)">
+<img src="${ico}" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%;" alt="${lanyueAppName.replace('.zap','')}" onclick="lanyueOpen(&quot;${lanyueAppName}&quot;)">
 </div>`;
-    getItem('/usr/zdesktop/preference/desktop_icon.html', res => {
-        saveItemLS('/usr/zdesktop/preference/desktop_icon.html', res + html);
-        
-        
-        
-   };
-   reader.readAsText(file);
- });
+            getItem('/usr/zdesktop/preference/desktop_icon.html', res => {
+                const newList = res + html;
+                saveItemLS('/usr/zdesktop/preference/desktop_icon.html', newList);
+                document.getElementById('applist').innerHTML = defaltApp + newList;
+            });
+            alert('Lanyue 应用安装成功');
+            document.getElementById('uploadInput').value = '';
+        };
+        reader.readAsText(file);
+    });
+}
+submitInstallLanyuePackage();
+
+// ========== Lanyue应用打开 ==========
+function lanyueOpen(a){
+    getItem('/usr/app/'+a, res => {
+        let finalCode = res;
+        const lanyueCodeList=['文档.','主体.','获取元素(','HTML内容=','样式.','宽度:','高度:','宽度=','高度=','窗口.','警告(','地址.','链接到=','打开(','大标题>','副标题>','小标题>','段落>','超链接>','<图片','唯一标识=','居中>','粗体>','斜体>','下划线>','删除线>','引用>','<输入框','输入提示=','资源链接=','视频>','音频>','内联样式>','按下执行=','css类=','声明函数','定时执行(','延时执行(','添加事件监听器(','({[转义]})','<容器','容器>','<视频','<音频','location.href=','window.open('];
+        const JavaScriptList=['document.','body.','getElementById(','innerHTML=','style.','width:','height:','width=','height=','window.','alert(','location.','href=','open(','h1>','h2>','h3>','p>','<img','id=','center>','b>','i>','u>','del>','q>','<input','placeholder=','src=','video>','audio>','style>','onclick=','class=','function','setInterval(','setTimeout(','addEventListener(','','<div','div>','<video','<audio','',''];
+        for(let i=0;i<lanyueCodeList.length;i++){
+            finalCode=finalCode.replaceAll(lanyueCodeList[i],JavaScriptList[i]);
+        }
+        // 打开窗口注入代码
+        wd.style.display = 'block';
+        wds.srcdoc = finalCode;
+        wd.style.height = '70vh';
+        wd.style.width = '70vw';
+        wd.style.zIndex = '100';
+        wd.style.top = '50px';
+        wd.style.left = '18vw';
+        wd.style.borderRadius = '5px';
+        wds.style.borderRadius = '5px';
+        document.getElementById('windowTitle').innerHTML = a.replace('.zap','');
+    });
 }
 
-function lanyueOpen(a){
-    getItem('/usr/app/'+a, res => {let finalCode=res;});
-    const lanyueCodeList=[''];
-    
-    
-}}*/
+// ========== Lanyue应用右键选中删除 ==========
+function removeLanyueSelection(event, path, name, ico){
+    event.preventDefault();
+    removingAppPath = path;
+    removingAppName = name; // 修复：不再重复加.zap后缀，传入的name本身就带.zap
+    removingAppIco = ico;
+    document.getElementById('maskRemoveAppLanyue').style.display = 'block';
+}
+
+// ========== Lanyue应用确认删除（核心修复） ==========
+function removeAppYesLanyue() {
+    // 【和安装模板100%一致】：换行、属性顺序、alt处理完全相同，保证精确匹配
+    const rmvctt = `<hr>
+<div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0.1);border-radius:50%;transition:all 0.3s ease;" oncontextmenu="removeLanyueSelection(event,&quot;${removingAppPath}&quot;,&quot;${removingAppName}&quot;,&quot;${removingAppIco}&quot;)">
+<img src="${removingAppIco}" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%;" alt="${removingAppName.replace('.zap','')}" onclick="lanyueOpen(&quot;${removingAppName}&quot;)">
+</div>`;
+    getItem('/usr/zdesktop/preference/desktop_icon.html', acti => {
+        const newHtml = acti.replace(rmvctt, '');
+        saveItemLS('/usr/zdesktop/preference/desktop_icon.html', newHtml);
+        saveItemLS(removingAppPath, ''); // 同时清空应用包数据
+        document.getElementById('applist').innerHTML = defaltApp + newHtml;
+    });
+    document.getElementById('maskRemoveAppLanyue').style.display = 'none';
+}
