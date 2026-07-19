@@ -2,11 +2,11 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>🔫 SURVIVOR.IO - 无限地图生存射击</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { overflow: hidden; background: #0a0a0a; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; user-select: none; -webkit-user-select: none; touch-action: none; -webkit-touch-callout: none; }
+body { overflow: hidden; background: #0a0a0a; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; user-select: none; -webkit-user-select: none; touch-action: none; }
 #game-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; }
 #game-canvas { display: block; width: 100%; height: 100%; }
 
@@ -64,6 +64,19 @@ html, body { overflow: hidden; background: #0a0a0a; font-family: 'Segoe UI', 'Mi
   text-shadow: 0 0 5px rgba(0,0,0,0.8); display: none;
 }
 
+/* 血条动画 */
+.hp-bar-container {
+  position: absolute; top: 50px; left: 15px; width: 150px; height: 12px;
+  background: #333; border-radius: 6px; overflow: hidden; display: none;
+}
+.hp-bar-fill {
+  height: 100%; border-radius: 6px; transition: width 0.3s;
+}
+.hp-bar-text {
+  position: absolute; top: 50px; left: 170px; color: #fff; font-size: 12px;
+  text-shadow: 0 0 5px rgba(0,0,0,0.8); display: none;
+}
+
 /* 回血提示 */
 #heal-hint {
   position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
@@ -71,51 +84,30 @@ html, body { overflow: hidden; background: #0a0a0a; font-family: 'Segoe UI', 'Mi
   text-shadow: 0 0 5px rgba(0,0,0,0.8); opacity: 0; transition: opacity 0.5s;
 }
 
-/* ===== 虚拟摇杆 - 修复冲突 ===== */
+/* 虚拟摇杆 */
 .joystick {
-  position: absolute; width: 130px; height: 130px;
-  border: 3px solid rgba(255,255,255,0.25); border-radius: 50%;
-  background: rgba(255,255,255,0.04); display: none;
-  touch-action: none; -webkit-touch-callout: none;
-  z-index: 60;
+  position: absolute; width: 120px; height: 120px;
+  border: 3px solid rgba(255,255,255,0.3); border-radius: 50%;
+  background: rgba(255,255,255,0.05); display: none; pointer-events: auto;
 }
-#joystick-left { bottom: 60px; left: 40px; }
-#joystick-right { bottom: 60px; right: 40px; }
+#joystick-left { bottom: 80px; left: 60px; }
+#joystick-right { bottom: 80px; right: 60px; }
 .stick {
-  position: absolute; top: 50%; left: 50%; width: 48px; height: 48px;
+  position: absolute; top: 50%; left: 50%; width: 50px; height: 50px;
   border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none;
-  transition: transform 0.05s;
 }
-#stick-left { background: rgba(233,69,96,0.7); box-shadow: 0 0 15px rgba(233,69,96,0.4); }
-#stick-right { background: rgba(78,204,163,0.7); box-shadow: 0 0 15px rgba(78,204,163,0.4); }
+#stick-left { background: rgba(233,69,96,0.6); }
+#stick-right { background: rgba(78,204,163,0.6); }
 
-/* 开火按钮（替代右侧摇杆，避免冲突） */
-#fire-btn {
-  position: absolute; bottom: 80px; right: 55px;
-  width: 90px; height: 90px; border-radius: 50%;
-  border: 3px solid rgba(78,204,163,0.5); display: none;
-  background: rgba(78,204,163,0.15); color: #4ecca3;
-  font-size: 28px; cursor: pointer;
-  touch-action: none; -webkit-touch-callout: none;
-  align-items: center; justify-content: center; z-index: 60;
-  box-shadow: 0 0 20px rgba(78,204,163,0.2);
-}
-#fire-btn:active {
-  background: rgba(78,204,163,0.35);
-  transform: scale(0.95);
-}
-
-/* 武器切换按钮 */
+/* 武器切换按钮（手机端） */
 #weapon-switch-btn {
-  position: absolute; bottom: 200px; right: 70px;
-  width: 55px; height: 55px; border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.3); display: none;
+  position: absolute; bottom: 220px; right: 60px;
+  width: 60px; height: 60px; border-radius: 50%;
+  border: 3px solid rgba(255,255,255,0.3); display: none;
   background: rgba(255,255,255,0.1); color: #fff;
-  font-size: 20px; cursor: pointer;
-  touch-action: none; -webkit-touch-callout: none;
+  font-size: 24px; cursor: pointer; pointer-events: auto;
   align-items: center; justify-content: center; z-index: 60;
 }
-#weapon-switch-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.2); }
 
 /* 游戏结束 */
 #game-over {
@@ -160,7 +152,7 @@ html, body { overflow: hidden; background: #0a0a0a; font-family: 'Segoe UI', 'Mi
       <p>🖱️ 鼠标移动瞄准 / 左键射击</p>
       <p>⌨️ WASD 移动，数字键 1-5 切换武器，滚轮切换</p>
       <p>❤️ 静止 3 秒自动回血 / 击败敌人概率掉落血包</p>
-      <p>📱 手机：左侧摇杆移动 / 右侧按钮开火 / 右下角按钮切换武器</p>
+      <p>📱 手机：左侧摇杆移动 / 右侧摇杆射击 / 右下角按钮切换武器</p>
     </div>
   </div>
 
@@ -180,16 +172,16 @@ html, body { overflow: hidden; background: #0a0a0a; font-family: 'Segoe UI', 'Mi
     <div id="weapon-switch-hint">按 1-5 切换武器</div>
     <div id="heal-hint">正在回血...</div>
 
-    <!-- 左侧移动摇杆 -->
+    <!-- 手机虚拟摇杆 -->
     <div class="joystick" id="joystick-left">
       <div class="stick" id="stick-left"></div>
     </div>
+    <div class="joystick" id="joystick-right">
+      <div class="stick" id="stick-right"></div>
+    </div>
 
-    <!-- 右侧开火按钮（大按钮，避免误触） -->
-    <div id="fire-btn">🔥</div>
-
-    <!-- 武器切换按钮 -->
-    <div id="weapon-switch-btn" onclick="event.stopPropagation(); switchWeaponMobile();">🔫</div>
+    <!-- 手机武器切换按钮 -->
+    <div id="weapon-switch-btn" onclick="switchWeaponMobile()">🔫</div>
   </div>
 
   <!-- 游戏结束 -->
@@ -217,12 +209,7 @@ let kills = 0;
 
 const keys = {};
 const mouse = { x: 0, y: 0, down: false, worldX: 0, worldY: 0 };
-
-// 触摸状态 - 分离左右手
-const touchState = {
-  left: { active: false, dx: 0, dy: 0, id: null },
-  fire: { active: false, id: null }
-};
+const touchState = { left: { active: false, dx: 0, dy: 0 }, right: { active: false, dx: 0, dy: 0 } };
 
 let player, camera, bullets, enemies, particles, obstacles, weaponsOnGround, healthPacks;
 let enemySpawnTimer = 0;
@@ -233,7 +220,7 @@ const texts = {
     subtitle: '无限地图 · 生存射击', easy: '🌱 简单', normal: '🔥 普通', hard: '💀 困难',
     wave: '第{0}波', goTitle: '游戏结束', goScore: '击杀: {0}', goTime: '生存时间: {0}',
     pistol: '手枪', smg: '冲锋枪', shotgun: '霰弹枪', rifle: '步枪', sniper: '狙击枪',
-    controls: '<p>🖱️ 鼠标移动瞄准 / 左键射击</p><p>⌨️ WASD 移动，数字键 1-5 切换武器，滚轮切换</p><p>❤️ 静止 3 秒自动回血 / 击败敌人概率掉落血包</p><p>📱 手机：左侧摇杆移动 / 右侧按钮开火 / 右下角按钮切换武器</p>',
+    controls: '<p>🖱️ 鼠标移动瞄准 / 左键射击</p><p>⌨️ WASD 移动，数字键 1-5 切换武器，滚轮切换</p><p>❤️ 静止 3 秒自动回血 / 击败敌人概率掉落血包</p><p>📱 手机：左侧摇杆移动 / 右侧摇杆射击 / 右下角按钮切换武器</p>',
     restart: '再来一局', backMenu: '返回主菜单', switchHint: '按 1-5 切换武器',
     healing: '正在回血...', healed: '已恢复！', fullHp: '生命值已满'
   },
@@ -241,7 +228,7 @@ const texts = {
     subtitle: 'Infinite Map · Survival Shooter', easy: '🌱 Easy', normal: '🔥 Normal', hard: '💀 Hard',
     wave: 'Wave {0}', goTitle: 'Game Over', goScore: 'Kills: {0}', goTime: 'Survived: {0}',
     pistol: 'Pistol', smg: 'SMG', shotgun: 'Shotgun', rifle: 'Rifle', sniper: 'Sniper',
-    controls: '<p>🖱️ Mouse aim / Left click shoot</p><p>⌨️ WASD move, keys 1-5 switch weapon, scroll wheel</p><p>❤️ Stand still 3s to auto-heal / Enemies drop health packs</p><p>📱 Mobile: Left stick move / Right button fire / Bottom-right button switch weapon</p>',
+    controls: '<p>🖱️ Mouse aim / Left click shoot</p><p>⌨️ WASD move, keys 1-5 switch weapon, scroll wheel</p><p>❤️ Stand still 3s to auto-heal / Enemies drop health packs</p><p>📱 Mobile: Left stick move / Right stick shoot / Bottom-right button switch weapon</p>',
     restart: 'Play Again', backMenu: 'Back to Menu', switchHint: 'Press 1-5 to switch weapon',
     healing: 'Healing...', healed: 'Healed!', fullHp: 'Full Health'
   }
@@ -304,8 +291,13 @@ function startGame(diff) {
     ],
     currentWeaponIndex: 0,
     fireCooldown: 0, angle: 0, invincible: 0,
-    stillTime: 0, lastX: 0, lastY: 0,
-    healRate: 8, healDelay: 3, healCooldown: 0, isHealing: false
+    // 回血机制
+    stillTime: 0,          // 静止时间
+    lastX: 0, lastY: 0,    // 上一帧位置
+    healRate: 8,           // 每秒回血量
+    healDelay: 3,          // 静止几秒后开始回血
+    healCooldown: 0,       // 受伤后冷却
+    isHealing: false
   };
   player.weapon = player.weapons[0];
   player.lastX = player.x;
@@ -326,11 +318,10 @@ function startGame(diff) {
   document.getElementById('game-over').style.display = 'none';
   document.getElementById('weapon-switch-hint').style.display = 'block';
 
-  // 检测手机并显示对应控件
   const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || ('ontouchstart' in window);
   if (isMobile) {
     document.getElementById('joystick-left').style.display = 'block';
-    document.getElementById('fire-btn').style.display = 'flex';
+    document.getElementById('joystick-right').style.display = 'block';
     document.getElementById('weapon-switch-btn').style.display = 'flex';
     document.getElementById('weapon-switch-hint').style.display = 'none';
   }
@@ -349,7 +340,7 @@ function backToMenu() {
   document.getElementById('hud').style.display = 'none';
   document.getElementById('game-over').style.display = 'none';
   document.getElementById('joystick-left').style.display = 'none';
-  document.getElementById('fire-btn').style.display = 'none';
+  document.getElementById('joystick-right').style.display = 'none';
   document.getElementById('weapon-switch-btn').style.display = 'none';
   document.getElementById('weapon-switch-hint').style.display = 'none';
 }
@@ -394,7 +385,6 @@ window.addEventListener('keydown', e => {
     switchWeapon(next);
   }
 });
-window.addEventListener('keyup', e => { keys[e.code] = false; });
 
 // ============ 伪随机生成 ============
 function seededRandom(seed) {
@@ -432,7 +422,8 @@ function generateObstacles(cx, cy, radius) {
   obstacles = obstacles.filter(o => Math.hypot(o.x - cx, o.y - cy) < radius * 1.5);
 }
 
-// ============ 鼠标输入 ============
+// ============ 输入处理 ============
+window.addEventListener('keyup', e => { keys[e.code] = false; });
 window.addEventListener('mousemove', e => {
   mouse.x = e.clientX;
   mouse.y = e.clientY;
@@ -455,127 +446,68 @@ window.addEventListener('wheel', e => {
   }
 }, { passive: false });
 
-// ============ 手机触摸控制 - 修复冲突 ============
 const jLeft = document.getElementById('joystick-left');
 const stickLeft = document.getElementById('stick-left');
-const fireBtn = document.getElementById('fire-btn');
+const jRight = document.getElementById('joystick-right');
+const stickRight = document.getElementById('stick-right');
 
-// 左侧摇杆 - 只响应屏幕左半边的触摸
-function setupLeftJoystick() {
+function setupJoystick(elem, stick, side) {
   let startX, startY, active = false;
 
-  const getTouchInZone = (touches) => {
-    for (let i = 0; i < touches.length; i++) {
-      if (touches[i].clientX < W / 2) return touches[i];
-    }
-    return null;
-  };
-
-  const onTouchStart = (e) => {
-    const t = getTouchInZone(e.changedTouches);
-    if (!t) return;
+  const start = (e) => {
     e.preventDefault();
-
-    const rect = jLeft.getBoundingClientRect();
+    const t = e.touches[0];
+    const rect = elem.getBoundingClientRect();
     startX = rect.left + rect.width / 2;
     startY = rect.top + rect.height / 2;
     active = true;
-    touchState.left.id = t.identifier;
-    onTouchMove(e);
+    move(e);
   };
 
-  const onTouchMove = (e) => {
+  const move = (e) => {
     if (!active) return;
     e.preventDefault();
-
-    let found = false;
-    for (let i = 0; i < e.changedTouches.length; i++) {
-      const t = e.changedTouches[i];
-      if (t.identifier === touchState.left.id) {
-        found = true;
-        let dx = t.clientX - startX;
-        let dy = t.clientY - startY;
-        const dist = Math.hypot(dx, dy);
-        const maxDist = 35;
-        if (dist > maxDist) {
-          dx = (dx / dist) * maxDist;
-          dy = (dy / dist) * maxDist;
-        }
-        stickLeft.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-        touchState.left.active = true;
-        touchState.left.dx = dx / maxDist;
-        touchState.left.dy = dy / maxDist;
-        break;
-      }
+    const t = e.touches[0];
+    let dx = t.clientX - startX;
+    let dy = t.clientY - startY;
+    const dist = Math.hypot(dx, dy);
+    const maxDist = 35;
+    if (dist > maxDist) {
+      dx = (dx / dist) * maxDist;
+      dy = (dy / dist) * maxDist;
     }
-    if (!found) {
-      // 手指移出区域，重置
-      active = false;
-      stickLeft.style.transform = 'translate(-50%, -50%)';
-      touchState.left.active = false;
-      touchState.left.dx = 0;
-      touchState.left.dy = 0;
-      touchState.left.id = null;
-    }
+    stick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    touchState[side].active = true;
+    touchState[side].dx = dx / maxDist;
+    touchState[side].dy = dy / maxDist;
   };
 
-  const onTouchEnd = (e) => {
-    for (let i = 0; i < e.changedTouches.length; i++) {
-      if (e.changedTouches[i].identifier === touchState.left.id) {
-        e.preventDefault();
-        active = false;
-        stickLeft.style.transform = 'translate(-50%, -50%)';
-        touchState.left.active = false;
-        touchState.left.dx = 0;
-        touchState.left.dy = 0;
-        touchState.left.id = null;
-        break;
-      }
-    }
+  const end = (e) => {
+    e.preventDefault();
+    active = false;
+    stick.style.transform = 'translate(-50%, -50%)';
+    touchState[side].active = false;
+    touchState[side].dx = 0;
+    touchState[side].dy = 0;
   };
 
-  document.addEventListener('touchstart', onTouchStart, { passive: false });
-  document.addEventListener('touchmove', onTouchMove, { passive: false });
-  document.addEventListener('touchend', onTouchEnd, { passive: false });
-  document.addEventListener('touchcancel', onTouchEnd, { passive: false });
+  elem.addEventListener('touchstart', start, { passive: false });
+  elem.addEventListener('touchmove', move, { passive: false });
+  elem.addEventListener('touchend', end, { passive: false });
+  elem.addEventListener('touchcancel', end, { passive: false });
 }
 
-// 开火按钮 - 独立触摸处理，避免与摇杆冲突
-function setupFireButton() {
-  fireBtn.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    touchState.fire.active = true;
-    fireBtn.style.background = 'rgba(78,204,163,0.35)';
-    fireBtn.style.transform = 'scale(0.95)';
-  }, { passive: false });
-
-  fireBtn.addEventListener('touchend', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    touchState.fire.active = false;
-    fireBtn.style.background = 'rgba(78,204,163,0.15)';
-    fireBtn.style.transform = 'scale(1)';
-  }, { passive: false });
-
-  fireBtn.addEventListener('touchcancel', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    touchState.fire.active = false;
-    fireBtn.style.background = 'rgba(78,204,163,0.15)';
-    fireBtn.style.transform = 'scale(1)';
-  }, { passive: false });
-}
-
-setupLeftJoystick();
-setupFireButton();
+setupJoystick(jLeft, stickLeft, 'left');
+setupJoystick(jRight, stickRight, 'right');
 
 // ============ 回血机制 ============
 function updateHealing(dt) {
+  // 检测是否静止
   const moved = Math.hypot(player.x - player.lastX, player.y - player.lastY);
   player.lastX = player.x;
   player.lastY = player.y;
 
+  // 受伤冷却递减
   if (player.healCooldown > 0) {
     player.healCooldown -= dt;
     player.stillTime = 0;
@@ -585,15 +517,18 @@ function updateHealing(dt) {
   }
 
   if (moved < 1) {
+    // 静止中
     player.stillTime += dt;
 
     if (player.stillTime >= player.healDelay) {
+      // 开始回血
       if (player.hp < player.maxHp) {
         player.isHealing = true;
         const healAmount = player.healRate * dt;
         player.hp = Math.min(player.hp + healAmount, player.maxHp);
         showHealHint(texts[lang].healing);
 
+        // 回血粒子效果
         if (Math.random() < 0.3) {
           createParticles(player.x + (Math.random() - 0.5) * 20, player.y + (Math.random() - 0.5) * 20, '#4ecca3', 1);
         }
@@ -606,6 +541,7 @@ function updateHealing(dt) {
       showHealHint('');
     }
   } else {
+    // 移动中，重置静止时间
     player.stillTime = 0;
     player.isHealing = false;
     showHealHint('');
@@ -623,7 +559,7 @@ function showHealHint(text) {
 }
 
 function onPlayerDamaged() {
-  player.healCooldown = 5;
+  player.healCooldown = 5; // 受伤后5秒不能回血
   player.stillTime = 0;
   player.isHealing = false;
   showHealHint('');
@@ -654,32 +590,18 @@ function update(dt) {
     player.y += my * player.speed * dt;
   }
 
-  // 瞄准 - 电脑用鼠标，手机自动瞄准最近敌人
+  // 瞄准
   mouse.worldX = mouse.x + camera.x - W / 2;
   mouse.worldY = mouse.y + camera.y - H / 2;
   player.angle = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
 
-  // 手机端：自动瞄准最近的敌人
-  const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || ('ontouchstart' in window);
-  if (isMobile && enemies.length > 0) {
-    let nearest = null;
-    let nearestDist = Infinity;
-    for (const e of enemies) {
-      const d = Math.hypot(e.x - player.x, e.y - player.y);
-      if (d < nearestDist) {
-        nearestDist = d;
-        nearest = e;
-      }
-    }
-    if (nearest) {
-      player.angle = Math.atan2(nearest.y - player.y, nearest.x - player.x);
-    }
+  if (touchState.right.active) {
+    player.angle = Math.atan2(touchState.right.dy, touchState.right.dx);
   }
 
-  // 射击 - 鼠标或开火按钮
+  // 射击
   player.fireCooldown -= dt * 1000;
-  const shouldFire = mouse.down || touchState.fire.active;
-  if (shouldFire && player.fireCooldown <= 0 && player.weapon.ammo !== 0) {
+  if ((mouse.down || touchState.right.active) && player.fireCooldown <= 0 && player.weapon.ammo !== 0) {
     shoot();
     player.fireCooldown = player.weapon.fireRate;
     if (player.weapon.ammo !== Infinity) {
@@ -731,6 +653,8 @@ function update(dt) {
       createParticles(pack.x, pack.y, '#ff6b6b', 10);
       createParticles(pack.x, pack.y, '#4ecca3', 5);
       healthPacks.splice(i, 1);
+
+      // 显示回血提示
       showHealHint(texts[lang].healed + ' +' + Math.floor(healAmount));
       setTimeout(() => showHealHint(''), 1500);
     }
@@ -771,6 +695,7 @@ function update(dt) {
           enemies.splice(j, 1);
           kills++;
 
+          // 概率掉落武器
           if (Math.random() < 0.2) {
             const types = ['smg', 'shotgun', 'rifle', 'sniper'];
             const type = types[Math.floor(Math.random() * types.length)];
@@ -781,6 +706,7 @@ function update(dt) {
             });
           }
 
+          // 概率掉落血包
           if (Math.random() < 0.25) {
             const healAmount = 15 + Math.floor(Math.random() * 20);
             healthPacks.push({
@@ -834,7 +760,7 @@ function update(dt) {
     if (dist < e.radius + player.radius && player.invincible <= 0) {
       player.hp -= e.damage;
       player.invincible = 0.5;
-      onPlayerDamaged();
+      onPlayerDamaged(); // 触发受伤回血冷却
       createParticles(player.x, player.y, '#e94560', 8);
       if (player.hp <= 0) {
         gameOver();
@@ -942,7 +868,7 @@ function gameOver() {
   document.getElementById('go-time').textContent = texts[lang].goTime.replace('{0}', timeStr);
   document.getElementById('game-over').style.display = 'flex';
   document.getElementById('joystick-left').style.display = 'none';
-  document.getElementById('fire-btn').style.display = 'none';
+  document.getElementById('joystick-right').style.display = 'none';
   document.getElementById('weapon-switch-btn').style.display = 'none';
   document.getElementById('weapon-switch-hint').style.display = 'none';
 }
@@ -1026,9 +952,11 @@ function draw() {
     ctx.translate(pack.x, pack.y);
     ctx.scale(pulseSize, pulseSize);
 
+    // 外圈光晕
     ctx.fillStyle = 'rgba(255, 107, 107, 0.3)';
     ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI * 2); ctx.fill();
 
+    // 血包主体
     ctx.fillStyle = '#ff6b6b';
     ctx.shadowColor = '#ff6b6b';
     ctx.shadowBlur = 12;
@@ -1038,6 +966,7 @@ function draw() {
     ctx.shadowBlur = 0;
     ctx.restore();
 
+    // 浮动文字
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 11px sans-serif';
     ctx.textAlign = 'center';
@@ -1095,6 +1024,7 @@ function draw() {
   ctx.save();
   ctx.translate(player.x, player.y);
 
+  // 回血光环
   if (player.isHealing) {
     ctx.fillStyle = 'rgba(78, 204, 163, 0.15)';
     ctx.beginPath(); ctx.arc(0, 0, player.radius + 10 + Math.sin(gameTime * 4) * 5, 0, Math.PI * 2); ctx.fill();
