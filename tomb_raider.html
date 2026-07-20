@@ -242,6 +242,20 @@
     pointer-events: auto; cursor: pointer;
   }
 
+  /* ===== 移动端搜刮按钮 ===== */
+  #lootBtn {
+    position: fixed; bottom: 100px; right: 160px;
+    width: 70px; height: 70px; border-radius: 50%;
+    background: rgba(212,168,83,0.3); border: 2px solid rgba(212,168,83,0.6);
+    color: #d4a853; font-size: 12px; display: none;
+    align-items: center; justify-content: center; z-index: 200;
+    pointer-events: auto; cursor: pointer; user-select: none;
+    flex-direction: column;
+  }
+  #lootBtn:active { background: rgba(212,168,83,0.5); transform: scale(0.95); }
+  #lootBtn .loot-icon { font-size: 22px; }
+  #lootBtn .loot-text { font-size: 10px; margin-top: 2px; }
+
   #minimap {
     position: fixed; top: 10px; right: 10px;
     width: 150px; height: 150px; border-radius: 8px;
@@ -463,6 +477,11 @@
 </div>
 
 <div id="shootBtn">射击</div>
+<!-- 移动端搜刮按钮 -->
+<div id="lootBtn">
+  <span class="loot-icon">&#x1F392;</span>
+  <span class="loot-text">搜刮</span>
+</div>
 <div id="bagBtn">&#x1F392;</div>
 <canvas id="minimap"></canvas>
 
@@ -822,6 +841,31 @@ function setupControls() {
   shootBtn.addEventListener('touchcancel', function(e) { shootTouch = false; });
 
   document.getElementById('bagBtn').addEventListener('click', toggleBag);
+
+  // ===== 移动端搜刮按钮事件 =====
+  const lootBtn = document.getElementById('lootBtn');
+  lootBtn.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    if (gameState !== 'playing') return;
+    if (lootingContainer) {
+      closeLoot();
+    } else if (nearContainer) {
+      openContainer(nearContainer);
+    } else {
+      tryEvac();
+    }
+  }, {passive:false});
+  lootBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    if (gameState !== 'playing') return;
+    if (lootingContainer) {
+      closeLoot();
+    } else if (nearContainer) {
+      openContainer(nearContainer);
+    } else {
+      tryEvac();
+    }
+  });
 }
 
 function updateUI() {
@@ -1362,6 +1406,7 @@ function startGame(mapIndex) {
     document.getElementById('joystickZone').style.display = 'block';
     document.getElementById('shootBtn').style.display = 'flex';
     document.getElementById('bagBtn').style.display = 'flex';
+    document.getElementById('lootBtn').style.display = 'flex';
   }
 
   updateWeaponBar();
@@ -2165,6 +2210,7 @@ function endGame(reason) {
   document.getElementById('minimap').style.display = 'none';
   document.getElementById('joystickZone').style.display = 'none';
   document.getElementById('shootBtn').style.display = 'none';
+  document.getElementById('lootBtn').style.display = 'none';
   document.getElementById('bagBtn').style.display = 'none';
   document.getElementById('weaponBar').style.display = 'none';
   document.getElementById('evacIndicator').style.display = 'none';
@@ -2180,6 +2226,7 @@ function returnToMenu() {
   document.getElementById('minimap').style.display = 'none';
   document.getElementById('joystickZone').style.display = 'none';
   document.getElementById('shootBtn').style.display = 'none';
+  document.getElementById('lootBtn').style.display = 'none';
   document.getElementById('bagBtn').style.display = 'none';
   document.getElementById('weaponBar').style.display = 'none';
   document.getElementById('evacIndicator').style.display = 'none';
