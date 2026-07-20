@@ -1,0 +1,1579 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<title>摸金校尉 - Tomb Raider Shooter</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+  body { overflow: hidden; background: #0a0a0a; font-family: 'Microsoft YaHei', sans-serif; color: #d4a853; }
+  canvas { display: block; }
+
+  #mainMenu {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(135deg, #1a0f0a 0%, #0d0603 50%, #1a0f0a 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 1000;
+  }
+  #mainMenu h1 {
+    font-size: clamp(32px, 8vw, 64px); color: #d4a853;
+    text-shadow: 0 0 20px rgba(212,168,83,0.5), 0 0 40px rgba(212,168,83,0.2);
+    margin-bottom: 10px; letter-spacing: 8px;
+  }
+  #mainMenu .subtitle { font-size: 14px; color: #8b7355; margin-bottom: 40px; letter-spacing: 4px; }
+  .menu-btn {
+    width: 220px; padding: 14px 0; margin: 8px 0;
+    background: linear-gradient(135deg, #2a1a0a, #1a0f05);
+    border: 2px solid #d4a853; border-radius: 8px;
+    color: #d4a853; font-size: 18px; cursor: pointer;
+    transition: all 0.3s; letter-spacing: 4px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  }
+  .menu-btn:hover { background: linear-gradient(135deg, #3a2a1a, #2a1a0a); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(212,168,83,0.2); }
+  .menu-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .lang-switch {
+    position: absolute; top: 20px; right: 20px;
+    display: flex; gap: 10px;
+  }
+  .lang-btn {
+    padding: 6px 14px; background: #1a0f0a; border: 1px solid #d4a853;
+    color: #d4a853; border-radius: 4px; cursor: pointer; font-size: 14px;
+  }
+  .lang-btn.active { background: #d4a853; color: #1a0f0a; }
+
+  #warehouse {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(135deg, #1a0f0a 0%, #0d0603 100%);
+    display: none; flex-direction: column; z-index: 900; overflow-y: auto;
+  }
+  #warehouse h2 { text-align: center; padding: 20px; font-size: 28px; border-bottom: 1px solid #3a2a1a; }
+  .wh-back { position: absolute; top: 20px; left: 20px; padding: 8px 16px; background: #2a1a0a; border: 1px solid #d4a853; color: #d4a853; border-radius: 4px; cursor: pointer; }
+  .inventory-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 10px; padding: 20px; max-width: 600px; margin: 0 auto; width: 100%;
+  }
+  .inv-item {
+    aspect-ratio: 1; background: #1a0f0a; border: 1px solid #3a2a1a;
+    border-radius: 8px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; cursor: pointer;
+    transition: all 0.2s; position: relative;
+  }
+  .inv-item:hover { border-color: #d4a853; transform: scale(1.05); }
+  .inv-item .item-icon { font-size: 28px; }
+  .inv-item .item-count { position: absolute; bottom: 4px; right: 6px; font-size: 12px; color: #d4a853; }
+  .inv-item .item-name { font-size: 10px; color: #8b7355; margin-top: 2px; }
+  .item-tooltip {
+    position: fixed; background: rgba(10,6,3,0.95); border: 1px solid #d4a853;
+    padding: 10px; border-radius: 6px; pointer-events: none; z-index: 10000;
+    display: none; max-width: 200px;
+  }
+
+  #mapSelect {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(135deg, #1a0f0a 0%, #0d0603 100%);
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 950;
+  }
+  .map-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; padding: 40px; max-width: 900px; width: 100%; }
+  .map-card {
+    background: linear-gradient(135deg, #2a1a0a, #1a0f05);
+    border: 2px solid #3a2a1a; border-radius: 12px; padding: 20px;
+    cursor: pointer; transition: all 0.3s; text-align: center;
+  }
+  .map-card:hover { border-color: #d4a853; transform: translateY(-5px); box-shadow: 0 10px 30px rgba(212,168,83,0.15); }
+  .map-card h3 { color: #d4a853; margin-bottom: 8px; font-size: 20px; }
+  .map-card p { color: #8b7355; font-size: 13px; line-height: 1.6; }
+  .map-card .map-diff { color: #c0392b; font-size: 12px; margin-top: 8px; }
+  .map-card.locked { opacity: 0.5; cursor: not-allowed; border-color: #333; }
+
+  #gameUI {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 100; display: none;
+  }
+  .hud-panel {
+    position: absolute; background: rgba(10,6,3,0.8);
+    border: 1px solid #3a2a1a; border-radius: 8px; padding: 10px;
+    pointer-events: auto;
+  }
+  #hudTopLeft { top: 10px; left: 10px; }
+  #hudTopRight { top: 10px; right: 10px; text-align: right; }
+  #hudBottomLeft { bottom: 10px; left: 10px; }
+  #hudBottomRight { bottom: 10px; right: 10px; }
+  .hp-bar { width: 150px; height: 12px; background: #1a0f0a; border-radius: 6px; overflow: hidden; margin-top: 4px; }
+  .hp-fill { height: 100%; background: linear-gradient(90deg, #c0392b, #e74c3c); transition: width 0.3s; }
+  .stamina-bar { width: 150px; height: 8px; background: #1a0f0a; border-radius: 4px; overflow: hidden; margin-top: 4px; }
+  .stamina-fill { height: 100%; background: linear-gradient(90deg, #27ae60, #2ecc71); transition: width 0.3s; }
+  .ammo-display { font-size: 20px; color: #d4a853; }
+  .timer { font-size: 24px; color: #e74c3c; font-weight: bold; }
+  .score { font-size: 16px; color: #d4a853; }
+
+  #joystickZone {
+    position: fixed; bottom: 80px; left: 80px;
+    width: 120px; height: 120px; z-index: 200; display: none;
+  }
+  #joystickBase {
+    width: 120px; height: 120px; border-radius: 50%;
+    background: rgba(212,168,83,0.15); border: 2px solid rgba(212,168,83,0.3);
+    position: relative;
+  }
+  #joystickStick {
+    width: 50px; height: 50px; border-radius: 50%;
+    background: rgba(212,168,83,0.5); border: 2px solid #d4a853;
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%); cursor: pointer;
+  }
+
+  #shootBtn {
+    position: fixed; bottom: 100px; right: 60px;
+    width: 80px; height: 80px; border-radius: 50%;
+    background: rgba(192,57,43,0.3); border: 2px solid rgba(192,57,43,0.6);
+    color: #e74c3c; font-size: 14px; display: none;
+    align-items: center; justify-content: center; z-index: 200;
+    pointer-events: auto; cursor: pointer; user-select: none;
+  }
+  #shootBtn:active { background: rgba(192,57,43,0.5); transform: scale(0.95); }
+
+  #bagBtn {
+    position: fixed; top: 10px; right: 120px;
+    width: 50px; height: 50px; border-radius: 8px;
+    background: rgba(10,6,3,0.8); border: 1px solid #3a2a1a;
+    color: #d4a853; font-size: 20px; display: none;
+    align-items: center; justify-content: center; z-index: 200;
+    pointer-events: auto; cursor: pointer;
+  }
+
+  #minimap {
+    position: fixed; top: 10px; right: 10px;
+    width: 150px; height: 150px; border-radius: 8px;
+    background: rgba(10,6,3,0.9); border: 1px solid #3a2a1a;
+    display: none; z-index: 150;
+  }
+
+  .modal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85); display: none;
+    align-items: center; justify-content: center; z-index: 500;
+  }
+  .modal-content {
+    background: linear-gradient(135deg, #1a0f0a, #0d0603);
+    border: 2px solid #d4a853; border-radius: 12px;
+    padding: 40px; text-align: center; max-width: 400px; width: 90%;
+  }
+  .modal-content h2 { color: #d4a853; margin-bottom: 20px; font-size: 28px; }
+  .modal-content p { color: #8b7355; margin-bottom: 20px; line-height: 1.6; }
+
+  #bagPanel {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 90%; max-width: 500px; max-height: 80vh;
+    background: rgba(10,6,3,0.95); border: 2px solid #d4a853;
+    border-radius: 12px; padding: 20px; display: none;
+    z-index: 300; overflow-y: auto; pointer-events: auto;
+  }
+  #bagPanel h3 { text-align: center; color: #d4a853; margin-bottom: 15px; }
+  .bag-close { position: absolute; top: 10px; right: 15px; color: #d4a853; font-size: 24px; cursor: pointer; }
+
+  #loading {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: #0a0a0a; display: none;
+    align-items: center; justify-content: center; flex-direction: column;
+    z-index: 2000;
+  }
+  .loader {
+    width: 60px; height: 60px; border: 4px solid #1a0f0a;
+    border-top-color: #d4a853; border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #toast {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: rgba(10,6,3,0.9); border: 1px solid #d4a853;
+    padding: 12px 24px; border-radius: 8px; color: #d4a853;
+    font-size: 16px; z-index: 3000; display: none; pointer-events: none;
+  }
+
+  #evacIndicator {
+    position: fixed; top: 50%; right: 10px; transform: translateY(-50%);
+    width: 40px; height: 40px; background: rgba(39,174,96,0.3);
+    border: 2px solid #27ae60; border-radius: 50%;
+    display: none; align-items: center; justify-content: center;
+    color: #2ecc71; font-size: 20px; z-index: 150;
+  }
+
+  .stats-row { display: flex; gap: 20px; justify-content: center; margin: 10px 0; }
+  .stat-box { text-align: center; }
+  .stat-box .stat-val { font-size: 24px; color: #d4a853; font-weight: bold; }
+  .stat-box .stat-label { font-size: 12px; color: #8b7355; }
+
+  #settingsPanel {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 90%; max-width: 400px;
+    background: rgba(10,6,3,0.95); border: 2px solid #d4a853;
+    border-radius: 12px; padding: 30px; display: none;
+    z-index: 300; pointer-events: auto;
+  }
+  #settingsPanel h3 { text-align: center; color: #d4a853; margin-bottom: 20px; }
+  .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #2a1a0a; }
+  .setting-row label { color: #8b7355; }
+  .toggle-btn {
+    width: 50px; height: 26px; border-radius: 13px; background: #333;
+    border: none; cursor: pointer; position: relative; transition: all 0.3s;
+  }
+  .toggle-btn.on { background: #d4a853; }
+  .toggle-btn::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 20px; height: 20px; border-radius: 50%; background: #fff;
+    transition: all 0.3s;
+  }
+  .toggle-btn.on::after { left: 27px; }
+
+  #weaponBar {
+    position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
+    display: none; gap: 5px; z-index: 200; pointer-events: auto;
+  }
+  .weapon-slot {
+    width: 50px; height: 50px; background: rgba(10,6,3,0.8);
+    border: 2px solid #3a2a1a; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    color: #8b7355; font-size: 12px; cursor: pointer; position: relative;
+  }
+  .weapon-slot.active { border-color: #d4a853; color: #d4a853; }
+  .weapon-slot .wep-key { position: absolute; top: 2px; left: 4px; font-size: 10px; }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="loader"></div>
+  <p style="color:#d4a853; margin-top:20px; font-size:18px;">正在进入古墓...</p>
+</div>
+
+<div id="mainMenu">
+  <div class="lang-switch">
+    <button class="lang-btn active" onclick="setLang('zh')">中文</button>
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+  </div>
+  <h1 id="gameTitle">摸金校尉</h1>
+  <p class="subtitle" id="gameSubtitle">TOMB RAIDER SHOOTER</p>
+  <button class="menu-btn" id="btnStart" onclick="showMapSelect()">开始摸金</button>
+  <button class="menu-btn" id="btnWarehouse" onclick="showWarehouse()">摸金仓库</button>
+  <button class="menu-btn" id="btnContinue" onclick="continueGame()" style="display:none;">继续摸金</button>
+  <button class="menu-btn" id="btnSettings" onclick="showSettings()">设置</button>
+</div>
+
+<div id="mapSelect">
+  <button class="wh-back" onclick="backToMenu()" id="btnBack">返回</button>
+  <h2 id="selectTitle" style="margin-top:60px; color:#d4a853; font-size:28px;">选择古墓</h2>
+  <div class="map-grid" id="mapGrid"></div>
+</div>
+
+<div id="warehouse">
+  <button class="wh-back" onclick="backToMenu()" id="btnWhBack">返回</button>
+  <h2 id="whTitle">摸金仓库</h2>
+  <div style="text-align:center; color:#8b7355; margin-bottom:10px;" id="whStats"></div>
+  <div class="inventory-grid" id="inventoryGrid"></div>
+</div>
+
+<div id="gameUI">
+  <div class="hud-panel" id="hudTopLeft">
+    <div style="color:#d4a853; font-size:14px;"><span id="hudHpLabel">生命</span>: <span id="hudHpVal">100</span>/<span id="hudHpMax">100</span></div>
+    <div class="hp-bar"><div class="hp-fill" id="hpFill" style="width:100%"></div></div>
+    <div style="color:#8b7355; font-size:12px; margin-top:4px;"><span id="hudStamLabel">体力</span></div>
+    <div class="stamina-bar"><div class="stamina-fill" id="staminaFill" style="width:100%"></div></div>
+  </div>
+  <div class="hud-panel" id="hudTopRight">
+    <div class="timer" id="gameTimer">10:00</div>
+    <div class="score" id="gameScore">摸金值: 0</div>
+    <div style="color:#8b7355; font-size:12px; margin-top:4px;" id="enemyCount">敌人: 0</div>
+  </div>
+  <div class="hud-panel" id="hudBottomLeft">
+    <div class="ammo-display" id="ammoDisplay">30 / 90</div>
+    <div style="color:#8b7355; font-size:12px;" id="weaponName">洛阳铲手枪</div>
+  </div>
+  <div class="hud-panel" id="hudBottomRight">
+    <div style="color:#d4a853; font-size:14px;" id="mapName">古墓一层</div>
+    <div style="color:#8b7355; font-size:12px;" id="position">X:0 Y:0</div>
+  </div>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<div id="joystickZone">
+  <div id="joystickBase"><div id="joystickStick"></div></div>
+</div>
+
+<div id="shootBtn">射击</div>
+<div id="bagBtn">&#x1F392;</div>
+<canvas id="minimap"></canvas>
+
+<div id="weaponBar"></div>
+
+<div id="bagPanel">
+  <span class="bag-close" onclick="toggleBag()">&#x2715;</span>
+  <h3 id="bagTitle">摸金背包</h3>
+  <div class="inventory-grid" id="bagGrid"></div>
+  <div style="text-align:center; margin-top:15px; color:#8b7355; font-size:12px;" id="bagWeight">负重: 0/50</div>
+</div>
+
+<div id="settingsPanel">
+  <span class="bag-close" onclick="closeSettings()">&#x2715;</span>
+  <h3 id="settingsTitle">设置</h3>
+  <div class="setting-row">
+    <label id="lblSound">音效</label>
+    <button class="toggle-btn on" id="toggleSound" onclick="toggleSetting('sound')"></button>
+  </div>
+  <div class="setting-row">
+    <label id="lblMusic">音乐</label>
+    <button class="toggle-btn on" id="toggleMusic" onclick="toggleSetting('music')"></button>
+  </div>
+  <div style="text-align:center; margin-top:20px;">
+    <button class="menu-btn" onclick="clearSave()" id="btnClear" style="width:180px; font-size:14px;">清除存档</button>
+  </div>
+</div>
+
+<div class="modal" id="gameModal">
+  <div class="modal-content">
+    <h2 id="modalTitle">游戏结束</h2>
+    <p id="modalText">你倒在了古墓中...</p>
+    <div class="stats-row" id="modalStats"></div>
+    <button class="menu-btn" onclick="modalAction()" id="modalBtn" style="margin-top:20px;">确定</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="evacIndicator">&#x1F6AA;</div>
+<div class="item-tooltip" id="tooltip"></div>
+
+<script>
+
+const I18N = {
+  zh: {
+    start: '开始摸金', warehouse: '摸金仓库', continue: '继续摸金', settings: '设置',
+    back: '返回', selectMap: '选择古墓', whTitle: '摸金仓库', bagTitle: '摸金背包',
+    hp: '生命', stamina: '体力', score: '摸金值', enemy: '敌人',
+    evac: '撤离点', found: '发现', killed: '击杀', timeOut: '时间耗尽',
+    died: '你倒在了古墓中...', evacuated: '成功撤离！', victory: '摸金成功！',
+    gameOver: '游戏结束', confirm: '确定', continueBtn: '继续',
+    newGame: '重新开始', mapLocked: '地图未解锁', needLevel: '需要等级',
+    weight: '负重', fullBag: '背包已满', looted: '拾取',
+    noAmmo: '弹药不足', reloading: '换弹中...', evacReady: '撤离点已开启',
+    pressF: '按 F 撤离', touchDoor: '靠近撤离点撤离', lowHp: '生命值过低',
+    settingsTitle: '设置', sound: '音效', music: '音乐', clearSave: '清除存档',
+    mapNames: ['秦王陵', '汉墓群', '唐皇陵', '宋陵寝', '明十三陵'],
+    mapDesc: [
+      '初级古墓，适合新手摸金校尉练手',
+      '中级古墓，机关重重，需谨慎行事',
+      '高级古墓，守卫森严，宝物丰厚',
+      '专家级古墓，危机四伏，九死一生',
+      '传说级古墓，千古之谜，唯有强者能入'
+    ],
+    diff: ['简单', '普通', '困难', '极难', '传说'],
+    items: {
+      gold: '金条', jade: '玉璧', bronze: '青铜器', pearl: '夜明珠',
+      scroll: '古卷', sword: '古剑', armor: '金丝甲', potion: '还魂丹',
+      ammo: '弹药', key: '墓门钥匙', coin: '古钱币', gem: '宝石'
+    },
+    weapons: {
+      pistol: '洛阳铲手枪', smg: '连弩冲锋枪', shotgun: '散弹火铳', rifle: '狙击长弓'
+    }
+  },
+  en: {
+    start: 'Start Raid', warehouse: 'Warehouse', continue: 'Continue', settings: 'Settings',
+    back: 'Back', selectMap: 'Select Tomb', whTitle: 'Treasure Warehouse', bagTitle: 'Loot Bag',
+    hp: 'HP', stamina: 'Stamina', score: 'Score', enemy: 'Enemies',
+    evac: 'Extraction', found: 'Found', killed: 'Killed', timeOut: 'Time\'s Up',
+    died: 'You fell in the tomb...', evacuated: 'Extracted!', victory: 'Raid Success!',
+    gameOver: 'Game Over', confirm: 'OK', continueBtn: 'Continue',
+    newGame: 'New Game', mapLocked: 'Map Locked', needLevel: 'Need Level',
+    weight: 'Weight', fullBag: 'Bag Full', looted: 'Looted',
+    noAmmo: 'No Ammo', reloading: 'Reloading...', evacReady: 'Extraction Ready',
+    pressF: 'Press F to Extract', touchDoor: 'Near door to extract', lowHp: 'Low HP',
+    settingsTitle: 'Settings', sound: 'Sound', music: 'Music', clearSave: 'Clear Save',
+    mapNames: ['Qin Mausoleum', 'Han Tombs', 'Tang Royal', 'Song Tombs', 'Ming Tombs'],
+    mapDesc: [
+      'Beginner tomb, good for training',
+      'Intermediate tomb, traps everywhere',
+      'Advanced tomb, heavily guarded',
+      'Expert tomb, extremely dangerous',
+      'Legendary tomb, only the strong survive'
+    ],
+    diff: ['Easy', 'Normal', 'Hard', 'Extreme', 'Legend'],
+    items: {
+      gold: 'Gold Bar', jade: 'Jade Disc', bronze: 'Bronze', pearl: 'Pearl',
+      scroll: 'Scroll', sword: 'Sword', armor: 'Armor', potion: 'Potion',
+      ammo: 'Ammo', key: 'Key', coin: 'Coin', gem: 'Gem'
+    },
+    weapons: {
+      pistol: 'Pistol', smg: 'SMG', shotgun: 'Shotgun', rifle: 'Rifle'
+    }
+  }
+};
+
+let lang = 'zh';
+function setLang(l) {
+  lang = l;
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', (l==='zh' && b.textContent.includes('中')) || (l==='en' && b.textContent.includes('EN')));
+  });
+  updateUI();
+}
+function t(key) { return I18N[lang][key] || key; }
+function itemName(type) { return I18N[lang].items[type] || type; }
+function weaponName(key) { return I18N[lang].weapons[key] || WEAPONS[key]?.name || key; }
+
+const SAVE_KEY = 'tomb_raider_save_v3';
+
+function loadSave() {
+  try {
+    const data = localStorage.getItem(SAVE_KEY);
+    if (data) return JSON.parse(data);
+  } catch(e) {}
+  return null;
+}
+
+function saveGame(data) {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+  } catch(e) {}
+}
+
+function getDefaultSave() {
+  return {
+    level: 1, exp: 0, expNeed: 100,
+    gold: 0, warehouse: {},
+    unlockedMaps: [0], bestScores: [0,0,0,0,0],
+    settings: { sound: true, music: true, sensitivity: 1 },
+    totalKills: 0, totalLoots: 0, playTime: 0,
+    weapons: ['pistol'], currentWeapon: 'pistol',
+    hpMax: 100, staminaMax: 100
+  };
+}
+
+let saveData = loadSave() || getDefaultSave();
+
+const TILE_SIZE = 40;
+const WEAPONS = {
+  pistol: { key:'pistol', damage: 25, fireRate: 300, ammo: 30, maxAmmo: 30, totalAmmo: 90, range: 400, spread: 0.05, auto: false },
+  smg: { key:'smg', damage: 15, fireRate: 100, ammo: 40, maxAmmo: 40, totalAmmo: 160, range: 350, spread: 0.08, auto: true },
+  shotgun: { key:'shotgun', damage: 60, fireRate: 800, ammo: 6, maxAmmo: 6, totalAmmo: 36, range: 250, spread: 0.2, pellets: 5, auto: false },
+  rifle: { key:'rifle', damage: 80, fireRate: 1000, ammo: 10, maxAmmo: 10, totalAmmo: 50, range: 800, spread: 0.01, auto: false }
+};
+
+const ENEMY_TYPES = {
+  zombie: { hp: 60, speed: 1.2, damage: 10, exp: 10, color: '#5d4e37', size: 18, range: 300 },
+  guard: { hp: 100, speed: 1.5, damage: 15, exp: 20, color: '#8b0000', size: 20, range: 400 },
+  archer: { hp: 40, speed: 1.8, damage: 12, exp: 15, color: '#2c5f2d', size: 16, range: 500 },
+  boss: { hp: 500, speed: 0.8, damage: 30, exp: 100, color: '#4a0080', size: 30, range: 350 }
+};
+
+const ITEM_TYPES = [
+  { type: 'gold', value: 100, weight: 2, icon: '\uD83C\uDFC6', chance: 0.08 },
+  { type: 'jade', value: 200, weight: 1.5, icon: '\uD83D\uDC8E', chance: 0.05 },
+  { type: 'bronze', value: 50, weight: 3, icon: '\uD83C\uDFFA', chance: 0.12 },
+  { type: 'pearl', value: 300, weight: 0.5, icon: '\u26AA', chance: 0.03 },
+  { type: 'scroll', value: 150, weight: 0.3, icon: '\uD83D\uDCDC', chance: 0.06 },
+  { type: 'sword', value: 250, weight: 4, icon: '\u2694\uFE0F', chance: 0.04 },
+  { type: 'armor', value: 400, weight: 5, icon: '\uD83D\uDEE1\uFE0F', chance: 0.02 },
+  { type: 'potion', value: 50, weight: 0.5, icon: '\uD83E\uDDEA', chance: 0.15 },
+  { type: 'ammo', value: 10, weight: 0.2, icon: '\uD83D\uDD2B', chance: 0.2 },
+  { type: 'coin', value: 20, weight: 0.1, icon: '\uD83E\uDE99', chance: 0.3 },
+  { type: 'gem', value: 500, weight: 1, icon: '\uD83D\uDCA0', chance: 0.01 }
+];
+
+let canvas, ctx, mmCanvas, mmCtx;
+let gameState = 'menu';
+let currentMap = 0;
+let mapData = null;
+let player = {};
+let enemies = [];
+let bullets = [];
+let items = [];
+let particles = [];
+let camera = { x: 0, y: 0 };
+let gameTime = 0;
+let timeLimit = 600;
+let score = 0;
+let kills = 0;
+let loots = 0;
+let evacPoint = null;
+let evacOpen = false;
+let lastTime = 0;
+let keys = {};
+let mouse = { x: 0, y: 0, down: false };
+let joystick = { active: false, dx: 0, dy: 0 };
+let shootTouch = false;
+let animFrame = null;
+let bagOpen = false;
+let isMobile = false;
+let modalCallback = null;
+
+function init() {
+  canvas = document.getElementById('gameCanvas');
+  ctx = canvas.getContext('2d');
+  mmCanvas = document.getElementById('minimap');
+  mmCtx = mmCanvas.getContext('2d');
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+  isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+  setupControls();
+  updateUI();
+  updateSettingsUI();
+  if (saveData.currentRun) {
+    document.getElementById('btnContinue').style.display = 'block';
+  }
+  requestAnimationFrame(gameLoop);
+}
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  mmCanvas.width = 150;
+  mmCanvas.height = 150;
+}
+
+function setupControls() {
+  document.addEventListener('keydown', e => {
+    keys[e.code] = true;
+    if (e.code === 'KeyF' && gameState === 'playing') tryEvac();
+    if (e.code === 'KeyR' && gameState === 'playing') reload();
+    if (e.code === 'KeyB' || e.code === 'Tab') { e.preventDefault(); toggleBag(); }
+    if (e.code === 'KeyM') toggleMap();
+    if (e.code === 'Digit1') switchWeapon('pistol');
+    if (e.code === 'Digit2') switchWeapon('smg');
+    if (e.code === 'Digit3') switchWeapon('shotgun');
+    if (e.code === 'Digit4') switchWeapon('rifle');
+    if (e.code === 'Escape') { if (gameState === 'playing') togglePause(); }
+  });
+  document.addEventListener('keyup', e => { keys[e.code] = false; });
+
+  canvas.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+  canvas.addEventListener('mousedown', e => { if (e.button === 0) { mouse.down = true; shoot(); } });
+  canvas.addEventListener('mouseup', e => { if (e.button === 0) mouse.down = false; });
+
+  const jBase = document.getElementById('joystickBase');
+  const jStick = document.getElementById('joystickStick');
+  let jTouchId = null;
+
+  jBase.addEventListener('touchstart', e => {
+    e.preventDefault();
+    const touch = e.changedTouches[0];
+    jTouchId = touch.identifier;
+    updateJoystick(touch);
+  }, {passive:false});
+
+  document.addEventListener('touchmove', e => {
+    if (jTouchId === null) return;
+    for (let t of e.changedTouches) {
+      if (t.identifier === jTouchId) { updateJoystick(t); break; }
+    }
+  }, {passive:false});
+
+  document.addEventListener('touchend', e => {
+    for (let t of e.changedTouches) {
+      if (t.identifier === jTouchId) {
+        jTouchId = null;
+        joystick.active = false;
+        joystick.dx = 0;
+        joystick.dy = 0;
+        jStick.style.transform = 'translate(-50%, -50%)';
+        break;
+      }
+    }
+  });
+
+  function updateJoystick(touch) {
+    const rect = jBase.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    let dx = touch.clientX - cx;
+    let dy = touch.clientY - cy;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const maxDist = 35;
+    if (dist > maxDist) { dx = dx/dist*maxDist; dy = dy/dist*maxDist; }
+    jStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    joystick.active = true;
+    joystick.dx = dx / maxDist;
+    joystick.dy = dy / maxDist;
+  }
+
+  const shootBtn = document.getElementById('shootBtn');
+  shootBtn.addEventListener('touchstart', e => { e.preventDefault(); shootTouch = true; shoot(); }, {passive:false});
+  shootBtn.addEventListener('touchend', e => { e.preventDefault(); shootTouch = false; });
+  shootBtn.addEventListener('touchcancel', e => { shootTouch = false; });
+
+  document.getElementById('bagBtn').addEventListener('click', toggleBag);
+}
+
+function updateUI() {
+  document.getElementById('gameTitle').textContent = lang === 'zh' ? '摸金校尉' : 'TOMB RAIDER';
+  document.getElementById('gameSubtitle').textContent = lang === 'zh' ? 'TOMB RAIDER SHOOTER' : '摸金射击';
+  document.getElementById('btnStart').textContent = t('start');
+  document.getElementById('btnWarehouse').textContent = t('warehouse');
+  document.getElementById('btnContinue').textContent = t('continue');
+  document.getElementById('btnSettings').textContent = t('settings');
+  document.getElementById('selectTitle').textContent = t('selectMap');
+  document.getElementById('btnBack').textContent = t('back');
+  document.getElementById('whTitle').textContent = t('whTitle');
+  document.getElementById('btnWhBack').textContent = t('back');
+  document.getElementById('bagTitle').textContent = t('bagTitle');
+  document.getElementById('hudHpLabel').textContent = t('hp');
+  document.getElementById('hudStamLabel').textContent = t('stamina');
+  document.getElementById('settingsTitle').textContent = t('settingsTitle');
+  document.getElementById('lblSound').textContent = t('sound');
+  document.getElementById('lblMusic').textContent = t('music');
+  document.getElementById('btnClear').textContent = t('clearSave');
+  renderMapSelect();
+  renderWarehouse();
+  updateWeaponBar();
+}
+
+function updateSettingsUI() {
+  document.getElementById('toggleSound').classList.toggle('on', saveData.settings.sound);
+  document.getElementById('toggleMusic').classList.toggle('on', saveData.settings.music);
+}
+
+function toggleSetting(key) {
+  saveData.settings[key] = !saveData.settings[key];
+  updateSettingsUI();
+  saveGame(saveData);
+}
+
+function clearSave() {
+  if (confirm(lang === 'zh' ? '确定要清除所有存档吗？此操作不可恢复！' : 'Clear all save data? This cannot be undone!')) {
+    localStorage.removeItem(SAVE_KEY);
+    saveData = getDefaultSave();
+    saveGame(saveData);
+    updateUI();
+    closeSettings();
+    showToast(lang === 'zh' ? '存档已清除' : 'Save cleared');
+  }
+}
+
+function showMapSelect() {
+  document.getElementById('mainMenu').style.display = 'none';
+  document.getElementById('mapSelect').style.display = 'flex';
+  renderMapSelect();
+}
+
+function showWarehouse() {
+  document.getElementById('mainMenu').style.display = 'none';
+  document.getElementById('warehouse').style.display = 'flex';
+  renderWarehouse();
+}
+
+function showSettings() {
+  document.getElementById('settingsPanel').style.display = 'block';
+}
+
+function closeSettings() {
+  document.getElementById('settingsPanel').style.display = 'none';
+}
+
+function backToMenu() {
+  document.getElementById('mapSelect').style.display = 'none';
+  document.getElementById('warehouse').style.display = 'none';
+  document.getElementById('mainMenu').style.display = 'flex';
+  if (saveData.currentRun) {
+    document.getElementById('btnContinue').style.display = 'block';
+  }
+}
+
+function renderMapSelect() {
+  const grid = document.getElementById('mapGrid');
+  grid.innerHTML = '';
+  for (let i = 0; i < 5; i++) {
+    const unlocked = saveData.unlockedMaps.includes(i);
+    const card = document.createElement('div');
+    card.className = 'map-card' + (unlocked ? '' : ' locked');
+    card.innerHTML = '<h3>' + t('mapNames')[i] + '</h3><p>' + t('mapDesc')[i] + '</p><div class="map-diff">' + t('diff')[i] + (unlocked ? '' : ' - ' + t('mapLocked')) + '</div>';
+    if (unlocked) card.onclick = function() { startGame(i); };
+    grid.appendChild(card);
+  }
+}
+
+function renderWarehouse() {
+  const grid = document.getElementById('inventoryGrid');
+  grid.innerHTML = '';
+  const wh = saveData.warehouse || {};
+  let totalValue = 0;
+  let totalItems = 0;
+  for (let type in wh) {
+    const itemDef = ITEM_TYPES.find(function(it) { return it.type === type; });
+    if (!itemDef) continue;
+    const count = wh[type];
+    totalValue += itemDef.value * count;
+    totalItems += count;
+    const div = document.createElement('div');
+    div.className = 'inv-item';
+    div.innerHTML = '<div class="item-icon">' + itemDef.icon + '</div><div class="item-name">' + itemName(type) + '</div><div class="item-count">x' + count + '</div>';
+    div.onmouseenter = function(e) { showTooltip(e, itemName(type) + '<br>价值: ' + itemDef.value + '<br>重量: ' + itemDef.weight); };
+    div.onmouseleave = hideTooltip;
+    grid.appendChild(div);
+  }
+  if (totalItems === 0) {
+    grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#8b7355; padding:40px;">' + (lang==='zh'?'仓库空空如也...':'Warehouse is empty...') + '</div>';
+  }
+  document.getElementById('whStats').innerHTML = '<span>' + (lang==='zh'?'总价值':'Total Value') + ': ' + totalValue + '</span> | <span>' + (lang==='zh'?'总数量':'Total Items') + ': ' + totalItems + '</span>';
+}
+
+function showTooltip(e, html) {
+  const tt = document.getElementById('tooltip');
+  tt.innerHTML = html;
+  tt.style.display = 'block';
+  tt.style.left = (e.clientX + 15) + 'px';
+  tt.style.top = (e.clientY + 15) + 'px';
+}
+function hideTooltip() {
+  document.getElementById('tooltip').style.display = 'none';
+}
+
+function updateWeaponBar() {
+  const bar = document.getElementById('weaponBar');
+  bar.innerHTML = '';
+  const weps = ['pistol', 'smg', 'shotgun', 'rifle'];
+  weps.forEach(function(w, i) {
+    const slot = document.createElement('div');
+    slot.className = 'weapon-slot' + (player.weapon === w ? ' active' : '');
+    slot.innerHTML = '<span class="wep-key">' + (i+1) + '</span>' + weaponName(w);
+    slot.onclick = function() { switchWeapon(w); };
+    bar.appendChild(slot);
+  });
+}
+
+function switchWeapon(w) {
+  if (!player.weapons || !player.weapons[w]) return;
+  player.weapon = w;
+  updateWeaponBar();
+  updateHUD();
+}
+
+function generateMap(mapIndex) {
+  const configs = [
+    { wallChance: 0.15, enemyCount: 15, itemCount: 25, time: 600, size: [60, 45] },
+    { wallChance: 0.2, enemyCount: 25, itemCount: 30, time: 540, size: [70, 50] },
+    { wallChance: 0.25, enemyCount: 40, itemCount: 35, time: 480, size: [75, 55] },
+    { wallChance: 0.3, enemyCount: 55, itemCount: 40, time: 420, size: [80, 60] },
+    { wallChance: 0.35, enemyCount: 70, itemCount: 45, time: 360, size: [80, 60] }
+  ];
+  const cfg = configs[mapIndex] || configs[0];
+  const w = cfg.size[0], h = cfg.size[1];
+
+  const map = [];
+  for (let y = 0; y < h; y++) {
+    map[y] = [];
+    for (let x = 0; x < w; x++) map[y][x] = 1;
+  }
+
+  let rooms = [];
+  const roomCount = 15 + mapIndex * 5;
+  for (let i = 0; i < roomCount; i++) {
+    const rw = 4 + Math.floor(Math.random() * 6);
+    const rh = 4 + Math.floor(Math.random() * 6);
+    const rx = 2 + Math.floor(Math.random() * (w - rw - 4));
+    const ry = 2 + Math.floor(Math.random() * (h - rh - 4));
+    rooms.push({x: rx, y: ry, w: rw, h: rh, cx: rx + rw/2, cy: ry + rh/2});
+    for (let y = ry; y < ry + rh; y++) {
+      for (let x = rx; x < rx + rw; x++) map[y][x] = 0;
+    }
+  }
+
+  for (let i = 0; i < rooms.length - 1; i++) {
+    const a = rooms[i], b = rooms[i+1];
+    let cx = Math.floor(a.cx), cy = Math.floor(a.cy);
+    const tx = Math.floor(b.cx), ty = Math.floor(b.cy);
+    while (cx !== tx) { map[cy][cx] = 0; cx += cx < tx ? 1 : -1; }
+    while (cy !== ty) { map[cy][cx] = 0; cy += cy < ty ? 1 : -1; }
+  }
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (x === 0 || x === w-1 || y === 0 || y === h-1) map[y][x] = 1;
+      else if (map[y][x] === 0 && Math.random() < 0.03) map[y][x] = 2;
+    }
+  }
+
+  return { data: map, width: w, height: h, config: cfg, rooms };
+}
+
+function startGame(mapIndex) {
+  if (!saveData.unlockedMaps.includes(mapIndex)) {
+    showToast(t('mapLocked'));
+    return;
+  }
+
+  currentMap = mapIndex;
+  const mapInfo = generateMap(mapIndex);
+  mapData = mapInfo;
+
+  const startRoom = mapInfo.rooms[0];
+  player = {
+    x: (startRoom.cx) * TILE_SIZE,
+    y: (startRoom.cy) * TILE_SIZE,
+    hp: saveData.hpMax || 100,
+    hpMax: saveData.hpMax || 100,
+    stamina: saveData.staminaMax || 100,
+    staminaMax: saveData.staminaMax || 100,
+    speed: 3,
+    angle: 0,
+    weapon: saveData.currentWeapon || 'pistol',
+    weapons: {},
+    bag: [],
+    bagMax: 50,
+    bagWeight: 0,
+    invincible: 0,
+    reloading: false,
+    lastShot: 0,
+    level: saveData.level,
+    exp: 0
+  };
+
+  for (let k in WEAPONS) {
+    player.weapons[k] = { ammo: WEAPONS[k].maxAmmo, totalAmmo: WEAPONS[k].totalAmmo };
+  }
+
+  enemies = [];
+  const enemyCfg = [
+    { zombie: 0.6, guard: 0.3, archer: 0.1 },
+    { zombie: 0.4, guard: 0.4, archer: 0.2 },
+    { zombie: 0.2, guard: 0.4, archer: 0.3, boss: 0.1 },
+    { zombie: 0.1, guard: 0.3, archer: 0.4, boss: 0.2 },
+    { zombie: 0.05, guard: 0.2, archer: 0.45, boss: 0.3 }
+  ][mapIndex];
+
+  for (let i = 0; i < mapInfo.config.enemyCount; i++) {
+    let type = 'zombie';
+    const r = Math.random();
+    let cum = 0;
+    for (let t in enemyCfg) { cum += enemyCfg[t]; if (r < cum) { type = t; break; } }
+
+    const room = mapInfo.rooms[1 + Math.floor(Math.random() * (mapInfo.rooms.length - 1))];
+    const ex = (room.cx + (Math.random() - 0.5) * room.w * 0.6) * TILE_SIZE;
+    const ey = (room.cy + (Math.random() - 0.5) * room.h * 0.6) * TILE_SIZE;
+
+    enemies.push({
+      x: ex, y: ey,
+      type: type,
+      hp: ENEMY_TYPES[type].hp * (1 + mapIndex * 0.2),
+      maxHp: ENEMY_TYPES[type].hp * (1 + mapIndex * 0.2),
+      speed: ENEMY_TYPES[type].speed,
+      damage: ENEMY_TYPES[type].damage,
+      exp: ENEMY_TYPES[type].exp,
+      color: ENEMY_TYPES[type].color,
+      size: ENEMY_TYPES[type].size,
+      range: ENEMY_TYPES[type].range,
+      angle: Math.random() * Math.PI * 2,
+      lastAttack: 0,
+      state: 'idle',
+      animFrame: 0
+    });
+  }
+
+  items = [];
+  for (let i = 0; i < mapInfo.config.itemCount; i++) {
+    const room = mapInfo.rooms[Math.floor(Math.random() * mapInfo.rooms.length)];
+    const ix = (room.cx + (Math.random() - 0.5) * room.w * 0.7) * TILE_SIZE;
+    const iy = (room.cy + (Math.random() - 0.5) * room.h * 0.7) * TILE_SIZE;
+    const itemDef = ITEM_TYPES[Math.floor(Math.random() * ITEM_TYPES.length)];
+    if (Math.random() < itemDef.chance) {
+      items.push({ x: ix, y: iy, type: itemDef.type, value: itemDef.value, weight: itemDef.weight, icon: itemDef.icon, id: Date.now() + i, bobOffset: Math.random() * Math.PI * 2 });
+    }
+  }
+
+  const lastRoom = mapInfo.rooms[mapInfo.rooms.length - 1];
+  evacPoint = { x: lastRoom.cx * TILE_SIZE, y: lastRoom.cy * TILE_SIZE, radius: 60 };
+  evacOpen = false;
+
+  bullets = [];
+  particles = [];
+  score = 0;
+  kills = 0;
+  loots = 0;
+  gameTime = 0;
+  timeLimit = mapInfo.config.time;
+
+  gameState = 'playing';
+  bagOpen = false;
+  document.getElementById('mainMenu').style.display = 'none';
+  document.getElementById('mapSelect').style.display = 'none';
+  document.getElementById('gameUI').style.display = 'block';
+  document.getElementById('minimap').style.display = 'block';
+  document.getElementById('weaponBar').style.display = 'flex';
+
+  if (isMobile) {
+    document.getElementById('joystickZone').style.display = 'block';
+    document.getElementById('shootBtn').style.display = 'flex';
+    document.getElementById('bagBtn').style.display = 'flex';
+  }
+
+  updateWeaponBar();
+  saveData.currentRun = { mapIndex: mapIndex, startTime: Date.now() };
+  saveGame(saveData);
+  showToast(t('evacReady'));
+}
+
+function continueGame() {
+  if (!saveData.currentRun) return;
+  startGame(saveData.currentRun.mapIndex);
+}
+
+function gameLoop(timestamp) {
+  const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+  lastTime = timestamp;
+
+  if (gameState === 'playing') {
+    gameTime += dt;
+    update(dt);
+    render();
+    renderMinimap();
+    updateHUD();
+
+    if (gameTime >= timeLimit) endGame('timeout');
+    if (player.hp <= 0) endGame('died');
+  } else if (gameState === 'menu') {
+    renderMenuBg();
+  }
+
+  animFrame = requestAnimationFrame(gameLoop);
+}
+
+function update(dt) {
+  let dx = 0, dy = 0;
+  const sprint = keys['ShiftLeft'] || keys['ShiftRight'];
+  const speed = player.speed * (sprint && player.stamina > 0 ? 1.5 : 1);
+
+  if (joystick.active) {
+    dx = joystick.dx * speed * 60 * dt;
+    dy = joystick.dy * speed * 60 * dt;
+  } else {
+    if (keys['KeyW'] || keys['ArrowUp']) dy -= speed * 60 * dt;
+    if (keys['KeyS'] || keys['ArrowDown']) dy += speed * 60 * dt;
+    if (keys['KeyA'] || keys['ArrowLeft']) dx -= speed * 60 * dt;
+    if (keys['KeyD'] || keys['ArrowRight']) dx += speed * 60 * dt;
+  }
+
+  if (dx !== 0 && !isWall(player.x + dx, player.y)) player.x += dx;
+  if (dy !== 0 && !isWall(player.x, player.y + dy)) player.y += dy;
+
+  if (!isMobile) {
+    player.angle = Math.atan2(mouse.y - canvas.height/2, mouse.x - canvas.width/2);
+  } else if (joystick.active) {
+    player.angle = Math.atan2(joystick.dy, joystick.dx);
+  }
+
+  const wpn = player.weapons[player.weapon];
+  if ((mouse.down || shootTouch) && WEAPONS[player.weapon].auto && Date.now() - player.lastShot > WEAPONS[player.weapon].fireRate) {
+    shoot();
+  }
+
+  if (sprint) {
+    player.stamina = Math.max(0, player.stamina - 30 * dt);
+  } else {
+    player.stamina = Math.min(player.staminaMax, player.stamina + 20 * dt);
+  }
+
+  if (player.invincible > 0) player.invincible -= dt;
+
+  // Update bullets
+  for (let i = bullets.length - 1; i >= 0; i--) {
+    const b = bullets[i];
+    b.x += Math.cos(b.angle) * b.speed * dt;
+    b.y += Math.sin(b.angle) * b.speed * dt;
+    b.life -= dt;
+
+    if (isWall(b.x, b.y) || b.life <= 0) {
+      createParticles(b.x, b.y, '#d4a853', 3);
+      bullets.splice(i, 1);
+      continue;
+    }
+
+    for (let j = enemies.length - 1; j >= 0; j--) {
+      const e = enemies[j];
+      if (Math.hypot(b.x - e.x, b.y - e.y) < e.size + 5) {
+        e.hp -= b.damage;
+        createParticles(b.x, b.y, '#e74c3c', 5);
+        bullets.splice(i, 1);
+        if (e.hp <= 0) killEnemy(j);
+        break;
+      }
+    }
+  }
+
+  // Update enemies
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    const e = enemies[i];
+    const dist = Math.hypot(player.x - e.x, player.y - e.y);
+    e.animFrame += dt * 5;
+
+    if (dist < e.range) {
+      e.state = 'chase';
+      e.angle = Math.atan2(player.y - e.y, player.x - e.x);
+      const ex = Math.cos(e.angle) * e.speed * 40 * dt;
+      const ey = Math.sin(e.angle) * e.speed * 40 * dt;
+      if (!isWall(e.x + ex, e.y)) e.x += ex;
+      if (!isWall(e.x, e.y + ey)) e.y += ey;
+
+      if (dist < e.size + 20 && Date.now() - e.lastAttack > 1000) {
+        if (player.invincible <= 0) {
+          player.hp -= e.damage;
+          player.invincible = 0.5;
+          createParticles(player.x, player.y, '#c0392b', 8);
+        }
+        e.lastAttack = Date.now();
+      }
+    } else {
+      e.state = 'idle';
+      if (Math.random() < 0.02) e.angle += (Math.random() - 0.5) * 2;
+      const px = Math.cos(e.angle) * e.speed * 20 * dt;
+      const py = Math.sin(e.angle) * e.speed * 20 * dt;
+      if (!isWall(e.x + px, e.y)) e.x += px;
+      if (!isWall(e.x, e.y + py)) e.y += py;
+    }
+  }
+
+  // Pickup items
+  for (let i = items.length - 1; i >= 0; i--) {
+    const item = items[i];
+    item.bobOffset += dt * 3;
+    if (Math.hypot(player.x - item.x, player.y - item.y) < 30) {
+      if (item.type === 'potion') {
+        player.hp = Math.min(player.hpMax, player.hp + 30);
+        showToast('+30 HP');
+        items.splice(i, 1);
+      } else if (item.type === 'ammo') {
+        for (let w in player.weapons) player.weapons[w].totalAmmo += 30;
+        showToast('+30 Ammo');
+        items.splice(i, 1);
+      } else {
+        if (player.bagWeight + item.weight <= player.bagMax) {
+          player.bag.push({ type: item.type, value: item.value, weight: item.weight, icon: item.icon, id: item.id });
+          player.bagWeight += item.weight;
+          score += item.value;
+          loots++;
+          showToast(itemName(item.type) + ' +1');
+          items.splice(i, 1);
+        } else {
+          showToast(t('fullBag'));
+        }
+      }
+    }
+  }
+
+  // Update particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.life -= dt;
+    p.vy += 100 * dt;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+
+  // Evac point
+  if (!evacOpen && kills >= Math.max(5, Math.floor(mapData.config.enemyCount * 0.3))) {
+    evacOpen = true;
+    showToast(t('evacReady'));
+  }
+
+  camera.x = player.x - canvas.width / 2;
+  camera.y = player.y - canvas.height / 2;
+}
+
+function isWall(x, y) {
+  const tx = Math.floor(x / TILE_SIZE);
+  const ty = Math.floor(y / TILE_SIZE);
+  if (!mapData || ty < 0 || ty >= mapData.height || tx < 0 || tx >= mapData.width) return true;
+  return mapData.data[ty][tx] === 1;
+}
+
+function shoot() {
+  const wpnDef = WEAPONS[player.weapon];
+  const wpn = player.weapons[player.weapon];
+  if (player.reloading || wpn.ammo <= 0) {
+    if (wpn.ammo <= 0 && wpn.totalAmmo > 0) reload();
+    return;
+  }
+  if (Date.now() - player.lastShot < wpnDef.fireRate) return;
+
+  player.lastShot = Date.now();
+  wpn.ammo--;
+
+  const pellets = wpnDef.pellets || 1;
+  for (let i = 0; i < pellets; i++) {
+    const spread = (Math.random() - 0.5) * wpnDef.spread * 2;
+    const angle = player.angle + spread;
+    bullets.push({
+      x: player.x + Math.cos(player.angle) * 20,
+      y: player.y + Math.sin(player.angle) * 20,
+      angle: angle, speed: 600, damage: wpnDef.damage,
+      life: wpnDef.range / 600, owner: 'player'
+    });
+  }
+
+  createParticles(
+    player.x + Math.cos(player.angle) * 25,
+    player.y + Math.sin(player.angle) * 25,
+    '#f39c12', 3
+  );
+}
+
+function reload() {
+  const wpnDef = WEAPONS[player.weapon];
+  const wpn = player.weapons[player.weapon];
+  if (wpn.ammo >= wpnDef.maxAmmo || wpn.totalAmmo <= 0 || player.reloading) return;
+  player.reloading = true;
+  showToast(t('reloading'));
+  setTimeout(function() {
+    const need = wpnDef.maxAmmo - wpn.ammo;
+    const take = Math.min(need, wpn.totalAmmo);
+    wpn.ammo += take;
+    wpn.totalAmmo -= take;
+    player.reloading = false;
+  }, 1500);
+}
+
+function killEnemy(index) {
+  const e = enemies[index];
+  createParticles(e.x, e.y, e.color, 15);
+  score += e.exp * 5;
+  kills++;
+  player.exp += e.exp;
+
+  if (Math.random() < 0.3) {
+    const itemDef = ITEM_TYPES[Math.floor(Math.random() * ITEM_TYPES.length)];
+    items.push({ x: e.x, y: e.y, type: itemDef.type, value: itemDef.value, weight: itemDef.weight, icon: itemDef.icon, id: Date.now(), bobOffset: 0 });
+  }
+
+  enemies.splice(index, 1);
+}
+
+function createParticles(x, y, color, count) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 50 + Math.random() * 150;
+    particles.push({
+      x: x, y: y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 50,
+      life: 0.3 + Math.random() * 0.5, color: color, size: 2 + Math.random() * 3
+    });
+  }
+}
+
+function render() {
+  ctx.fillStyle = '#0d0603';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  if (gameState !== 'playing' || !mapData) return;
+
+  ctx.save();
+  ctx.translate(-camera.x, -camera.y);
+
+  const startX = Math.max(0, Math.floor(camera.x / TILE_SIZE) - 1);
+  const endX = Math.min(mapData.width, Math.floor((camera.x + canvas.width) / TILE_SIZE) + 2);
+  const startY = Math.max(0, Math.floor(camera.y / TILE_SIZE) - 1);
+  const endY = Math.min(mapData.height, Math.floor((camera.y + canvas.height) / TILE_SIZE) + 2);
+
+  for (let y = startY; y < endY; y++) {
+    for (let x = startX; x < endX; x++) {
+      const tile = mapData.data[y][x];
+      const px = x * TILE_SIZE;
+      const py = y * TILE_SIZE;
+
+      if (tile === 1) {
+        ctx.fillStyle = '#1a0f0a';
+        ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+        ctx.fillStyle = '#2a1a0a';
+        ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+        ctx.strokeStyle = '#0d0603';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(px + 4, py + 4, TILE_SIZE/2 - 4, TILE_SIZE/2 - 4);
+        ctx.strokeRect(px + TILE_SIZE/2, py + 4, TILE_SIZE/2 - 4, TILE_SIZE/2 - 4);
+        ctx.strokeRect(px + 4, py + TILE_SIZE/2, TILE_SIZE - 8, TILE_SIZE/2 - 4);
+      } else if (tile === 2) {
+        ctx.fillStyle = '#1a0f0a';
+        ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+        ctx.fillStyle = '#3a2a1a';
+        ctx.beginPath();
+        ctx.arc(px + TILE_SIZE/2, py + TILE_SIZE/2, 6, 0, Math.PI*2);
+        ctx.fill();
+      } else {
+        ctx.fillStyle = ((x + y) % 2 === 0) ? '#14100c' : '#16120e';
+        ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+      }
+    }
+  }
+
+  // Evac point
+  if (evacPoint) {
+    const pulse = Math.sin(Date.now() / 300) * 0.3 + 0.7;
+    ctx.fillStyle = evacOpen ? 'rgba(39,174,96,' + (pulse * 0.3) + ')' : 'rgba(100,100,100,' + (pulse * 0.2) + ')';
+    ctx.beginPath();
+    ctx.arc(evacPoint.x, evacPoint.y, evacPoint.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = evacOpen ? '#27ae60' : '#555';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = evacOpen ? '#2ecc71' : '#666';
+    ctx.font = '24px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('\uD83D\uDEAA', evacPoint.x, evacPoint.y + 8);
+  }
+
+  // Items
+  for (let item of items) {
+    const bob = Math.sin(item.bobOffset) * 3;
+    ctx.fillStyle = 'rgba(212,168,83,' + (0.3 + Math.sin(item.bobOffset)*0.2) + ')';
+    ctx.beginPath();
+    ctx.arc(item.x, item.y + bob, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = '20px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(item.icon, item.x, item.y + bob + 7);
+  }
+
+  // Enemies
+  for (let e of enemies) {
+    ctx.save();
+    ctx.translate(e.x, e.y);
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.beginPath();
+    ctx.ellipse(0, e.size, e.size * 0.8, e.size * 0.3, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = e.color;
+    const breathe = Math.sin(e.animFrame) * 2;
+    ctx.beginPath();
+    ctx.arc(0, breathe, e.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#e74c3c';
+    const eyeOff = e.size * 0.4;
+    ctx.beginPath();
+    ctx.arc(-eyeOff/2, breathe - 3, 3, 0, Math.PI*2);
+    ctx.arc(eyeOff/2, breathe - 3, 3, 0, Math.PI*2);
+    ctx.fill();
+    if (e.hp < e.maxHp) {
+      ctx.fillStyle = '#1a0f0a';
+      ctx.fillRect(-15, -e.size - 10, 30, 4);
+      ctx.fillStyle = '#c0392b';
+      ctx.fillRect(-15, -e.size - 10, 30 * (e.hp / e.maxHp), 4);
+    }
+    ctx.restore();
+  }
+
+  // Bullets
+  for (let b of bullets) {
+    ctx.fillStyle = '#f1c40f';
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(241,196,15,0.3)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(b.x, b.y);
+    ctx.lineTo(b.x - Math.cos(b.angle) * 15, b.y - Math.sin(b.angle) * 15);
+    ctx.stroke();
+  }
+
+  // Particles
+  for (let p of particles) {
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = p.life / 0.8;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size * (p.life / 0.8), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // Player
+  ctx.save();
+  ctx.translate(player.x, player.y);
+  ctx.rotate(player.angle);
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(0, 18, 14, 6, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = '#d4a853';
+  ctx.beginPath();
+  ctx.arc(0, 0, 14, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#1a0f0a';
+  ctx.beginPath();
+  ctx.arc(0, 0, 10, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#8b7355';
+  ctx.fillRect(8, -3, 18, 6);
+  ctx.fillStyle = '#d4a853';
+  ctx.fillRect(20, -2, 8, 4);
+  ctx.restore();
+
+  if (player.invincible > 0 && Math.floor(player.invincible * 10) % 2 === 0) {
+    ctx.fillStyle = 'rgba(192,57,43,0.2)';
+    ctx.fillRect(camera.x, camera.y, canvas.width, canvas.height);
+  }
+
+  ctx.restore();
+
+  // Evac indicator
+  if (evacOpen && evacPoint) {
+    const angle = Math.atan2(evacPoint.y - player.y, evacPoint.x - player.x);
+    const dist = Math.hypot(evacPoint.x - player.x, evacPoint.y - player.y);
+    const indicator = document.getElementById('evacIndicator');
+    if (dist > 300) {
+      indicator.style.display = 'flex';
+      indicator.style.transform = 'translateY(-50%) rotate(' + angle + 'rad)';
+    } else {
+      indicator.style.display = 'none';
+    }
+  }
+}
+
+function renderMinimap() {
+  if (gameState !== 'playing' || !mapData) return;
+  const mm = mmCanvas;
+  const mctx = mmCtx;
+  const scale = mm.width / (mapData.width * TILE_SIZE);
+
+  mctx.fillStyle = '#0d0603';
+  mctx.fillRect(0, 0, mm.width, mm.height);
+
+  for (let y = 0; y < mapData.height; y++) {
+    for (let x = 0; x < mapData.width; x++) {
+      if (mapData.data[y][x] === 1) {
+        mctx.fillStyle = '#2a1a0a';
+        mctx.fillRect(x * TILE_SIZE * scale, y * TILE_SIZE * scale, TILE_SIZE * scale + 1, TILE_SIZE * scale + 1);
+      }
+    }
+  }
+
+  for (let e of enemies) {
+    mctx.fillStyle = '#c0392b';
+    mctx.beginPath();
+    mctx.arc(e.x * scale, e.y * scale, 2, 0, Math.PI*2);
+    mctx.fill();
+  }
+
+  if (evacPoint) {
+    mctx.fillStyle = evacOpen ? '#27ae60' : '#555';
+    mctx.beginPath();
+    mctx.arc(evacPoint.x * scale, evacPoint.y * scale, 4, 0, Math.PI*2);
+    mctx.fill();
+  }
+
+  mctx.fillStyle = '#d4a853';
+  mctx.beginPath();
+  mctx.arc(player.x * scale, player.y * scale, 3, 0, Math.PI*2);
+  mctx.fill();
+}
+
+function renderMenuBg() {
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Subtle animated particles in menu
+  const time = Date.now() / 1000;
+  for (let i = 0; i < 30; i++) {
+    const x = (Math.sin(time * 0.3 + i * 1.5) * 0.5 + 0.5) * canvas.width;
+    const y = (Math.cos(time * 0.2 + i * 2.1) * 0.5 + 0.5) * canvas.height;
+    const size = 1 + Math.sin(time + i) * 1;
+    ctx.fillStyle = 'rgba(212,168,83,' + (0.1 + Math.sin(time * 0.5 + i) * 0.05) + ')';
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function updateHUD() {
+  if (!player.weapons) return;
+  const wpn = player.weapons[player.weapon];
+  const wpnDef = WEAPONS[player.weapon];
+  document.getElementById('hudHpVal').textContent = Math.ceil(player.hp);
+  document.getElementById('hudHpMax').textContent = player.hpMax;
+  document.getElementById('hpFill').style.width = (player.hp / player.hpMax * 100) + '%';
+  document.getElementById('staminaFill').style.width = (player.stamina / player.staminaMax * 100) + '%';
+  document.getElementById('gameTimer').textContent = formatTime(timeLimit - gameTime);
+  document.getElementById('gameScore').textContent = (lang === 'zh' ? '摸金值: ' : 'Score: ') + score;
+  document.getElementById('enemyCount').textContent = (lang === 'zh' ? '敌人: ' : 'Enemies: ') + enemies.length;
+  document.getElementById('ammoDisplay').textContent = wpn.ammo + ' / ' + wpn.totalAmmo;
+  document.getElementById('weaponName').textContent = weaponName(player.weapon) + (player.reloading ? ' [' + t('reloading') + ']' : '');
+  document.getElementById('mapName').textContent = t('mapNames')[currentMap];
+  document.getElementById('position').textContent = 'X:' + Math.floor(player.x/TILE_SIZE) + ' Y:' + Math.floor(player.y/TILE_SIZE);
+
+  if (bagOpen) renderBag();
+}
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return m + ':' + (s < 10 ? '0' : '') + s;
+}
+
+function toggleBag() {
+  if (gameState !== 'playing') return;
+  bagOpen = !bagOpen;
+  const panel = document.getElementById('bagPanel');
+  panel.style.display = bagOpen ? 'block' : 'none';
+  if (bagOpen) renderBag();
+}
+
+function renderBag() {
+  const grid = document.getElementById('bagGrid');
+  grid.innerHTML = '';
+  if (!player.bag || player.bag.length === 0) {
+    grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#8b7355; padding:20px;">' + (lang==='zh'?'背包空空如也...':'Bag is empty...') + '</div>';
+  } else {
+    const counts = {};
+    for (let item of player.bag) {
+      counts[item.type] = (counts[item.type] || 0) + 1;
+    }
+    for (let type in counts) {
+      const itemDef = ITEM_TYPES.find(function(it) { return it.type === type; });
+      const div = document.createElement('div');
+      div.className = 'inv-item';
+      div.innerHTML = '<div class="item-icon">' + itemDef.icon + '</div><div class="item-name">' + itemName(type) + '</div><div class="item-count">x' + counts[type] + '</div>';
+      grid.appendChild(div);
+    }
+  }
+  document.getElementById('bagWeight').textContent = (lang==='zh'?'负重':'Weight') + ': ' + (player.bagWeight || 0).toFixed(1) + '/' + player.bagMax;
+}
+
+function toggleMap() {
+  const mm = document.getElementById('minimap');
+  mm.style.display = mm.style.display === 'none' ? 'block' : 'none';
+}
+
+function togglePause() {
+  if (gameState === 'playing') {
+    gameState = 'paused';
+    showModal(t('settingsTitle'), t('continueBtn'), function() {
+      gameState = 'playing';
+      hideModal();
+    });
+  }
+}
+
+function tryEvac() {
+  if (!evacOpen || !evacPoint) return;
+  const dist = Math.hypot(player.x - evacPoint.x, player.y - evacPoint.y);
+  if (dist < evacPoint.radius) {
+    endGame('evacuated');
+  } else {
+    showToast(t('touchDoor'));
+  }
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.style.display = 'block';
+  setTimeout(function() { toast.style.display = 'none'; }, 2000);
+}
+
+function showModal(title, btnText, callback) {
+  modalCallback = callback;
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBtn').textContent = btnText || t('confirm');
+  document.getElementById('gameModal').style.display = 'flex';
+}
+
+function hideModal() {
+  document.getElementById('gameModal').style.display = 'none';
+}
+
+function modalAction() {
+  if (modalCallback) modalCallback();
+  else {
+    hideModal();
+    returnToMenu();
+  }
+}
+
+function endGame(reason) {
+  gameState = 'over';
+  delete saveData.currentRun;
+
+  // Transfer bag to warehouse
+  if (player.bag && player.bag.length > 0) {
+    for (let item of player.bag) {
+      saveData.warehouse[item.type] = (saveData.warehouse[item.type] || 0) + 1;
+    }
+  }
+
+  // Update stats
+  saveData.gold += score;
+  saveData.totalKills += kills;
+  saveData.totalLoots += loots;
+  saveData.playTime += gameTime;
+
+  // Best score
+  if (score > saveData.bestScores[currentMap]) {
+    saveData.bestScores[currentMap] = score;
+  }
+
+  // Level up
+  saveData.exp += player.exp;
+  while (saveData.exp >= saveData.expNeed) {
+    saveData.exp -= saveData.expNeed;
+    saveData.level++;
+    saveData.expNeed = Math.floor(saveData.expNeed * 1.5);
+    saveData.hpMax += 10;
+    saveData.staminaMax += 5;
+  }
+
+  // Unlock next map
+  if (reason === 'evacuated' && currentMap < 4 && !saveData.unlockedMaps.includes(currentMap + 1)) {
+    saveData.unlockedMaps.push(currentMap + 1);
+  }
+
+  saveGame(saveData);
+
+  const titles = { died: t('died'), timeout: t('timeOut'), evacuated: t('evacuated') };
+  const texts = {
+    died: lang === 'zh' ? '你的摸金之路到此为止...' : 'Your raid ends here...',
+    timeout: lang === 'zh' ? '时间耗尽，古墓即将坍塌！' : 'Time\'s up, the tomb is collapsing!',
+    evacuated: lang === 'zh' ? '你带着宝物成功撤离！' : 'You extracted with the loot!'
+  };
+
+  document.getElementById('modalTitle').textContent = titles[reason] || t('gameOver');
+  document.getElementById('modalText').textContent = texts[reason] || '';
+  document.getElementById('modalStats').innerHTML = 
+    '<div class="stat-box"><div class="stat-val">' + score + '</div><div class="stat-label">' + t('score') + '</div></div>' +
+    '<div class="stat-box"><div class="stat-val">' + kills + '</div><div class="stat-label">' + t('killed') + '</div></div>' +
+    '<div class="stat-box"><div class="stat-val">' + loots + '</div><div class="stat-label">' + t('looted') + '</div></div>';
+  document.getElementById('modalBtn').textContent = t('newGame');
+  modalCallback = function() {
+    hideModal();
+    returnToMenu();
+  };
+  document.getElementById('gameModal').style.display = 'flex';
+
+  // Hide game UI
+  document.getElementById('gameUI').style.display = 'none';
+  document.getElementById('minimap').style.display = 'none';
+  document.getElementById('joystickZone').style.display = 'none';
+  document.getElementById('shootBtn').style.display = 'none';
+  document.getElementById('bagBtn').style.display = 'none';
+  document.getElementById('weaponBar').style.display = 'none';
+  document.getElementById('evacIndicator').style.display = 'none';
+  document.getElementById('bagPanel').style.display = 'none';
+  bagOpen = false;
+}
+
+function returnToMenu() {
+  gameState = 'menu';
+  document.getElementById('mainMenu').style.display = 'flex';
+  document.getElementById('gameUI').style.display = 'none';
+  document.getElementById('minimap').style.display = 'none';
+  document.getElementById('joystickZone').style.display = 'none';
+  document.getElementById('shootBtn').style.display = 'none';
+  document.getElementById('bagBtn').style.display = 'none';
+  document.getElementById('weaponBar').style.display = 'none';
+  document.getElementById('evacIndicator').style.display = 'none';
+  document.getElementById('bagPanel').style.display = 'none';
+  bagOpen = false;
+  if (saveData.currentRun) {
+    document.getElementById('btnContinue').style.display = 'block';
+  }
+}
+
+// Init
+window.onload = init;
+</script>
+</body>
+</html>
