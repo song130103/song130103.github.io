@@ -9,6 +9,7 @@
   body { overflow: hidden; background: #0a0a0a; font-family: 'Microsoft YaHei', sans-serif; color: #d4a853; }
   canvas { display: block; }
 
+  /* ===== 主菜单 ===== */
   #mainMenu {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: linear-gradient(135deg, #1a0f0a 0%, #0d0603 50%, #1a0f0a 100%);
@@ -42,6 +43,98 @@
   }
   .lang-btn.active { background: #d4a853; color: #1a0f0a; }
 
+  /* ===== 装备界面（战前准备） ===== */
+  #equipScreen {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(135deg, #1a0f0a 0%, #0d0603 100%);
+    display: none; flex-direction: column; z-index: 980;
+    overflow-y: auto;
+  }
+  #equipScreen h2 { text-align: center; padding: 15px; font-size: 24px; border-bottom: 1px solid #3a2a1a; }
+  .equip-back { position: absolute; top: 15px; left: 15px; padding: 8px 16px; background: #2a1a0a; border: 1px solid #d4a853; color: #d4a853; border-radius: 4px; cursor: pointer; }
+  .equip-start { position: absolute; top: 15px; right: 15px; padding: 8px 24px; background: #d4a853; border: none; color: #1a0f0a; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 16px; }
+  .equip-start:hover { background: #e8c060; }
+
+  .equip-layout {
+    display: flex; flex-wrap: wrap; gap: 20px; padding: 20px; max-width: 1200px; margin: 0 auto; width: 100%;
+  }
+  .equip-section {
+    flex: 1; min-width: 280px; background: rgba(20,10,5,0.8);
+    border: 1px solid #3a2a1a; border-radius: 10px; padding: 15px;
+  }
+  .equip-section h3 { color: #d4a853; margin-bottom: 12px; font-size: 18px; border-bottom: 1px solid #2a1a0a; padding-bottom: 8px; }
+
+  .loadout-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  }
+  .loadout-slot {
+    aspect-ratio: 1; background: #1a0f0a; border: 2px dashed #3a2a1a;
+    border-radius: 8px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; cursor: pointer;
+    transition: all 0.2s; position: relative;
+  }
+  .loadout-slot:hover { border-color: #d4a853; }
+  .loadout-slot.occupied { border-style: solid; border-color: #d4a853; background: #2a1a0a; }
+  .loadout-slot .slot-label { font-size: 10px; color: #8b7355; position: absolute; top: 4px; left: 4px; }
+  .loadout-slot .slot-icon { font-size: 24px; }
+  .loadout-slot .slot-name { font-size: 10px; color: #d4a853; margin-top: 2px; text-align: center; }
+  .loadout-slot .slot-ammo { font-size: 9px; color: #8b7355; }
+
+  .stash-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 8px;
+    max-height: 300px; overflow-y: auto; padding: 5px;
+  }
+  .stash-item {
+    aspect-ratio: 1; background: #1a0f0a; border: 1px solid #3a2a1a;
+    border-radius: 6px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; cursor: pointer;
+    transition: all 0.2s; position: relative;
+  }
+  .stash-item:hover { border-color: #d4a853; transform: scale(1.05); }
+  .stash-item .item-icon { font-size: 24px; }
+  .stash-item .item-count { position: absolute; bottom: 2px; right: 4px; font-size: 11px; color: #d4a853; }
+  .stash-item .item-name { font-size: 9px; color: #8b7355; margin-top: 1px; }
+
+  .money-display {
+    text-align: center; padding: 10px; font-size: 20px; color: #d4a853;
+    background: rgba(20,10,5,0.9); border-radius: 8px; margin-bottom: 15px;
+  }
+
+  /* ===== 商城 ===== */
+  #shopScreen {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(135deg, #1a0f0a 0%, #0d0603 100%);
+    display: none; flex-direction: column; z-index: 970;
+    overflow-y: auto;
+  }
+  #shopScreen h2 { text-align: center; padding: 15px; font-size: 24px; border-bottom: 1px solid #3a2a1a; }
+  .shop-back { position: absolute; top: 15px; left: 15px; padding: 8px 16px; background: #2a1a0a; border: 1px solid #d4a853; color: #d4a853; border-radius: 4px; cursor: pointer; }
+  .shop-money { position: absolute; top: 15px; right: 15px; padding: 8px 16px; background: #2a1a0a; border: 1px solid #d4a853; color: #d4a853; border-radius: 4px; font-size: 16px; }
+
+  .shop-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;
+    padding: 20px; max-width: 1000px; margin: 0 auto; width: 100%;
+  }
+  .shop-card {
+    background: linear-gradient(135deg, #2a1a0a, #1a0f05);
+    border: 2px solid #3a2a1a; border-radius: 10px; padding: 15px;
+    text-align: center; transition: all 0.3s;
+  }
+  .shop-card:hover { border-color: #d4a853; transform: translateY(-3px); }
+  .shop-card .shop-icon { font-size: 40px; margin-bottom: 8px; }
+  .shop-card .shop-name { color: #d4a853; font-size: 16px; margin-bottom: 5px; }
+  .shop-card .shop-desc { color: #8b7355; font-size: 12px; margin-bottom: 8px; }
+  .shop-card .shop-price { color: #f1c40f; font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+  .shop-card .shop-btn {
+    padding: 8px 20px; background: #d4a853; border: none; color: #1a0f0a;
+    border-radius: 4px; cursor: pointer; font-weight: bold;
+  }
+  .shop-card .shop-btn:hover { background: #e8c060; }
+  .shop-card .shop-btn:disabled { background: #555; color: #888; cursor: not-allowed; }
+  .shop-card.owned { border-color: #27ae60; opacity: 0.7; }
+  .shop-card.owned .shop-btn { background: #27ae60; color: #fff; }
+
+  /* ===== 仓库 ===== */
   #warehouse {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: linear-gradient(135deg, #1a0f0a 0%, #0d0603 100%);
@@ -49,6 +142,8 @@
   }
   #warehouse h2 { text-align: center; padding: 20px; font-size: 28px; border-bottom: 1px solid #3a2a1a; }
   .wh-back { position: absolute; top: 20px; left: 20px; padding: 8px 16px; background: #2a1a0a; border: 1px solid #d4a853; color: #d4a853; border-radius: 4px; cursor: pointer; }
+  .wh-sell { position: absolute; top: 20px; right: 20px; padding: 8px 20px; background: #c0392b; border: none; color: #fff; border-radius: 4px; cursor: pointer; font-weight: bold; }
+  .wh-sell:hover { background: #e74c3c; }
   .inventory-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
     gap: 10px; padding: 20px; max-width: 600px; margin: 0 auto; width: 100%;
@@ -60,6 +155,7 @@
     transition: all 0.2s; position: relative;
   }
   .inv-item:hover { border-color: #d4a853; transform: scale(1.05); }
+  .inv-item.selected { border-color: #e74c3c; background: rgba(192,57,43,0.2); }
   .inv-item .item-icon { font-size: 28px; }
   .inv-item .item-count { position: absolute; bottom: 4px; right: 6px; font-size: 12px; color: #d4a853; }
   .inv-item .item-name { font-size: 10px; color: #8b7355; margin-top: 2px; }
@@ -69,6 +165,7 @@
     display: none; max-width: 200px;
   }
 
+  /* ===== 选图 ===== */
   #mapSelect {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: linear-gradient(135deg, #1a0f0a 0%, #0d0603 100%);
@@ -87,6 +184,7 @@
   .map-card .map-diff { color: #c0392b; font-size: 12px; margin-top: 8px; }
   .map-card.locked { opacity: 0.5; cursor: not-allowed; border-color: #333; }
 
+  /* ===== HUD ===== */
   #gameUI {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     pointer-events: none; z-index: 100; display: none;
@@ -108,6 +206,7 @@
   .timer { font-size: 24px; color: #e74c3c; font-weight: bold; }
   .score { font-size: 16px; color: #d4a853; }
 
+  /* ===== 摇杆 ===== */
   #joystickZone {
     position: fixed; bottom: 80px; left: 80px;
     width: 120px; height: 120px; z-index: 200; display: none;
@@ -150,6 +249,28 @@
     display: none; z-index: 150;
   }
 
+  /* ===== 容器搜刮界面 ===== */
+  #lootPanel {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 90%; max-width: 500px; max-height: 80vh;
+    background: rgba(10,6,3,0.95); border: 2px solid #d4a853;
+    border-radius: 12px; padding: 20px; display: none;
+    z-index: 400; overflow-y: auto; pointer-events: auto;
+  }
+  #lootPanel h3 { text-align: center; color: #d4a853; margin-bottom: 15px; }
+  .loot-close { position: absolute; top: 10px; right: 15px; color: #d4a853; font-size: 24px; cursor: pointer; }
+  .loot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 8px; }
+  .loot-item {
+    aspect-ratio: 1; background: #1a0f0a; border: 1px solid #3a2a1a;
+    border-radius: 6px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .loot-item:hover { border-color: #d4a853; transform: scale(1.05); }
+  .loot-item .item-icon { font-size: 24px; }
+  .loot-item .item-name { font-size: 9px; color: #8b7355; margin-top: 1px; }
+
+  /* ===== 弹窗 ===== */
   .modal {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.85); display: none;
@@ -163,6 +284,7 @@
   .modal-content h2 { color: #d4a853; margin-bottom: 20px; font-size: 28px; }
   .modal-content p { color: #8b7355; margin-bottom: 20px; line-height: 1.6; }
 
+  /* ===== 背包 ===== */
   #bagPanel {
     position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
     width: 90%; max-width: 500px; max-height: 80vh;
@@ -173,39 +295,7 @@
   #bagPanel h3 { text-align: center; color: #d4a853; margin-bottom: 15px; }
   .bag-close { position: absolute; top: 10px; right: 15px; color: #d4a853; font-size: 24px; cursor: pointer; }
 
-  #loading {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: #0a0a0a; display: none;
-    align-items: center; justify-content: center; flex-direction: column;
-    z-index: 2000;
-  }
-  .loader {
-    width: 60px; height: 60px; border: 4px solid #1a0f0a;
-    border-top-color: #d4a853; border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  #toast {
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    background: rgba(10,6,3,0.9); border: 1px solid #d4a853;
-    padding: 12px 24px; border-radius: 8px; color: #d4a853;
-    font-size: 16px; z-index: 3000; display: none; pointer-events: none;
-  }
-
-  #evacIndicator {
-    position: fixed; top: 50%; right: 10px; transform: translateY(-50%);
-    width: 40px; height: 40px; background: rgba(39,174,96,0.3);
-    border: 2px solid #27ae60; border-radius: 50%;
-    display: none; align-items: center; justify-content: center;
-    color: #2ecc71; font-size: 20px; z-index: 150;
-  }
-
-  .stats-row { display: flex; gap: 20px; justify-content: center; margin: 10px 0; }
-  .stat-box { text-align: center; }
-  .stat-box .stat-val { font-size: 24px; color: #d4a853; font-weight: bold; }
-  .stat-box .stat-label { font-size: 12px; color: #8b7355; }
-
+  /* ===== 设置 ===== */
   #settingsPanel {
     position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
     width: 90%; max-width: 400px;
@@ -240,15 +330,51 @@
   }
   .weapon-slot.active { border-color: #d4a853; color: #d4a853; }
   .weapon-slot .wep-key { position: absolute; top: 2px; left: 4px; font-size: 10px; }
+
+  /* ===== 提示 ===== */
+  #toast {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: rgba(10,6,3,0.9); border: 1px solid #d4a853;
+    padding: 12px 24px; border-radius: 8px; color: #d4a853;
+    font-size: 16px; z-index: 3000; display: none; pointer-events: none;
+  }
+
+  #evacIndicator {
+    position: fixed; top: 50%; right: 10px; transform: translateY(-50%);
+    width: 40px; height: 40px; background: rgba(39,174,96,0.3);
+    border: 2px solid #27ae60; border-radius: 50%;
+    display: none; align-items: center; justify-content: center;
+    color: #2ecc71; font-size: 20px; z-index: 150;
+  }
+
+  .stats-row { display: flex; gap: 20px; justify-content: center; margin: 10px 0; }
+  .stat-box { text-align: center; }
+  .stat-box .stat-val { font-size: 24px; color: #d4a853; font-weight: bold; }
+  .stat-box .stat-label { font-size: 12px; color: #8b7355; }
+
+  .item-tooltip {
+    position: fixed; background: rgba(10,6,3,0.95); border: 1px solid #d4a853;
+    padding: 10px; border-radius: 6px; pointer-events: none; z-index: 10000;
+    display: none; max-width: 200px;
+  }
+
+  /* 交互提示 */
+  #interactHint {
+    position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%);
+    background: rgba(10,6,3,0.9); border: 1px solid #d4a853;
+    padding: 8px 20px; border-radius: 20px; color: #d4a853;
+    font-size: 14px; z-index: 250; display: none; pointer-events: none;
+  }
 </style>
 </head>
 <body>
 
-<div id="loading">
-  <div class="loader"></div>
-  <p style="color:#d4a853; margin-top:20px; font-size:18px;">正在进入古墓...</p>
-</div>
+<div id="toast"></div>
+<div id="evacIndicator">&#x1F6AA;</div>
+<div id="interactHint">按 F 搜刮</div>
+<div class="item-tooltip" id="tooltip"></div>
 
+<!-- 主菜单 -->
 <div id="mainMenu">
   <div class="lang-switch">
     <button class="lang-btn active" onclick="setLang('zh')">中文</button>
@@ -257,24 +383,57 @@
   <h1 id="gameTitle">摸金校尉</h1>
   <p class="subtitle" id="gameSubtitle">TOMB RAIDER SHOOTER</p>
   <button class="menu-btn" id="btnStart" onclick="showMapSelect()">开始摸金</button>
+  <button class="menu-btn" id="btnEquip" onclick="showEquip()">装备准备</button>
+  <button class="menu-btn" id="btnShop" onclick="showShop()">黑市商城</button>
   <button class="menu-btn" id="btnWarehouse" onclick="showWarehouse()">摸金仓库</button>
   <button class="menu-btn" id="btnContinue" onclick="continueGame()" style="display:none;">继续摸金</button>
   <button class="menu-btn" id="btnSettings" onclick="showSettings()">设置</button>
 </div>
 
+<!-- 装备界面 -->
+<div id="equipScreen">
+  <button class="equip-back" onclick="backToMenuFromEquip()" id="btnEquipBack">返回</button>
+  <button class="equip-start" onclick="startFromEquip()" id="btnEquipStart">开始摸金</button>
+  <h2 id="equipTitle">战前装备</h2>
+  <div class="money-display" id="equipMoney">💰 0</div>
+  <div class="equip-layout">
+    <div class="equip-section">
+      <h3 id="lblLoadout">当前装备</h3>
+      <div class="loadout-grid" id="loadoutGrid"></div>
+    </div>
+    <div class="equip-section">
+      <h3 id="lblStash">仓库物品</h3>
+      <div class="stash-grid" id="stashGrid"></div>
+      <p style="color:#8b7355; font-size:12px; margin-top:10px; text-align:center;" id="equipHint">点击仓库物品装备，点击装备卸下</p>
+    </div>
+  </div>
+</div>
+
+<!-- 商城 -->
+<div id="shopScreen">
+  <button class="shop-back" onclick="backToMenu()" id="btnShopBack">返回</button>
+  <div class="shop-money" id="shopMoney">💰 0</div>
+  <h2 id="shopTitle">黑市商城</h2>
+  <div class="shop-grid" id="shopGrid"></div>
+</div>
+
+<!-- 选图 -->
 <div id="mapSelect">
   <button class="wh-back" onclick="backToMenu()" id="btnBack">返回</button>
   <h2 id="selectTitle" style="margin-top:60px; color:#d4a853; font-size:28px;">选择古墓</h2>
   <div class="map-grid" id="mapGrid"></div>
 </div>
 
+<!-- 仓库 -->
 <div id="warehouse">
   <button class="wh-back" onclick="backToMenu()" id="btnWhBack">返回</button>
+  <button class="wh-sell" onclick="sellSelected()" id="btnSell">出售选中</button>
   <h2 id="whTitle">摸金仓库</h2>
   <div style="text-align:center; color:#8b7355; margin-bottom:10px;" id="whStats"></div>
   <div class="inventory-grid" id="inventoryGrid"></div>
 </div>
 
+<!-- 游戏UI -->
 <div id="gameUI">
   <div class="hud-panel" id="hudTopLeft">
     <div style="color:#d4a853; font-size:14px;"><span id="hudHpLabel">生命</span>: <span id="hudHpVal">100</span>/<span id="hudHpMax">100</span></div>
@@ -309,6 +468,14 @@
 
 <div id="weaponBar"></div>
 
+<!-- 搜刮面板 -->
+<div id="lootPanel">
+  <span class="loot-close" onclick="closeLoot()">&#x2715;</span>
+  <h3 id="lootTitle">搜刮中...</h3>
+  <div class="loot-grid" id="lootGrid"></div>
+</div>
+
+<!-- 背包面板 -->
 <div id="bagPanel">
   <span class="bag-close" onclick="toggleBag()">&#x2715;</span>
   <h3 id="bagTitle">摸金背包</h3>
@@ -316,6 +483,7 @@
   <div style="text-align:center; margin-top:15px; color:#8b7355; font-size:12px;" id="bagWeight">负重: 0/50</div>
 </div>
 
+<!-- 设置 -->
 <div id="settingsPanel">
   <span class="bag-close" onclick="closeSettings()">&#x2715;</span>
   <h3 id="settingsTitle">设置</h3>
@@ -332,6 +500,7 @@
   </div>
 </div>
 
+<!-- 弹窗 -->
 <div class="modal" id="gameModal">
   <div class="modal-content">
     <h2 id="modalTitle">游戏结束</h2>
@@ -341,15 +510,11 @@
   </div>
 </div>
 
-<div id="toast"></div>
-<div id="evacIndicator">&#x1F6AA;</div>
-<div class="item-tooltip" id="tooltip"></div>
-
 <script>
 
 const I18N = {
   zh: {
-    start: '开始摸金', warehouse: '摸金仓库', continue: '继续摸金', settings: '设置',
+    start: '开始摸金', equip: '装备准备', shop: '黑市商城', warehouse: '摸金仓库', continue: '继续摸金', settings: '设置',
     back: '返回', selectMap: '选择古墓', whTitle: '摸金仓库', bagTitle: '摸金背包',
     hp: '生命', stamina: '体力', score: '摸金值', enemy: '敌人',
     evac: '撤离点', found: '发现', killed: '击杀', timeOut: '时间耗尽',
@@ -358,8 +523,10 @@ const I18N = {
     newGame: '重新开始', mapLocked: '地图未解锁', needLevel: '需要等级',
     weight: '负重', fullBag: '背包已满', looted: '拾取',
     noAmmo: '弹药不足', reloading: '换弹中...', evacReady: '撤离点已开启',
-    pressF: '按 F 撤离', touchDoor: '靠近撤离点撤离', lowHp: '生命值过低',
+    pressF: '按 F 搜刮', touchLoot: '点击搜刮', lowHp: '生命值过低',
     settingsTitle: '设置', sound: '音效', music: '音乐', clearSave: '清除存档',
+    equipTitle: '战前装备', lblLoadout: '当前装备', lblStash: '仓库物品', equipHint: '点击仓库物品装备，点击装备卸下',
+    shopTitle: '黑市商城', shopBuy: '购买', shopOwned: '已拥有',
     mapNames: ['秦王陵', '汉墓群', '唐皇陵', '宋陵寝', '明十三陵'],
     mapDesc: [
       '初级古墓，适合新手摸金校尉练手',
@@ -372,14 +539,18 @@ const I18N = {
     items: {
       gold: '金条', jade: '玉璧', bronze: '青铜器', pearl: '夜明珠',
       scroll: '古卷', sword: '古剑', armor: '金丝甲', potion: '还魂丹',
-      ammo: '弹药', key: '墓门钥匙', coin: '古钱币', gem: '宝石'
+      ammo: '弹药箱', key: '墓门钥匙', coin: '古钱币', gem: '宝石',
+      chest: '宝箱', vase: '陶罐', skeleton: '遗骸', tablet: '石碑'
     },
     weapons: {
       pistol: '洛阳铲手枪', smg: '连弩冲锋枪', shotgun: '散弹火铳', rifle: '狙击长弓'
+    },
+    containers: {
+      chest: '宝箱', vase: '陶罐', skeleton: '遗骸', tablet: '石碑', coffin: '石棺'
     }
   },
   en: {
-    start: 'Start Raid', warehouse: 'Warehouse', continue: 'Continue', settings: 'Settings',
+    start: 'Start Raid', equip: 'Equipment', shop: 'Black Market', warehouse: 'Warehouse', continue: 'Continue', settings: 'Settings',
     back: 'Back', selectMap: 'Select Tomb', whTitle: 'Treasure Warehouse', bagTitle: 'Loot Bag',
     hp: 'HP', stamina: 'Stamina', score: 'Score', enemy: 'Enemies',
     evac: 'Extraction', found: 'Found', killed: 'Killed', timeOut: 'Time\'s Up',
@@ -388,8 +559,10 @@ const I18N = {
     newGame: 'New Game', mapLocked: 'Map Locked', needLevel: 'Need Level',
     weight: 'Weight', fullBag: 'Bag Full', looted: 'Looted',
     noAmmo: 'No Ammo', reloading: 'Reloading...', evacReady: 'Extraction Ready',
-    pressF: 'Press F to Extract', touchDoor: 'Near door to extract', lowHp: 'Low HP',
+    pressF: 'Press F to Loot', touchLoot: 'Tap to Loot', lowHp: 'Low HP',
     settingsTitle: 'Settings', sound: 'Sound', music: 'Music', clearSave: 'Clear Save',
+    equipTitle: 'Pre-Raid Gear', lblLoadout: 'Current Loadout', lblStash: 'Stash Items', equipHint: 'Click stash to equip, click equipped to remove',
+    shopTitle: 'Black Market', shopBuy: 'Buy', shopOwned: 'Owned',
     mapNames: ['Qin Mausoleum', 'Han Tombs', 'Tang Royal', 'Song Tombs', 'Ming Tombs'],
     mapDesc: [
       'Beginner tomb, good for training',
@@ -402,10 +575,14 @@ const I18N = {
     items: {
       gold: 'Gold Bar', jade: 'Jade Disc', bronze: 'Bronze', pearl: 'Pearl',
       scroll: 'Scroll', sword: 'Sword', armor: 'Armor', potion: 'Potion',
-      ammo: 'Ammo', key: 'Key', coin: 'Coin', gem: 'Gem'
+      ammo: 'Ammo Box', key: 'Key', coin: 'Coin', gem: 'Gem',
+      chest: 'Chest', vase: 'Vase', skeleton: 'Skeleton', tablet: 'Tablet'
     },
     weapons: {
       pistol: 'Pistol', smg: 'SMG', shotgun: 'Shotgun', rifle: 'Rifle'
+    },
+    containers: {
+      chest: 'Chest', vase: 'Vase', skeleton: 'Skeleton', tablet: 'Tablet', coffin: 'Coffin'
     }
   }
 };
@@ -421,43 +598,49 @@ function setLang(l) {
 function t(key) { return I18N[lang][key] || key; }
 function itemName(type) { return I18N[lang].items[type] || type; }
 function weaponName(key) { return I18N[lang].weapons[key] || WEAPONS[key]?.name || key; }
+function containerName(key) { return I18N[lang].containers[key] || key; }
 
-const SAVE_KEY = 'tomb_raider_save_v4';
+// ===== 存档 =====
+const SAVE_KEY = 'tomb_raider_save_v5';
 
 function loadSave() {
-  try {
-    const data = localStorage.getItem(SAVE_KEY);
-    if (data) return JSON.parse(data);
-  } catch(e) {}
+  try { const data = localStorage.getItem(SAVE_KEY); if (data) return JSON.parse(data); } catch(e) {}
   return null;
 }
-
 function saveGame(data) {
-  try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
-  } catch(e) {}
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch(e) {}
 }
-
 function getDefaultSave() {
   return {
     level: 1, exp: 0, expNeed: 100,
-    gold: 0, warehouse: {},
+    money: 500,  // 初始资金
+    warehouse: {},
     unlockedMaps: [0], bestScores: [0,0,0,0,0],
     settings: { sound: true, music: true, sensitivity: 1 },
     totalKills: 0, totalLoots: 0, playTime: 0,
-    weapons: ['pistol'], currentWeapon: 'pistol',
+    // 已购买的武器
+    ownedWeapons: ['pistol'],
+    // 战前装备配置
+    loadout: {
+      weapon: 'pistol',
+      armor: null,
+      accessory1: null,
+      accessory2: null,
+      healing: null
+    },
     hpMax: 100, staminaMax: 100
   };
 }
-
 let saveData = loadSave() || getDefaultSave();
 
+// ===== 游戏常量 =====
 const TILE_SIZE = 40;
+
 const WEAPONS = {
-  pistol: { key:'pistol', damage: 25, fireRate: 300, ammo: 30, maxAmmo: 30, totalAmmo: 90, range: 400, spread: 0.05, auto: false },
-  smg: { key:'smg', damage: 15, fireRate: 100, ammo: 40, maxAmmo: 40, totalAmmo: 160, range: 350, spread: 0.08, auto: true },
-  shotgun: { key:'shotgun', damage: 60, fireRate: 800, ammo: 6, maxAmmo: 6, totalAmmo: 36, range: 250, spread: 0.2, pellets: 5, auto: false },
-  rifle: { key:'rifle', damage: 80, fireRate: 1000, ammo: 10, maxAmmo: 10, totalAmmo: 50, range: 800, spread: 0.01, auto: false }
+  pistol: { key:'pistol', damage: 25, fireRate: 350, ammo: 12, maxAmmo: 12, totalAmmo: 60, range: 350, spread: 0.06, auto: false, price: 0, icon: '\uD83D\uDD2B' },
+  smg: { key:'smg', damage: 15, fireRate: 120, ammo: 30, maxAmmo: 30, totalAmmo: 120, range: 300, spread: 0.1, auto: true, price: 2000, icon: '\uD83D\uDCA5' },
+  shotgun: { key:'shotgun', damage: 55, fireRate: 900, ammo: 5, maxAmmo: 5, totalAmmo: 25, range: 200, spread: 0.25, pellets: 6, auto: false, price: 3500, icon: '\uD83D\uDCA3' },
+  rifle: { key:'rifle', damage: 75, fireRate: 1100, ammo: 8, maxAmmo: 8, totalAmmo: 40, range: 700, spread: 0.015, auto: false, price: 5000, icon: '\uD83C\uDFF9' }
 };
 
 const ENEMY_TYPES = {
@@ -467,20 +650,43 @@ const ENEMY_TYPES = {
   boss: { hp: 500, speed: 0.8, damage: 30, exp: 100, color: '#4a0080', size: 30, range: 350 }
 };
 
-const ITEM_TYPES = [
-  { type: 'gold', value: 100, weight: 2, icon: '\uD83C\uDFC6', chance: 0.5 },
-  { type: 'jade', value: 200, weight: 1.5, icon: '\uD83D\uDC8E', chance: 0.4 },
-  { type: 'bronze', value: 50, weight: 3, icon: '\uD83C\uDFFA', chance: 0.6 },
-  { type: 'pearl', value: 300, weight: 0.5, icon: '\u26AA', chance: 0.3 },
-  { type: 'scroll', value: 150, weight: 0.3, icon: '\uD83D\uDCDC', chance: 0.4 },
-  { type: 'sword', value: 250, weight: 4, icon: '\u2694\uFE0F', chance: 0.35 },
-  { type: 'armor', value: 400, weight: 5, icon: '\uD83D\uDEE1\uFE0F', chance: 0.2 },
-  { type: 'potion', value: 50, weight: 0.5, icon: '\uD83E\uDDEA', chance: 0.7 },
-  { type: 'ammo', value: 10, weight: 0.2, icon: '\uD83D\uDD2B', chance: 0.8 },
-  { type: 'coin', value: 20, weight: 0.1, icon: '\uD83E\uDE99', chance: 0.9 },
-  { type: 'gem', value: 500, weight: 1, icon: '\uD83D\uDCA0', chance: 0.15 }
+// 容器类型（可搜刮）
+const CONTAINER_TYPES = [
+  { type: 'chest', icon: '\uD83D\uDCE6', size: 25, lootCount: [2,5], color: '#8B4513' },
+  { type: 'vase', icon: '\uD83C\uDFFA', size: 18, lootCount: [1,3], color: '#CD853F' },
+  { type: 'skeleton', icon: '\uD83D\uDC80', size: 20, lootCount: [1,2], color: '#F5F5DC' },
+  { type: 'tablet', icon: '\uD83D\uDCDC', size: 22, lootCount: [1,2], color: '#708090' },
+  { type: 'coffin', icon: '\u26B0\uFE0F', size: 30, lootCount: [3,6], color: '#2F4F4F' }
 ];
 
+// 战利品类型
+const LOOT_TYPES = [
+  { type: 'gold', value: 100, weight: 2, icon: '\uD83C\uDFC6', sellPrice: 80 },
+  { type: 'jade', value: 200, weight: 1.5, icon: '\uD83D\uDC8E', sellPrice: 160 },
+  { type: 'bronze', value: 50, weight: 3, icon: '\uD83C\uDFFA', sellPrice: 40 },
+  { type: 'pearl', value: 300, weight: 0.5, icon: '\u26AA', sellPrice: 240 },
+  { type: 'scroll', value: 150, weight: 0.3, icon: '\uD83D\uDCDC', sellPrice: 120 },
+  { type: 'sword', value: 250, weight: 4, icon: '\u2694\uFE0F', sellPrice: 200 },
+  { type: 'armor', value: 400, weight: 5, icon: '\uD83D\uDEE1\uFE0F', sellPrice: 320 },
+  { type: 'potion', value: 50, weight: 0.5, icon: '\uD83E\uDDEA', sellPrice: 40 },
+  { type: 'ammo', value: 10, weight: 0.2, icon: '\uD83D\uDD2B', sellPrice: 8 },
+  { type: 'coin', value: 20, weight: 0.1, icon: '\uD83E\uDE99', sellPrice: 16 },
+  { type: 'gem', value: 500, weight: 1, icon: '\uD83D\uDCA0', sellPrice: 400 }
+];
+
+// 商城商品
+const SHOP_ITEMS = [
+  { id: 'smg', type: 'weapon', name: '连弩冲锋枪', desc: '高射速，适合近距离战斗', price: 2000, icon: '\uD83D\uDCA5' },
+  { id: 'shotgun', type: 'weapon', name: '散弹火铳', desc: '近距离毁灭性伤害', price: 3500, icon: '\uD83D\uDCA3' },
+  { id: 'rifle', type: 'weapon', name: '狙击长弓', desc: '超远距离精准打击', price: 5000, icon: '\uD83C\uDFF9' },
+  { id: 'armor1', type: 'armor', name: '皮甲', desc: '基础防护，+20生命上限', price: 800, icon: '\uD83E\uDDBA' },
+  { id: 'armor2', type: 'armor', name: '锁子甲', desc: '中级防护，+50生命上限', price: 2000, icon: '\uD83D\uDEE1\uFE0F' },
+  { id: 'armor3', type: 'armor', name: '金丝软甲', desc: '高级防护，+100生命上限', price: 4000, icon: '\uD83D\uDC51' },
+  { id: 'medkit', type: 'consumable', name: '医疗包x3', desc: '战斗中恢复50生命', price: 300, icon: '\uD83C\uDFE5' },
+  { id: 'ammo_pack', type: 'consumable', name: '弹药包', desc: '补充所有武器弹药', price: 500, icon: '\uD83D\uDDE1\uFE0F' }
+];
+
+// ===== 游戏状态 =====
 let canvas, ctx, mmCanvas, mmCtx;
 let gameState = 'menu';
 let currentMap = 0;
@@ -488,7 +694,8 @@ let mapData = null;
 let player = {};
 let enemies = [];
 let bullets = [];
-let items = [];
+let containers = [];  // 可搜刮的容器
+let items = [];       // 地面上的物品（从容器搜出后）
 let particles = [];
 let camera = { x: 0, y: 0 };
 let gameTime = 0;
@@ -507,7 +714,11 @@ let animFrame = null;
 let bagOpen = false;
 let isMobile = false;
 let modalCallback = null;
+let nearContainer = null;  // 当前靠近的容器
+let lootingContainer = null; // 正在搜刮的容器
+let selectedItems = {};  // 仓库中选中要出售的物品
 
+// ===== 初始化 =====
 function init() {
   canvas = document.getElementById('gameCanvas');
   ctx = canvas.getContext('2d');
@@ -535,7 +746,11 @@ function resizeCanvas() {
 function setupControls() {
   document.addEventListener('keydown', function(e) {
     keys[e.code] = true;
-    if (e.code === 'KeyF' && gameState === 'playing') tryEvac();
+    if (e.code === 'KeyF' && gameState === 'playing') {
+      if (lootingContainer) closeLoot();
+      else if (nearContainer) openContainer(nearContainer);
+      else tryEvac();
+    }
     if (e.code === 'KeyR' && gameState === 'playing') reload();
     if (e.code === 'KeyB' || e.code === 'Tab') { e.preventDefault(); toggleBag(); }
     if (e.code === 'KeyM') toggleMap();
@@ -543,7 +758,10 @@ function setupControls() {
     if (e.code === 'Digit2') switchWeapon('smg');
     if (e.code === 'Digit3') switchWeapon('shotgun');
     if (e.code === 'Digit4') switchWeapon('rifle');
-    if (e.code === 'Escape') { if (gameState === 'playing') togglePause(); }
+    if (e.code === 'Escape') {
+      if (lootingContainer) { closeLoot(); }
+      else if (gameState === 'playing') togglePause();
+    }
   });
   document.addEventListener('keyup', function(e) { keys[e.code] = false; });
 
@@ -551,6 +769,7 @@ function setupControls() {
   canvas.addEventListener('mousedown', function(e) { if (e.button === 0) { mouse.down = true; shoot(); } });
   canvas.addEventListener('mouseup', function(e) { if (e.button === 0) mouse.down = false; });
 
+  // 摇杆
   const jBase = document.getElementById('joystickBase');
   const jStick = document.getElementById('joystickStick');
   let jTouchId = null;
@@ -609,6 +828,8 @@ function updateUI() {
   document.getElementById('gameTitle').textContent = lang === 'zh' ? '摸金校尉' : 'TOMB RAIDER';
   document.getElementById('gameSubtitle').textContent = lang === 'zh' ? 'TOMB RAIDER SHOOTER' : '摸金射击';
   document.getElementById('btnStart').textContent = t('start');
+  document.getElementById('btnEquip').textContent = t('equip');
+  document.getElementById('btnShop').textContent = t('shop');
   document.getElementById('btnWarehouse').textContent = t('warehouse');
   document.getElementById('btnContinue').textContent = t('continue');
   document.getElementById('btnSettings').textContent = t('settings');
@@ -623,8 +844,19 @@ function updateUI() {
   document.getElementById('lblSound').textContent = t('sound');
   document.getElementById('lblMusic').textContent = t('music');
   document.getElementById('btnClear').textContent = t('clearSave');
+  document.getElementById('equipTitle').textContent = t('equipTitle');
+  document.getElementById('lblLoadout').textContent = t('lblLoadout');
+  document.getElementById('lblStash').textContent = t('lblStash');
+  document.getElementById('equipHint').textContent = t('equipHint');
+  document.getElementById('btnEquipBack').textContent = t('back');
+  document.getElementById('btnEquipStart').textContent = t('start');
+  document.getElementById('shopTitle').textContent = t('shopTitle');
+  document.getElementById('btnShopBack').textContent = t('back');
+  document.getElementById('btnSell').textContent = lang==='zh'?'出售选中':'Sell Selected';
   renderMapSelect();
   renderWarehouse();
+  renderEquipScreen();
+  renderShop();
   updateWeaponBar();
 }
 
@@ -650,16 +882,30 @@ function clearSave() {
   }
 }
 
+// ===== 页面切换 =====
 function showMapSelect() {
   document.getElementById('mainMenu').style.display = 'none';
   document.getElementById('mapSelect').style.display = 'flex';
   renderMapSelect();
 }
 
+function showEquip() {
+  document.getElementById('mainMenu').style.display = 'none';
+  document.getElementById('equipScreen').style.display = 'flex';
+  renderEquipScreen();
+}
+
+function showShop() {
+  document.getElementById('mainMenu').style.display = 'none';
+  document.getElementById('shopScreen').style.display = 'flex';
+  renderShop();
+}
+
 function showWarehouse() {
   document.getElementById('mainMenu').style.display = 'none';
   document.getElementById('warehouse').style.display = 'flex';
   renderWarehouse();
+  selectedItems = {};
 }
 
 function showSettings() {
@@ -673,12 +919,139 @@ function closeSettings() {
 function backToMenu() {
   document.getElementById('mapSelect').style.display = 'none';
   document.getElementById('warehouse').style.display = 'none';
+  document.getElementById('shopScreen').style.display = 'none';
   document.getElementById('mainMenu').style.display = 'flex';
   if (saveData.currentRun) {
     document.getElementById('btnContinue').style.display = 'block';
   }
 }
 
+function backToMenuFromEquip() {
+  document.getElementById('equipScreen').style.display = 'none';
+  document.getElementById('mainMenu').style.display = 'flex';
+}
+
+function startFromEquip() {
+  document.getElementById('equipScreen').style.display = 'none';
+  showMapSelect();
+}
+
+// ===== 装备界面渲染 =====
+function renderEquipScreen() {
+  document.getElementById('equipMoney').textContent = '\uD83D\uDCB0 ' + saveData.money;
+
+  // 装备栏
+  const loadoutGrid = document.getElementById('loadoutGrid');
+  loadoutGrid.innerHTML = '';
+  const slots = [
+    { key: 'weapon', label: lang==='zh'?'主武器':'Weapon', icon: '\uD83D\uDD2B' },
+    { key: 'armor', label: lang==='zh'?'护甲':'Armor', icon: '\uD83D\uDEE1\uFE0F' },
+    { key: 'accessory1', label: lang==='zh'?'饰品1':'Acc1', icon: '\uD83D\uDC8D' },
+    { key: 'accessory2', label: lang==='zh'?'饰品2':'Acc2', icon: '\uD83D\uDC8E' },
+    { key: 'healing', label: lang==='zh'?'药品':'Med', icon: '\uD83E\uDDEA' },
+    { key: 'empty', label: '', icon: '' }
+  ];
+
+  slots.forEach(function(slot) {
+    if (slot.key === 'empty') return;
+    const div = document.createElement('div');
+    const equipped = saveData.loadout[slot.key];
+    div.className = 'loadout-slot' + (equipped ? ' occupied' : '');
+    let icon = slot.icon;
+    let name = slot.label;
+    if (equipped && slot.key === 'weapon') {
+      icon = WEAPONS[equipped].icon;
+      name = weaponName(equipped);
+    }
+    div.innerHTML = '<span class="slot-label">' + slot.label + '</span><div class="slot-icon">' + icon + '</div><div class="slot-name">' + (equipped ? name : '') + '</div>';
+    div.onclick = function() {
+      if (equipped && slot.key === 'weapon') {
+        saveData.loadout.weapon = null;
+        renderEquipScreen();
+        saveGame(saveData);
+      }
+    };
+    loadoutGrid.appendChild(div);
+  });
+
+  // 仓库物品（可装备的）
+  const stashGrid = document.getElementById('stashGrid');
+  stashGrid.innerHTML = '';
+
+  // 显示已拥有的武器
+  saveData.ownedWeapons.forEach(function(wepKey) {
+    if (saveData.loadout.weapon === wepKey) return; // 已装备
+    const wep = WEAPONS[wepKey];
+    const div = document.createElement('div');
+    div.className = 'stash-item';
+    div.innerHTML = '<div class="item-icon">' + wep.icon + '</div><div class="item-name">' + weaponName(wepKey) + '</div>';
+    div.onclick = function() {
+      saveData.loadout.weapon = wepKey;
+      renderEquipScreen();
+      saveGame(saveData);
+    };
+    stashGrid.appendChild(div);
+  });
+
+  // 显示仓库中的物品
+  const wh = saveData.warehouse || {};
+  for (let type in wh) {
+    const itemDef = LOOT_TYPES.find(function(it) { return it.type === type; });
+    if (!itemDef) continue;
+    const div = document.createElement('div');
+    div.className = 'stash-item';
+    div.innerHTML = '<div class="item-icon">' + itemDef.icon + '</div><div class="item-name">' + itemName(type) + '</div><div class="item-count">x' + wh[type] + '</div>';
+    stashGrid.appendChild(div);
+  }
+}
+
+// ===== 商城渲染 =====
+function renderShop() {
+  document.getElementById('shopMoney').textContent = '\uD83D\uDCB0 ' + saveData.money;
+  const grid = document.getElementById('shopGrid');
+  grid.innerHTML = '';
+
+  SHOP_ITEMS.forEach(function(item) {
+    const div = document.createElement('div');
+    const isOwned = item.type === 'weapon' && saveData.ownedWeapons.includes(item.id);
+    div.className = 'shop-card' + (isOwned ? ' owned' : '');
+    div.innerHTML = 
+      '<div class="shop-icon">' + item.icon + '</div>' +
+      '<div class="shop-name">' + item.name + '</div>' +
+      '<div class="shop-desc">' + item.desc + '</div>' +
+      '<div class="shop-price">\uD83D\uDCB0 ' + item.price + '</div>' +
+      '<button class="shop-btn" ' + (isOwned || saveData.money < item.price ? 'disabled' : '') + '>' + 
+      (isOwned ? t('shopOwned') : t('shopBuy')) + '</button>';
+
+    const btn = div.querySelector('.shop-btn');
+    if (!isOwned && saveData.money >= item.price) {
+      btn.onclick = function() {
+        buyItem(item);
+      };
+    }
+    grid.appendChild(div);
+  });
+}
+
+function buyItem(item) {
+  if (saveData.money < item.price) {
+    showToast(lang==='zh'?'资金不足':'Not enough money');
+    return;
+  }
+  saveData.money -= item.price;
+  if (item.type === 'weapon') {
+    saveData.ownedWeapons.push(item.id);
+  } else if (item.type === 'armor') {
+    // 护甲直接放入装备
+  } else if (item.type === 'consumable') {
+    // 消耗品
+  }
+  saveGame(saveData);
+  renderShop();
+  showToast((lang==='zh'?'购买成功: ':'Bought: ') + item.name);
+}
+
+// ===== 选图 =====
 function renderMapSelect() {
   const grid = document.getElementById('mapGrid');
   grid.innerHTML = '';
@@ -692,29 +1065,75 @@ function renderMapSelect() {
   }
 }
 
+// ===== 仓库 =====
 function renderWarehouse() {
   const grid = document.getElementById('inventoryGrid');
   grid.innerHTML = '';
   const wh = saveData.warehouse || {};
   let totalValue = 0;
   let totalItems = 0;
+
   for (let type in wh) {
-    const itemDef = ITEM_TYPES.find(function(it) { return it.type === type; });
+    const itemDef = LOOT_TYPES.find(function(it) { return it.type === type; });
     if (!itemDef) continue;
     const count = wh[type];
-    totalValue += itemDef.value * count;
+    totalValue += itemDef.sellPrice * count;
     totalItems += count;
+
     const div = document.createElement('div');
-    div.className = 'inv-item';
+    const isSelected = selectedItems[type];
+    div.className = 'inv-item' + (isSelected ? ' selected' : '');
     div.innerHTML = '<div class="item-icon">' + itemDef.icon + '</div><div class="item-name">' + itemName(type) + '</div><div class="item-count">x' + count + '</div>';
-    div.onmouseenter = function(e) { showTooltip(e, itemName(type) + '<br>' + (lang==='zh'?'价值':'Value') + ': ' + itemDef.value + '<br>' + (lang==='zh'?'重量':'Weight') + ': ' + itemDef.weight); };
+    div.onclick = function() {
+      selectedItems[type] = !selectedItems[type];
+      renderWarehouse();
+    };
+    div.onmouseenter = function(e) { showTooltip(e, itemName(type) + '<br>' + (lang==='zh'?'价值':'Value') + ': ' + itemDef.value + '<br>' + (lang==='zh'?'出售价':'Sell') + ': ' + itemDef.sellPrice); };
     div.onmouseleave = hideTooltip;
     grid.appendChild(div);
   }
+
   if (totalItems === 0) {
     grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#8b7355; padding:40px;">' + (lang==='zh'?'仓库空空如也...':'Warehouse is empty...') + '</div>';
   }
-  document.getElementById('whStats').innerHTML = '<span>' + (lang==='zh'?'总价值':'Total Value') + ': ' + totalValue + '</span> | <span>' + (lang==='zh'?'总数量':'Total Items') + ': ' + totalItems + '</span>';
+
+  // 计算选中物品总价值
+  let selectedValue = 0;
+  for (let type in selectedItems) {
+    if (selectedItems[type]) {
+      const itemDef = LOOT_TYPES.find(function(it) { return it.type === type; });
+      if (itemDef && wh[type]) {
+        selectedValue += itemDef.sellPrice * wh[type];
+      }
+    }
+  }
+
+  document.getElementById('whStats').innerHTML = 
+    '<span>' + (lang==='zh'?'总价值':'Total Value') + ': ' + totalValue + '</span> | ' +
+    '<span>' + (lang==='zh'?'总数量':'Total Items') + ': ' + totalItems + '</span>' +
+    (selectedValue > 0 ? '<br><span style="color:#f1c40f;">' + (lang==='zh'?'选中出售':'Selected') + ': ' + selectedValue + '</span>' : '');
+}
+
+function sellSelected() {
+  const wh = saveData.warehouse || {};
+  let totalEarned = 0;
+  for (let type in selectedItems) {
+    if (selectedItems[type] && wh[type]) {
+      const itemDef = LOOT_TYPES.find(function(it) { return it.type === type; });
+      if (itemDef) {
+        totalEarned += itemDef.sellPrice * wh[type];
+        delete wh[type];
+      }
+    }
+  }
+  if (totalEarned > 0) {
+    saveData.money += totalEarned;
+    saveData.warehouse = wh;
+    saveGame(saveData);
+    selectedItems = {};
+    renderWarehouse();
+    showToast((lang==='zh'?'出售获得 ':'Sold for ') + totalEarned + '\uD83D\uDCB0');
+  }
 }
 
 function showTooltip(e, html) {
@@ -750,11 +1169,11 @@ function switchWeapon(w) {
 
 function generateMap(mapIndex) {
   const configs = [
-    { wallChance: 0.15, enemyCount: 15, itemCount: 30, time: 600, size: [60, 45] },
-    { wallChance: 0.2, enemyCount: 25, itemCount: 40, time: 540, size: [70, 50] },
-    { wallChance: 0.25, enemyCount: 40, itemCount: 50, time: 480, size: [75, 55] },
-    { wallChance: 0.3, enemyCount: 55, itemCount: 60, time: 420, size: [80, 60] },
-    { wallChance: 0.35, enemyCount: 70, itemCount: 70, time: 360, size: [80, 60] }
+    { wallChance: 0.15, enemyCount: 12, containerCount: 15, time: 600, size: [50, 40] },
+    { wallChance: 0.2, enemyCount: 20, containerCount: 20, time: 540, size: [60, 45] },
+    { wallChance: 0.25, enemyCount: 30, containerCount: 25, time: 480, size: [70, 50] },
+    { wallChance: 0.3, enemyCount: 40, containerCount: 30, time: 420, size: [75, 55] },
+    { wallChance: 0.35, enemyCount: 50, containerCount: 35, time: 360, size: [80, 60] }
   ];
   const cfg = configs[mapIndex] || configs[0];
   const w = cfg.size[0], h = cfg.size[1];
@@ -766,7 +1185,7 @@ function generateMap(mapIndex) {
   }
 
   let rooms = [];
-  const roomCount = 15 + mapIndex * 5;
+  const roomCount = 12 + mapIndex * 4;
   for (let i = 0; i < roomCount; i++) {
     const rw = 4 + Math.floor(Math.random() * 6);
     const rh = 4 + Math.floor(Math.random() * 6);
@@ -796,6 +1215,23 @@ function generateMap(mapIndex) {
   return { data: map, width: w, height: h, config: cfg, rooms };
 }
 
+function generateContainerLoot(containerType) {
+  const contDef = CONTAINER_TYPES.find(function(c) { return c.type === containerType; });
+  const count = contDef.lootCount[0] + Math.floor(Math.random() * (contDef.lootCount[1] - contDef.lootCount[0] + 1));
+  const loot = [];
+  for (let i = 0; i < count; i++) {
+    const itemDef = LOOT_TYPES[Math.floor(Math.random() * LOOT_TYPES.length)];
+    loot.push({
+      type: itemDef.type,
+      value: itemDef.value,
+      weight: itemDef.weight,
+      icon: itemDef.icon,
+      id: Date.now() + i + Math.random()
+    });
+  }
+  return loot;
+}
+
 function startGame(mapIndex) {
   if (!saveData.unlockedMaps.includes(mapIndex)) {
     showToast(t('mapLocked'));
@@ -805,6 +1241,10 @@ function startGame(mapIndex) {
   currentMap = mapIndex;
   const mapInfo = generateMap(mapIndex);
   mapData = mapInfo;
+
+  // 使用装备配置初始化玩家
+  const equippedWeapon = saveData.loadout.weapon || 'pistol';
+  const wpnDef = WEAPONS[equippedWeapon];
 
   const startRoom = mapInfo.rooms[0];
   player = {
@@ -816,7 +1256,7 @@ function startGame(mapIndex) {
     staminaMax: saveData.staminaMax || 100,
     speed: 3,
     angle: 0,
-    weapon: saveData.currentWeapon || 'pistol',
+    weapon: equippedWeapon,
     weapons: {},
     bag: [],
     bagMax: 50,
@@ -828,18 +1268,25 @@ function startGame(mapIndex) {
     exp: 0
   };
 
+  // 只给装备的武器配弹药
   for (let k in WEAPONS) {
-    player.weapons[k] = { ammo: WEAPONS[k].maxAmmo, totalAmmo: WEAPONS[k].totalAmmo };
+    if (saveData.ownedWeapons.includes(k)) {
+      player.weapons[k] = { ammo: WEAPONS[k].maxAmmo, totalAmmo: WEAPONS[k].totalAmmo };
+    }
+  }
+  // 确保当前武器有弹药
+  if (!player.weapons[equippedWeapon]) {
+    player.weapons[equippedWeapon] = { ammo: wpnDef.maxAmmo, totalAmmo: wpnDef.totalAmmo };
   }
 
-  // Generate enemies
+  // 生成敌人
   enemies = [];
   const enemyCfg = [
-    { zombie: 0.6, guard: 0.3, archer: 0.1 },
-    { zombie: 0.4, guard: 0.4, archer: 0.2 },
-    { zombie: 0.2, guard: 0.4, archer: 0.3, boss: 0.1 },
-    { zombie: 0.1, guard: 0.3, archer: 0.4, boss: 0.2 },
-    { zombie: 0.05, guard: 0.2, archer: 0.45, boss: 0.3 }
+    { zombie: 0.7, guard: 0.25, archer: 0.05 },
+    { zombie: 0.5, guard: 0.35, archer: 0.15 },
+    { zombie: 0.3, guard: 0.4, archer: 0.2, boss: 0.1 },
+    { zombie: 0.15, guard: 0.35, archer: 0.3, boss: 0.2 },
+    { zombie: 0.1, guard: 0.2, archer: 0.35, boss: 0.35 }
   ][mapIndex];
 
   for (let i = 0; i < mapInfo.config.enemyCount; i++) {
@@ -870,32 +1317,29 @@ function startGame(mapIndex) {
     });
   }
 
-  // FIXED: Generate items - guaranteed spawn, no chance check
-  items = [];
-  const itemCount = mapInfo.config.itemCount;
-  for (let i = 0; i < itemCount; i++) {
+  // 生成容器（可搜刮的）
+  containers = [];
+  for (let i = 0; i < mapInfo.config.containerCount; i++) {
     const room = mapInfo.rooms[Math.floor(Math.random() * mapInfo.rooms.length)];
-    const ix = (room.cx + (Math.random() - 0.5) * room.w * 0.7) * TILE_SIZE;
-    const iy = (room.cy + (Math.random() - 0.5) * room.h * 0.7) * TILE_SIZE;
+    const contDef = CONTAINER_TYPES[Math.floor(Math.random() * CONTAINER_TYPES.length)];
+    const cx = (room.cx + (Math.random() - 0.5) * room.w * 0.6) * TILE_SIZE;
+    const cy = (room.cy + (Math.random() - 0.5) * room.h * 0.6) * TILE_SIZE;
 
-    // Pick random item type weighted by chance
-    const itemDef = pickRandomItem();
-    items.push({
-      x: ix,
-      y: iy,
-      type: itemDef.type,
-      value: itemDef.value,
-      weight: itemDef.weight,
-      icon: itemDef.icon,
+    containers.push({
+      x: cx,
+      y: cy,
+      type: contDef.type,
+      icon: contDef.icon,
+      size: contDef.size,
+      color: contDef.color,
+      loot: generateContainerLoot(contDef.type),
+      looted: false,
       id: Date.now() + i,
       bobOffset: Math.random() * Math.PI * 2
     });
   }
 
-  const lastRoom = mapInfo.rooms[mapInfo.rooms.length - 1];
-  evacPoint = { x: lastRoom.cx * TILE_SIZE, y: lastRoom.cy * TILE_SIZE, radius: 60 };
-  evacOpen = false;
-
+  items = [];  // 地面上的物品（从容器搜出后放到地上）
   bullets = [];
   particles = [];
   score = 0;
@@ -903,6 +1347,8 @@ function startGame(mapIndex) {
   loots = 0;
   gameTime = 0;
   timeLimit = mapInfo.config.time;
+  nearContainer = null;
+  lootingContainer = null;
 
   gameState = 'playing';
   bagOpen = false;
@@ -921,22 +1367,98 @@ function startGame(mapIndex) {
   updateWeaponBar();
   saveData.currentRun = { mapIndex: mapIndex, startTime: Date.now() };
   saveGame(saveData);
-  showToast(t('evacReady') + ' - ' + items.length + ' ' + (lang==='zh'?'个宝物':'items'));
-}
-
-function pickRandomItem() {
-  const totalChance = ITEM_TYPES.reduce(function(sum, it) { return sum + it.chance; }, 0);
-  let r = Math.random() * totalChance;
-  for (let it of ITEM_TYPES) {
-    r -= it.chance;
-    if (r <= 0) return it;
-  }
-  return ITEM_TYPES[0];
+  showToast(t('evacReady'));
 }
 
 function continueGame() {
   if (!saveData.currentRun) return;
   startGame(saveData.currentRun.mapIndex);
+}
+
+// ===== 容器搜刮 =====
+function openContainer(container) {
+  if (container.looted) {
+    showToast(lang==='zh'?'已搜刮':'Already looted');
+    return;
+  }
+  lootingContainer = container;
+  const panel = document.getElementById('lootPanel');
+  panel.style.display = 'block';
+  document.getElementById('lootTitle').textContent = containerName(container.type) + ' - ' + container.loot.length + ' ' + (lang==='zh'?'件物品':'items');
+
+  const grid = document.getElementById('lootGrid');
+  grid.innerHTML = '';
+
+  container.loot.forEach(function(item, idx) {
+    const div = document.createElement('div');
+    div.className = 'loot-item';
+    div.innerHTML = '<div class="item-icon">' + item.icon + '</div><div class="item-name">' + itemName(item.type) + '</div>';
+    div.onclick = function() {
+      takeLootItem(container, idx);
+    };
+    grid.appendChild(div);
+  });
+}
+
+function takeLootItem(container, idx) {
+  const item = container.loot[idx];
+  if (!item) return;
+
+  if (item.type === 'potion') {
+    player.hp = Math.min(player.hpMax, player.hp + 30);
+    showToast('+30 HP');
+    container.loot.splice(idx, 1);
+  } else if (item.type === 'ammo') {
+    for (let w in player.weapons) {
+      if (player.weapons[w]) player.weapons[w].totalAmmo += 20;
+    }
+    showToast('+20 Ammo');
+    container.loot.splice(idx, 1);
+  } else {
+    if (player.bagWeight + item.weight <= player.bagMax) {
+      player.bag.push({
+        type: item.type,
+        value: item.value,
+        weight: item.weight,
+        icon: item.icon,
+        id: item.id
+      });
+      player.bagWeight += item.weight;
+      score += item.value;
+      loots++;
+      showToast(itemName(item.type) + ' +1');
+      container.loot.splice(idx, 1);
+    } else {
+      showToast(t('fullBag'));
+      // 放到地上
+      items.push({
+        x: player.x + (Math.random() - 0.5) * 40,
+        y: player.y + (Math.random() - 0.5) * 40,
+        type: item.type,
+        value: item.value,
+        weight: item.weight,
+        icon: item.icon,
+        id: item.id,
+        bobOffset: Math.random() * Math.PI * 2
+      });
+      container.loot.splice(idx, 1);
+      showToast(itemName(item.type) + ' ' + (lang==='zh'?'掉落在地':'dropped'));
+    }
+  }
+
+  // 更新搜刮界面
+  if (container.loot.length === 0) {
+    container.looted = true;
+    closeLoot();
+    showToast(lang==='zh'?'搜刮完毕':'Looted');
+  } else {
+    openContainer(container); // 刷新
+  }
+}
+
+function closeLoot() {
+  lootingContainer = null;
+  document.getElementById('lootPanel').style.display = 'none';
 }
 
 function gameLoop(timestamp) {
@@ -960,6 +1482,8 @@ function gameLoop(timestamp) {
 }
 
 function update(dt) {
+  if (lootingContainer) return; // 搜刮时暂停移动
+
   let dx = 0, dy = 0;
   const sprint = keys['ShiftLeft'] || keys['ShiftRight'];
   const speed = player.speed * (sprint && player.stamina > 0 ? 1.5 : 1);
@@ -1053,19 +1577,40 @@ function update(dt) {
     }
   }
 
-  // Pickup items - FIXED
+  // Check near containers
+  nearContainer = null;
+  let nearestDist = 50;
+  for (let c of containers) {
+    if (c.looted) continue;
+    const dist = Math.hypot(player.x - c.x, player.y - c.y);
+    if (dist < nearestDist) {
+      nearestDist = dist;
+      nearContainer = c;
+    }
+  }
+
+  const hint = document.getElementById('interactHint');
+  if (nearContainer && !lootingContainer) {
+    hint.style.display = 'block';
+    hint.textContent = (lang==='zh'?'按 F 搜刮 ':'Press F to loot ') + containerName(nearContainer.type);
+  } else {
+    hint.style.display = 'none';
+  }
+
+  // Pickup ground items
   for (let i = items.length - 1; i >= 0; i--) {
     const item = items[i];
     item.bobOffset += dt * 3;
-    const distToPlayer = Math.hypot(player.x - item.x, player.y - item.y);
-    if (distToPlayer < 35) {
+    if (Math.hypot(player.x - item.x, player.y - item.y) < 35) {
       if (item.type === 'potion') {
         player.hp = Math.min(player.hpMax, player.hp + 30);
         showToast('+30 HP');
         items.splice(i, 1);
       } else if (item.type === 'ammo') {
-        for (let w in player.weapons) player.weapons[w].totalAmmo += 30;
-        showToast('+30 Ammo');
+        for (let w in player.weapons) {
+          if (player.weapons[w]) player.weapons[w].totalAmmo += 20;
+        }
+        showToast('+20 Ammo');
         items.splice(i, 1);
       } else {
         if (player.bagWeight + item.weight <= player.bagMax) {
@@ -1099,7 +1644,7 @@ function update(dt) {
   }
 
   // Evac point
-  if (!evacOpen && kills >= Math.max(3, Math.floor(mapData.config.enemyCount * 0.2))) {
+  if (!evacOpen && kills >= Math.max(3, Math.floor(mapData.config.enemyCount * 0.25))) {
     evacOpen = true;
     showToast(t('evacReady'));
   }
@@ -1118,8 +1663,8 @@ function isWall(x, y) {
 function shoot() {
   const wpnDef = WEAPONS[player.weapon];
   const wpn = player.weapons[player.weapon];
-  if (player.reloading || wpn.ammo <= 0) {
-    if (wpn.ammo <= 0 && wpn.totalAmmo > 0) reload();
+  if (!wpn || player.reloading || wpn.ammo <= 0) {
+    if (wpn && wpn.ammo <= 0 && wpn.totalAmmo > 0) reload();
     return;
   }
   if (Date.now() - player.lastShot < wpnDef.fireRate) return;
@@ -1149,7 +1694,7 @@ function shoot() {
 function reload() {
   const wpnDef = WEAPONS[player.weapon];
   const wpn = player.weapons[player.weapon];
-  if (wpn.ammo >= wpnDef.maxAmmo || wpn.totalAmmo <= 0 || player.reloading) return;
+  if (!wpn || wpn.ammo >= wpnDef.maxAmmo || wpn.totalAmmo <= 0 || player.reloading) return;
   player.reloading = true;
   showToast(t('reloading'));
   setTimeout(function() {
@@ -1167,21 +1712,6 @@ function killEnemy(index) {
   score += e.exp * 5;
   kills++;
   player.exp += e.exp;
-
-  // Enemy drop items
-  if (Math.random() < 0.5) {
-    const itemDef = pickRandomItem();
-    items.push({
-      x: e.x, y: e.y,
-      type: itemDef.type,
-      value: itemDef.value,
-      weight: itemDef.weight,
-      icon: itemDef.icon,
-      id: Date.now(),
-      bobOffset: 0
-    });
-  }
-
   enemies.splice(index, 1);
 }
 
@@ -1260,25 +1790,54 @@ function render() {
     ctx.fillText('\uD83D\uDEAA', evacPoint.x, evacPoint.y + 8);
   }
 
-  // Items - render with glow effect
+  // Containers (可搜刮的)
+  for (let c of containers) {
+    const bob = Math.sin(c.bobOffset + Date.now()/500) * 2;
+
+    if (c.looted) {
+      // 已搜刮 - 变暗
+      ctx.globalAlpha = 0.3;
+    }
+
+    // 容器光晕
+    const glow = c.looted ? 'rgba(100,100,100,0.2)' : 'rgba(212,168,83,0.25)';
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(c.x, c.y + bob, c.size + 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 容器本体
+    ctx.fillStyle = c.color;
+    ctx.beginPath();
+    ctx.arc(c.x, c.y + bob, c.size, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 容器图标
+    ctx.font = (c.size * 1.2) + 'px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(c.icon, c.x, c.y + bob);
+
+    // 高亮边框（靠近时）
+    if (!c.looted && nearContainer === c) {
+      ctx.strokeStyle = '#d4a853';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(c.x, c.y + bob, c.size + 3, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    ctx.globalAlpha = 1;
+  }
+
+  // Ground items (掉落的)
   for (let item of items) {
     const bob = Math.sin(item.bobOffset) * 4;
-    const glowAlpha = 0.3 + Math.sin(item.bobOffset) * 0.2;
-
-    // Glow
-    ctx.fillStyle = 'rgba(212,168,83,' + glowAlpha + ')';
+    ctx.fillStyle = 'rgba(212,168,83,0.3)';
     ctx.beginPath();
-    ctx.arc(item.x, item.y + bob, 16, 0, Math.PI * 2);
+    ctx.arc(item.x, item.y + bob, 14, 0, Math.PI * 2);
     ctx.fill();
-
-    // Inner glow
-    ctx.fillStyle = 'rgba(255,215,0,' + (glowAlpha * 0.5) + ')';
-    ctx.beginPath();
-    ctx.arc(item.x, item.y + bob, 10, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Icon
-    ctx.font = '22px serif';
+    ctx.font = '20px serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(item.icon, item.x, item.y + bob);
@@ -1397,18 +1956,19 @@ function renderMinimap() {
     }
   }
 
+  // Containers on minimap
+  for (let c of containers) {
+    if (c.looted) continue;
+    mctx.fillStyle = '#d4a853';
+    mctx.beginPath();
+    mctx.arc(c.x * scale, c.y * scale, 2, 0, Math.PI*2);
+    mctx.fill();
+  }
+
   for (let e of enemies) {
     mctx.fillStyle = '#c0392b';
     mctx.beginPath();
     mctx.arc(e.x * scale, e.y * scale, 2, 0, Math.PI*2);
-    mctx.fill();
-  }
-
-  // Items on minimap
-  for (let item of items) {
-    mctx.fillStyle = '#d4a853';
-    mctx.beginPath();
-    mctx.arc(item.x * scale, item.y * scale, 1.5, 0, Math.PI*2);
     mctx.fill();
   }
 
@@ -1419,7 +1979,7 @@ function renderMinimap() {
     mctx.fill();
   }
 
-  mctx.fillStyle = '#d4a853';
+  mctx.fillStyle = '#00bfff';
   mctx.beginPath();
   mctx.arc(player.x * scale, player.y * scale, 3, 0, Math.PI*2);
   mctx.fill();
@@ -1444,13 +2004,14 @@ function updateHUD() {
   if (!player.weapons) return;
   const wpn = player.weapons[player.weapon];
   const wpnDef = WEAPONS[player.weapon];
+  if (!wpn) return;
   document.getElementById('hudHpVal').textContent = Math.ceil(player.hp);
   document.getElementById('hudHpMax').textContent = player.hpMax;
   document.getElementById('hpFill').style.width = (player.hp / player.hpMax * 100) + '%';
   document.getElementById('staminaFill').style.width = (player.stamina / player.staminaMax * 100) + '%';
   document.getElementById('gameTimer').textContent = formatTime(timeLimit - gameTime);
   document.getElementById('gameScore').textContent = (lang === 'zh' ? '摸金值: ' : 'Score: ') + score;
-  document.getElementById('enemyCount').textContent = (lang === 'zh' ? '敌人: ' : 'Enemies: ') + enemies.length + ' | ' + (lang === 'zh' ? '宝物: ' : 'Items: ') + items.length;
+  document.getElementById('enemyCount').textContent = (lang === 'zh' ? '敌人: ' : 'Enemies: ') + enemies.length + ' | ' + (lang === 'zh' ? '容器: ' : 'Containers: ') + containers.filter(function(c){return !c.looted;}).length;
   document.getElementById('ammoDisplay').textContent = wpn.ammo + ' / ' + wpn.totalAmmo;
   document.getElementById('weaponName').textContent = weaponName(player.weapon) + (player.reloading ? ' [' + t('reloading') + ']' : '');
   document.getElementById('mapName').textContent = t('mapNames')[currentMap];
@@ -1484,7 +2045,7 @@ function renderBag() {
       counts[item.type] = (counts[item.type] || 0) + 1;
     }
     for (let type in counts) {
-      const itemDef = ITEM_TYPES.find(function(it) { return it.type === type; });
+      const itemDef = LOOT_TYPES.find(function(it) { return it.type === type; });
       const div = document.createElement('div');
       div.className = 'inv-item';
       div.innerHTML = '<div class="item-icon">' + itemDef.icon + '</div><div class="item-name">' + itemName(type) + '</div><div class="item-count">x' + counts[type] + '</div>';
@@ -1549,13 +2110,14 @@ function endGame(reason) {
   gameState = 'over';
   delete saveData.currentRun;
 
+  // 背包物品转入仓库
   if (player.bag && player.bag.length > 0) {
     for (let item of player.bag) {
       saveData.warehouse[item.type] = (saveData.warehouse[item.type] || 0) + 1;
     }
   }
 
-  saveData.gold += score;
+  saveData.gold = (saveData.gold || 0) + score;
   saveData.totalKills += kills;
   saveData.totalLoots += loots;
   saveData.playTime += gameTime;
@@ -1607,6 +2169,7 @@ function endGame(reason) {
   document.getElementById('weaponBar').style.display = 'none';
   document.getElementById('evacIndicator').style.display = 'none';
   document.getElementById('bagPanel').style.display = 'none';
+  document.getElementById('interactHint').style.display = 'none';
   bagOpen = false;
 }
 
@@ -1621,6 +2184,7 @@ function returnToMenu() {
   document.getElementById('weaponBar').style.display = 'none';
   document.getElementById('evacIndicator').style.display = 'none';
   document.getElementById('bagPanel').style.display = 'none';
+  document.getElementById('interactHint').style.display = 'none';
   bagOpen = false;
   if (saveData.currentRun) {
     document.getElementById('btnContinue').style.display = 'block';
