@@ -413,7 +413,7 @@ const I18N = {
 let lang = 'zh';
 function setLang(l) {
   lang = l;
-  document.querySelectorAll('.lang-btn').forEach(b => {
+  document.querySelectorAll('.lang-btn').forEach(function(b) {
     b.classList.toggle('active', (l==='zh' && b.textContent.includes('中')) || (l==='en' && b.textContent.includes('EN')));
   });
   updateUI();
@@ -422,7 +422,7 @@ function t(key) { return I18N[lang][key] || key; }
 function itemName(type) { return I18N[lang].items[type] || type; }
 function weaponName(key) { return I18N[lang].weapons[key] || WEAPONS[key]?.name || key; }
 
-const SAVE_KEY = 'tomb_raider_save_v3';
+const SAVE_KEY = 'tomb_raider_save_v4';
 
 function loadSave() {
   try {
@@ -468,17 +468,17 @@ const ENEMY_TYPES = {
 };
 
 const ITEM_TYPES = [
-  { type: 'gold', value: 100, weight: 2, icon: '\uD83C\uDFC6', chance: 0.08 },
-  { type: 'jade', value: 200, weight: 1.5, icon: '\uD83D\uDC8E', chance: 0.05 },
-  { type: 'bronze', value: 50, weight: 3, icon: '\uD83C\uDFFA', chance: 0.12 },
-  { type: 'pearl', value: 300, weight: 0.5, icon: '\u26AA', chance: 0.03 },
-  { type: 'scroll', value: 150, weight: 0.3, icon: '\uD83D\uDCDC', chance: 0.06 },
-  { type: 'sword', value: 250, weight: 4, icon: '\u2694\uFE0F', chance: 0.04 },
-  { type: 'armor', value: 400, weight: 5, icon: '\uD83D\uDEE1\uFE0F', chance: 0.02 },
-  { type: 'potion', value: 50, weight: 0.5, icon: '\uD83E\uDDEA', chance: 0.15 },
-  { type: 'ammo', value: 10, weight: 0.2, icon: '\uD83D\uDD2B', chance: 0.2 },
-  { type: 'coin', value: 20, weight: 0.1, icon: '\uD83E\uDE99', chance: 0.3 },
-  { type: 'gem', value: 500, weight: 1, icon: '\uD83D\uDCA0', chance: 0.01 }
+  { type: 'gold', value: 100, weight: 2, icon: '\uD83C\uDFC6', chance: 0.5 },
+  { type: 'jade', value: 200, weight: 1.5, icon: '\uD83D\uDC8E', chance: 0.4 },
+  { type: 'bronze', value: 50, weight: 3, icon: '\uD83C\uDFFA', chance: 0.6 },
+  { type: 'pearl', value: 300, weight: 0.5, icon: '\u26AA', chance: 0.3 },
+  { type: 'scroll', value: 150, weight: 0.3, icon: '\uD83D\uDCDC', chance: 0.4 },
+  { type: 'sword', value: 250, weight: 4, icon: '\u2694\uFE0F', chance: 0.35 },
+  { type: 'armor', value: 400, weight: 5, icon: '\uD83D\uDEE1\uFE0F', chance: 0.2 },
+  { type: 'potion', value: 50, weight: 0.5, icon: '\uD83E\uDDEA', chance: 0.7 },
+  { type: 'ammo', value: 10, weight: 0.2, icon: '\uD83D\uDD2B', chance: 0.8 },
+  { type: 'coin', value: 20, weight: 0.1, icon: '\uD83E\uDE99', chance: 0.9 },
+  { type: 'gem', value: 500, weight: 1, icon: '\uD83D\uDCA0', chance: 0.15 }
 ];
 
 let canvas, ctx, mmCanvas, mmCtx;
@@ -533,7 +533,7 @@ function resizeCanvas() {
 }
 
 function setupControls() {
-  document.addEventListener('keydown', e => {
+  document.addEventListener('keydown', function(e) {
     keys[e.code] = true;
     if (e.code === 'KeyF' && gameState === 'playing') tryEvac();
     if (e.code === 'KeyR' && gameState === 'playing') reload();
@@ -545,31 +545,31 @@ function setupControls() {
     if (e.code === 'Digit4') switchWeapon('rifle');
     if (e.code === 'Escape') { if (gameState === 'playing') togglePause(); }
   });
-  document.addEventListener('keyup', e => { keys[e.code] = false; });
+  document.addEventListener('keyup', function(e) { keys[e.code] = false; });
 
-  canvas.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
-  canvas.addEventListener('mousedown', e => { if (e.button === 0) { mouse.down = true; shoot(); } });
-  canvas.addEventListener('mouseup', e => { if (e.button === 0) mouse.down = false; });
+  canvas.addEventListener('mousemove', function(e) { mouse.x = e.clientX; mouse.y = e.clientY; });
+  canvas.addEventListener('mousedown', function(e) { if (e.button === 0) { mouse.down = true; shoot(); } });
+  canvas.addEventListener('mouseup', function(e) { if (e.button === 0) mouse.down = false; });
 
   const jBase = document.getElementById('joystickBase');
   const jStick = document.getElementById('joystickStick');
   let jTouchId = null;
 
-  jBase.addEventListener('touchstart', e => {
+  jBase.addEventListener('touchstart', function(e) {
     e.preventDefault();
     const touch = e.changedTouches[0];
     jTouchId = touch.identifier;
     updateJoystick(touch);
   }, {passive:false});
 
-  document.addEventListener('touchmove', e => {
+  document.addEventListener('touchmove', function(e) {
     if (jTouchId === null) return;
     for (let t of e.changedTouches) {
       if (t.identifier === jTouchId) { updateJoystick(t); break; }
     }
   }, {passive:false});
 
-  document.addEventListener('touchend', e => {
+  document.addEventListener('touchend', function(e) {
     for (let t of e.changedTouches) {
       if (t.identifier === jTouchId) {
         jTouchId = null;
@@ -591,16 +591,16 @@ function setupControls() {
     const dist = Math.sqrt(dx*dx + dy*dy);
     const maxDist = 35;
     if (dist > maxDist) { dx = dx/dist*maxDist; dy = dy/dist*maxDist; }
-    jStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    jStick.style.transform = 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px))';
     joystick.active = true;
     joystick.dx = dx / maxDist;
     joystick.dy = dy / maxDist;
   }
 
   const shootBtn = document.getElementById('shootBtn');
-  shootBtn.addEventListener('touchstart', e => { e.preventDefault(); shootTouch = true; shoot(); }, {passive:false});
-  shootBtn.addEventListener('touchend', e => { e.preventDefault(); shootTouch = false; });
-  shootBtn.addEventListener('touchcancel', e => { shootTouch = false; });
+  shootBtn.addEventListener('touchstart', function(e) { e.preventDefault(); shootTouch = true; shoot(); }, {passive:false});
+  shootBtn.addEventListener('touchend', function(e) { e.preventDefault(); shootTouch = false; });
+  shootBtn.addEventListener('touchcancel', function(e) { shootTouch = false; });
 
   document.getElementById('bagBtn').addEventListener('click', toggleBag);
 }
@@ -707,7 +707,7 @@ function renderWarehouse() {
     const div = document.createElement('div');
     div.className = 'inv-item';
     div.innerHTML = '<div class="item-icon">' + itemDef.icon + '</div><div class="item-name">' + itemName(type) + '</div><div class="item-count">x' + count + '</div>';
-    div.onmouseenter = function(e) { showTooltip(e, itemName(type) + '<br>价值: ' + itemDef.value + '<br>重量: ' + itemDef.weight); };
+    div.onmouseenter = function(e) { showTooltip(e, itemName(type) + '<br>' + (lang==='zh'?'价值':'Value') + ': ' + itemDef.value + '<br>' + (lang==='zh'?'重量':'Weight') + ': ' + itemDef.weight); };
     div.onmouseleave = hideTooltip;
     grid.appendChild(div);
   }
@@ -750,11 +750,11 @@ function switchWeapon(w) {
 
 function generateMap(mapIndex) {
   const configs = [
-    { wallChance: 0.15, enemyCount: 15, itemCount: 25, time: 600, size: [60, 45] },
-    { wallChance: 0.2, enemyCount: 25, itemCount: 30, time: 540, size: [70, 50] },
-    { wallChance: 0.25, enemyCount: 40, itemCount: 35, time: 480, size: [75, 55] },
-    { wallChance: 0.3, enemyCount: 55, itemCount: 40, time: 420, size: [80, 60] },
-    { wallChance: 0.35, enemyCount: 70, itemCount: 45, time: 360, size: [80, 60] }
+    { wallChance: 0.15, enemyCount: 15, itemCount: 30, time: 600, size: [60, 45] },
+    { wallChance: 0.2, enemyCount: 25, itemCount: 40, time: 540, size: [70, 50] },
+    { wallChance: 0.25, enemyCount: 40, itemCount: 50, time: 480, size: [75, 55] },
+    { wallChance: 0.3, enemyCount: 55, itemCount: 60, time: 420, size: [80, 60] },
+    { wallChance: 0.35, enemyCount: 70, itemCount: 70, time: 360, size: [80, 60] }
   ];
   const cfg = configs[mapIndex] || configs[0];
   const w = cfg.size[0], h = cfg.size[1];
@@ -832,6 +832,7 @@ function startGame(mapIndex) {
     player.weapons[k] = { ammo: WEAPONS[k].maxAmmo, totalAmmo: WEAPONS[k].totalAmmo };
   }
 
+  // Generate enemies
   enemies = [];
   const enemyCfg = [
     { zombie: 0.6, guard: 0.3, archer: 0.1 },
@@ -869,15 +870,26 @@ function startGame(mapIndex) {
     });
   }
 
+  // FIXED: Generate items - guaranteed spawn, no chance check
   items = [];
-  for (let i = 0; i < mapInfo.config.itemCount; i++) {
+  const itemCount = mapInfo.config.itemCount;
+  for (let i = 0; i < itemCount; i++) {
     const room = mapInfo.rooms[Math.floor(Math.random() * mapInfo.rooms.length)];
     const ix = (room.cx + (Math.random() - 0.5) * room.w * 0.7) * TILE_SIZE;
     const iy = (room.cy + (Math.random() - 0.5) * room.h * 0.7) * TILE_SIZE;
-    const itemDef = ITEM_TYPES[Math.floor(Math.random() * ITEM_TYPES.length)];
-    if (Math.random() < itemDef.chance) {
-      items.push({ x: ix, y: iy, type: itemDef.type, value: itemDef.value, weight: itemDef.weight, icon: itemDef.icon, id: Date.now() + i, bobOffset: Math.random() * Math.PI * 2 });
-    }
+
+    // Pick random item type weighted by chance
+    const itemDef = pickRandomItem();
+    items.push({
+      x: ix,
+      y: iy,
+      type: itemDef.type,
+      value: itemDef.value,
+      weight: itemDef.weight,
+      icon: itemDef.icon,
+      id: Date.now() + i,
+      bobOffset: Math.random() * Math.PI * 2
+    });
   }
 
   const lastRoom = mapInfo.rooms[mapInfo.rooms.length - 1];
@@ -909,7 +921,17 @@ function startGame(mapIndex) {
   updateWeaponBar();
   saveData.currentRun = { mapIndex: mapIndex, startTime: Date.now() };
   saveGame(saveData);
-  showToast(t('evacReady'));
+  showToast(t('evacReady') + ' - ' + items.length + ' ' + (lang==='zh'?'个宝物':'items'));
+}
+
+function pickRandomItem() {
+  const totalChance = ITEM_TYPES.reduce(function(sum, it) { return sum + it.chance; }, 0);
+  let r = Math.random() * totalChance;
+  for (let it of ITEM_TYPES) {
+    r -= it.chance;
+    if (r <= 0) return it;
+  }
+  return ITEM_TYPES[0];
 }
 
 function continueGame() {
@@ -961,8 +983,8 @@ function update(dt) {
     player.angle = Math.atan2(joystick.dy, joystick.dx);
   }
 
-  const wpn = player.weapons[player.weapon];
-  if ((mouse.down || shootTouch) && WEAPONS[player.weapon].auto && Date.now() - player.lastShot > WEAPONS[player.weapon].fireRate) {
+  const wpnDef = WEAPONS[player.weapon];
+  if ((mouse.down || shootTouch) && wpnDef.auto && Date.now() - player.lastShot > wpnDef.fireRate) {
     shoot();
   }
 
@@ -1031,11 +1053,12 @@ function update(dt) {
     }
   }
 
-  // Pickup items
+  // Pickup items - FIXED
   for (let i = items.length - 1; i >= 0; i--) {
     const item = items[i];
     item.bobOffset += dt * 3;
-    if (Math.hypot(player.x - item.x, player.y - item.y) < 30) {
+    const distToPlayer = Math.hypot(player.x - item.x, player.y - item.y);
+    if (distToPlayer < 35) {
       if (item.type === 'potion') {
         player.hp = Math.min(player.hpMax, player.hp + 30);
         showToast('+30 HP');
@@ -1046,7 +1069,13 @@ function update(dt) {
         items.splice(i, 1);
       } else {
         if (player.bagWeight + item.weight <= player.bagMax) {
-          player.bag.push({ type: item.type, value: item.value, weight: item.weight, icon: item.icon, id: item.id });
+          player.bag.push({
+            type: item.type,
+            value: item.value,
+            weight: item.weight,
+            icon: item.icon,
+            id: item.id
+          });
           player.bagWeight += item.weight;
           score += item.value;
           loots++;
@@ -1070,7 +1099,7 @@ function update(dt) {
   }
 
   // Evac point
-  if (!evacOpen && kills >= Math.max(5, Math.floor(mapData.config.enemyCount * 0.3))) {
+  if (!evacOpen && kills >= Math.max(3, Math.floor(mapData.config.enemyCount * 0.2))) {
     evacOpen = true;
     showToast(t('evacReady'));
   }
@@ -1139,9 +1168,18 @@ function killEnemy(index) {
   kills++;
   player.exp += e.exp;
 
-  if (Math.random() < 0.3) {
-    const itemDef = ITEM_TYPES[Math.floor(Math.random() * ITEM_TYPES.length)];
-    items.push({ x: e.x, y: e.y, type: itemDef.type, value: itemDef.value, weight: itemDef.weight, icon: itemDef.icon, id: Date.now(), bobOffset: 0 });
+  // Enemy drop items
+  if (Math.random() < 0.5) {
+    const itemDef = pickRandomItem();
+    items.push({
+      x: e.x, y: e.y,
+      type: itemDef.type,
+      value: itemDef.value,
+      weight: itemDef.weight,
+      icon: itemDef.icon,
+      id: Date.now(),
+      bobOffset: 0
+    });
   }
 
   enemies.splice(index, 1);
@@ -1152,8 +1190,12 @@ function createParticles(x, y, color, count) {
     const angle = Math.random() * Math.PI * 2;
     const speed = 50 + Math.random() * 150;
     particles.push({
-      x: x, y: y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 50,
-      life: 0.3 + Math.random() * 0.5, color: color, size: 2 + Math.random() * 3
+      x: x, y: y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 50,
+      life: 0.3 + Math.random() * 0.5,
+      color: color,
+      size: 2 + Math.random() * 3
     });
   }
 }
@@ -1218,16 +1260,28 @@ function render() {
     ctx.fillText('\uD83D\uDEAA', evacPoint.x, evacPoint.y + 8);
   }
 
-  // Items
+  // Items - render with glow effect
   for (let item of items) {
-    const bob = Math.sin(item.bobOffset) * 3;
-    ctx.fillStyle = 'rgba(212,168,83,' + (0.3 + Math.sin(item.bobOffset)*0.2) + ')';
+    const bob = Math.sin(item.bobOffset) * 4;
+    const glowAlpha = 0.3 + Math.sin(item.bobOffset) * 0.2;
+
+    // Glow
+    ctx.fillStyle = 'rgba(212,168,83,' + glowAlpha + ')';
     ctx.beginPath();
-    ctx.arc(item.x, item.y + bob, 12, 0, Math.PI * 2);
+    ctx.arc(item.x, item.y + bob, 16, 0, Math.PI * 2);
     ctx.fill();
-    ctx.font = '20px serif';
+
+    // Inner glow
+    ctx.fillStyle = 'rgba(255,215,0,' + (glowAlpha * 0.5) + ')';
+    ctx.beginPath();
+    ctx.arc(item.x, item.y + bob, 10, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Icon
+    ctx.font = '22px serif';
     ctx.textAlign = 'center';
-    ctx.fillText(item.icon, item.x, item.y + bob + 7);
+    ctx.textBaseline = 'middle';
+    ctx.fillText(item.icon, item.x, item.y + bob);
   }
 
   // Enemies
@@ -1350,6 +1404,14 @@ function renderMinimap() {
     mctx.fill();
   }
 
+  // Items on minimap
+  for (let item of items) {
+    mctx.fillStyle = '#d4a853';
+    mctx.beginPath();
+    mctx.arc(item.x * scale, item.y * scale, 1.5, 0, Math.PI*2);
+    mctx.fill();
+  }
+
   if (evacPoint) {
     mctx.fillStyle = evacOpen ? '#27ae60' : '#555';
     mctx.beginPath();
@@ -1366,7 +1428,6 @@ function renderMinimap() {
 function renderMenuBg() {
   ctx.fillStyle = '#0a0a0a';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  // Subtle animated particles in menu
   const time = Date.now() / 1000;
   for (let i = 0; i < 30; i++) {
     const x = (Math.sin(time * 0.3 + i * 1.5) * 0.5 + 0.5) * canvas.width;
@@ -1389,7 +1450,7 @@ function updateHUD() {
   document.getElementById('staminaFill').style.width = (player.stamina / player.staminaMax * 100) + '%';
   document.getElementById('gameTimer').textContent = formatTime(timeLimit - gameTime);
   document.getElementById('gameScore').textContent = (lang === 'zh' ? '摸金值: ' : 'Score: ') + score;
-  document.getElementById('enemyCount').textContent = (lang === 'zh' ? '敌人: ' : 'Enemies: ') + enemies.length;
+  document.getElementById('enemyCount').textContent = (lang === 'zh' ? '敌人: ' : 'Enemies: ') + enemies.length + ' | ' + (lang === 'zh' ? '宝物: ' : 'Items: ') + items.length;
   document.getElementById('ammoDisplay').textContent = wpn.ammo + ' / ' + wpn.totalAmmo;
   document.getElementById('weaponName').textContent = weaponName(player.weapon) + (player.reloading ? ' [' + t('reloading') + ']' : '');
   document.getElementById('mapName').textContent = t('mapNames')[currentMap];
@@ -1488,25 +1549,21 @@ function endGame(reason) {
   gameState = 'over';
   delete saveData.currentRun;
 
-  // Transfer bag to warehouse
   if (player.bag && player.bag.length > 0) {
     for (let item of player.bag) {
       saveData.warehouse[item.type] = (saveData.warehouse[item.type] || 0) + 1;
     }
   }
 
-  // Update stats
   saveData.gold += score;
   saveData.totalKills += kills;
   saveData.totalLoots += loots;
   saveData.playTime += gameTime;
 
-  // Best score
   if (score > saveData.bestScores[currentMap]) {
     saveData.bestScores[currentMap] = score;
   }
 
-  // Level up
   saveData.exp += player.exp;
   while (saveData.exp >= saveData.expNeed) {
     saveData.exp -= saveData.expNeed;
@@ -1516,7 +1573,6 @@ function endGame(reason) {
     saveData.staminaMax += 5;
   }
 
-  // Unlock next map
   if (reason === 'evacuated' && currentMap < 4 && !saveData.unlockedMaps.includes(currentMap + 1)) {
     saveData.unlockedMaps.push(currentMap + 1);
   }
@@ -1543,7 +1599,6 @@ function endGame(reason) {
   };
   document.getElementById('gameModal').style.display = 'flex';
 
-  // Hide game UI
   document.getElementById('gameUI').style.display = 'none';
   document.getElementById('minimap').style.display = 'none';
   document.getElementById('joystickZone').style.display = 'none';
@@ -1572,7 +1627,6 @@ function returnToMenu() {
   }
 }
 
-// Init
 window.onload = init;
 </script>
 </body>
