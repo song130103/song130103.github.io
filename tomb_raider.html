@@ -300,12 +300,7 @@
   #shootBtn:active { background: rgba(192,57,43,0.6); transform: scale(0.92); box-shadow: 0 0 25px rgba(192,57,43,0.5); }
 
 
-  #minimap {
-    position: fixed; top: 10px; right: 10px;
-    width: 150px; height: 150px; border-radius: 8px;
-    background: rgba(10,6,3,0.9); border: 1px solid #3a2a1a;
-    display: none; z-index: 150;
-  }
+
 
   /* ===== 容器搜刮界面 ===== */
   #lootPanel {
@@ -397,13 +392,7 @@
     font-size: 16px; z-index: 3000; display: none; pointer-events: none;
   }
 
-  #evacIndicator {
-    position: fixed; top: 50%; right: 10px; transform: translateY(-50%);
-    width: 40px; height: 40px; background: rgba(39,174,96,0.3);
-    border: 2px solid #27ae60; border-radius: 50%;
-    display: none; align-items: center; justify-content: center;
-    color: #2ecc71; font-size: 20px; z-index: 150;
-  }
+
 
   .stats-row { display: flex; gap: 20px; justify-content: center; margin: 10px 0; }
   .stat-box { text-align: center; }
@@ -471,7 +460,7 @@
 <body>
 
 <div id="toast"></div>
-<div id="evacIndicator">&#x1F6AA;</div>
+
 <div id="interactHint">按 F 搜刮</div>
 <div class="item-tooltip" id="tooltip"></div>
 
@@ -598,7 +587,7 @@
 <div id="lootBtn"><span class="btn-icon" id="lootIcon">&#x1F392;</span><span class="btn-text" id="lootText">搜刮</span></div>
 <div id="bagBtn">&#x1F392;</div>
 <div id="shootBtn">&#x1F4A5;</div>
-<canvas id="minimap"></canvas>
+
 
 <div id="weaponBar"></div>
 
@@ -856,7 +845,7 @@ const SHOP_ITEMS = [
 ];
 
 // ===== 游戏状态 =====
-let canvas, ctx, mmCanvas, mmCtx;
+let canvas, ctx;
 let gameState = 'menu';
 let currentMap = 0;
 let mapData = null;
@@ -939,8 +928,7 @@ function checkFirstTime() {
 function init() {
   canvas = document.getElementById('gameCanvas');
   ctx = canvas.getContext('2d');
-  mmCanvas = document.getElementById('minimap');
-  mmCtx = mmCanvas.getContext('2d');
+
   resizeCanvas();
   window.addEventListener('resize', resizeCanvas);
   isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
@@ -958,8 +946,7 @@ function init() {
 function resizeCanvas() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
-  mmCanvas.width = 150;
-  mmCanvas.height = 150;
+
 }
 
 function setupControls() {
@@ -973,7 +960,7 @@ function setupControls() {
     }
     if (e.code === 'KeyR' && gameState === 'playing') reload();
     if (e.code === 'KeyB' || e.code === 'Tab') { e.preventDefault(); toggleBag(); }
-    if (e.code === 'KeyM') toggleMap();
+    
     if (e.code === 'Digit1') switchWeapon('pistol');
     if (e.code === 'Digit2') switchWeapon('smg');
     if (e.code === 'Digit3') switchWeapon('shotgun');
@@ -1539,7 +1526,9 @@ function generateContainerLoot(containerType) {
       weight: itemDef.weight,
       icon: itemDef.icon,
       rarity: itemDef.rarity,
-      id: Date.now() + i + Math.random()
+      id: Date.now() + i + Math.random(),
+      revealed: false,
+      searching: false
     });
   }
   return loot;
@@ -1705,7 +1694,7 @@ function startGame(mapIndex) {
   document.getElementById('mainMenu').style.display = 'none';
   document.getElementById('mapSelect').style.display = 'none';
   document.getElementById('gameUI').style.display = 'block';
-  document.getElementById('minimap').style.display = 'block';
+  
   document.getElementById('weaponBar').style.display = 'flex';
 
   if (isMobile) {
@@ -1718,7 +1707,7 @@ function startGame(mapIndex) {
   updateWeaponBar();
   saveData.currentRun = { mapIndex: mapIndex, startTime: Date.now() };
   saveGame(saveData);
-  showToast(t('evacReady'));
+  showToast(lang==='zh'?'进入古墓，寻找机关开启撤离点！':'Enter the tomb, find the lever to open extraction!');
 }
 
 function continueGame() {
@@ -1736,17 +1725,16 @@ function openContainer(container) {
   const panel = document.getElementById('lootPanel');
   panel.style.display = 'block';
 
-  // 计算稀有物品数量
-  let rareCount = 0;
-  container.loot.forEach(function(item) { if (item.rarity === 'rare') rareCount++; });
+  // 计算已揭示和未揭示的物品数量
+  let revealedCount = container.loot.filter(function(it) { return it.revealed; }).length;
+  let totalCount = container.loot.length;
 
   document.getElementById('lootTitle').innerHTML = 
     '<div style="display:flex; align-items:center; justify-content:center; gap:10px;">' +
     '<span style="font-size:28px;">' + container.icon + '</span>' +
     '<div style="text-align:left;">' +
     '<div style="color:#d4a853; font-size:18px;">' + containerName(container.type) + '</div>' +
-    '<div style="color:#8b7355; font-size:12px;">' + container.loot.length + ' ' + (lang==='zh'?'件物品':'items') + 
-    (rareCount > 0 ? ' | <span style="color:#f1c40f;">★ ' + rareCount + ' ' + (lang==='zh'?'稀有':'rare') + '</span>' : '') +
+    '<div style="color:#8b7355; font-size:12px;">' + revealedCount + '/' + totalCount + ' ' + (lang==='zh'?'已搜索':'searched') +
     ' | 🛡️ ' + (lang==='zh'?'安全箱':'Safe') + ': ' + player.safeBox.length + '/' + player.safeBoxMax +
     '</div></div></div>';
 
@@ -1756,66 +1744,110 @@ function openContainer(container) {
   // 添加操作提示
   const hintDiv = document.createElement('div');
   hintDiv.style.cssText = 'grid-column:1/-1; text-align:center; color:#8b7355; font-size:11px; padding:5px; border-bottom:1px solid #3a2a1a; margin-bottom:5px;';
-  hintDiv.innerHTML = lang==='zh' ? '单击拾取到背包 | 长按0.5秒放入安全箱' : 'Click to bag | Hold 0.5s for safebox';
+  hintDiv.innerHTML = lang==='zh' ? '点击"?"搜索物品 | 搜索后单击拾取到背包 | 长按0.5秒放入安全箱' : 'Click "?" to search | Click to bag | Hold 0.5s for safebox';
   grid.appendChild(hintDiv);
 
   container.loot.forEach(function(item, idx) {
     const div = document.createElement('div');
     div.className = 'loot-item';
-    const isRare = item.rarity === 'rare';
-    const itemDef = LOOT_TYPES.find(function(it) { return it.type === item.type; });
-    const rarityColor = isRare ? '#f1c40f' : '#8b7355';
-    const rarityTag = isRare ? '<span style="color:#f1c40f;font-size:10px;">★★★ 稀有</span>' : '<span style="color:#8b7355;font-size:10px;">★ 普通</span>';
-    const bgStyle = isRare ? 'background:rgba(241,196,15,0.05); border-color:rgba(241,196,15,0.3);' : '';
+    div.style.cssText = 'position:relative; padding:10px 5px; transition:all 0.2s;';
 
-    div.innerHTML = 
-      '<div class="item-icon" style="font-size:28px;">' + item.icon + '</div>' +
-      '<div class="item-name" style="color:' + rarityColor + '; font-weight:bold; font-size:11px;">' + itemName(item.type) + '</div>' +
-      '<div style="font-size:9px; color:#8b7355; margin:2px 0;">' + rarityTag + '</div>' +
-      '<div style="font-size:10px; color:#d4a853;">💰 ' + item.value + ' | ⚖ ' + item.weight + 'kg</div>';
+    if (!item.revealed) {
+      // 未揭示 - 显示问号
+      div.innerHTML = 
+        '<div class="item-icon" style="font-size:32px; color:#5a4a3a;">❓</div>' +
+        '<div class="item-name" style="color:#5a4a3a; font-weight:bold; font-size:11px;">' + (lang==='zh'?'未知物品':'Unknown') + '</div>' +
+        '<div style="font-size:9px; color:#5a4a3a; margin:2px 0;">???</div>' +
+        '<div style="font-size:10px; color:#5a4a3a;">???</div>';
+      div.style.background = 'rgba(40,30,20,0.5)';
+      div.style.borderColor = '#3a2a1a';
+      div.style.cursor = 'pointer';
 
-    div.style.cssText = 'position:relative; padding:10px 5px; transition:all 0.2s; ' + bgStyle;
+      // 点击搜索
+      div.onclick = function() {
+        searchLootItem(container, idx);
+      };
+      div.onmouseenter = function(e) {
+        showTooltip(e, (lang==='zh'?'点击搜索此物品':'Click to search this item'));
+      };
+      div.onmouseleave = hideTooltip;
+    } else {
+      // 已揭示 - 显示真实信息
+      const isRare = item.rarity === 'rare';
+      const itemDef = LOOT_TYPES.find(function(it) { return it.type === item.type; });
+      const rarityColor = isRare ? '#f1c40f' : '#8b7355';
+      const rarityTag = isRare ? '<span style="color:#f1c40f;font-size:10px;">★★★ 稀有</span>' : '<span style="color:#8b7355;font-size:10px;">★ 普通</span>';
+      const bgStyle = isRare ? 'background:rgba(241,196,15,0.05); border-color:rgba(241,196,15,0.3);' : '';
 
-    let pressTimer = null;
-    let pressStart = 0;
+      div.innerHTML = 
+        '<div class="item-icon" style="font-size:28px;">' + item.icon + '</div>' +
+        '<div class="item-name" style="color:' + rarityColor + '; font-weight:bold; font-size:11px;">' + itemName(item.type) + '</div>' +
+        '<div style="font-size:9px; color:#8b7355; margin:2px 0;">' + rarityTag + '</div>' +
+        '<div style="font-size:10px; color:#d4a853;">💰 ' + item.value + ' | ⚖ ' + item.weight + 'kg</div>';
+      div.style.cssText += bgStyle;
 
-    function startPress() {
-      pressStart = Date.now();
-      pressTimer = setTimeout(function() {
-        pressTimer = null;
-        takeLootItem(container, idx, true);
-      }, 500);
-    }
+      let pressTimer = null;
+      let pressStart = 0;
 
-    function endPress() {
-      if (pressTimer) {
-        clearTimeout(pressTimer);
-        pressTimer = null;
-        const elapsed = Date.now() - pressStart;
-        if (elapsed < 500) {
-          takeLootItem(container, idx, false);
+      function startPress() {
+        pressStart = Date.now();
+        pressTimer = setTimeout(function() {
+          pressTimer = null;
+          takeLootItem(container, idx, true);
+        }, 500);
+      }
+
+      function endPress() {
+        if (pressTimer) {
+          clearTimeout(pressTimer);
+          pressTimer = null;
+          const elapsed = Date.now() - pressStart;
+          if (elapsed < 500) {
+            takeLootItem(container, idx, false);
+          }
         }
       }
-    }
 
-    function cancelPress() {
-      if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
-    }
+      function cancelPress() {
+        if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+      }
 
-    div.onmousedown = startPress;
-    div.onmouseup = endPress;
-    div.onmouseleave = cancelPress;
-    div.addEventListener('touchstart', function(e) { e.preventDefault(); startPress(); }, {passive:false});
-    div.addEventListener('touchend', function(e) { e.preventDefault(); endPress(); });
-    div.addEventListener('touchcancel', cancelPress);
+      div.onmousedown = startPress;
+      div.onmouseup = endPress;
+      div.onmouseleave = cancelPress;
+      div.addEventListener('touchstart', function(e) { e.preventDefault(); startPress(); }, {passive:false});
+      div.addEventListener('touchend', function(e) { e.preventDefault(); endPress(); });
+      div.addEventListener('touchcancel', cancelPress);
+    }
 
     grid.appendChild(div);
   });
 }
 
+
+function searchLootItem(container, idx) {
+  const item = container.loot[idx];
+  if (!item || item.revealed || item.searching) return;
+
+  item.searching = true;
+  showToast((lang==='zh'?'正在搜索...':'Searching...'));
+
+  setTimeout(function() {
+    item.revealed = true;
+    item.searching = false;
+    showToast((lang==='zh'?'发现: ':'Found: ') + itemName(item.type));
+    openContainer(container);
+  }, 800);
+}
+
 function takeLootItem(container, idx, toSafeBox) {
   const item = container.loot[idx];
   if (!item) return;
+
+  if (!item.revealed) {
+    showToast(lang==='zh'?'需要先搜索此物品':'Need to search this item first');
+    return;
+  }
 
   if (item.type === 'potion') {
     player.hp = Math.min(player.hpMax, player.hp + 30);
@@ -1898,7 +1930,6 @@ function gameLoop(timestamp) {
     gameTime += dt;
     update(dt);
     render();
-    renderMinimap();
     updateHUD();
 
     if (gameTime >= timeLimit) endGame('timeout');
@@ -1915,7 +1946,16 @@ function update(dt) {
 
   let dx = 0, dy = 0;
   const sprint = keys['ShiftLeft'] || keys['ShiftRight'];
-  const speed = player.speed * (sprint && player.stamina > 0 ? 1.5 : 1);
+
+  // 体力机制：体力为0时无法冲刺，移动速度降低50%
+  let speed;
+  if (player.stamina <= 0) {
+    speed = player.speed * 0.5;
+  } else if (sprint && player.stamina > 10) {
+    speed = player.speed * 1.5;
+  } else {
+    speed = player.speed;
+  }
 
   if (joystick.active) {
     dx = joystick.dx * speed * 60 * dt;
@@ -1941,10 +1981,13 @@ function update(dt) {
     shoot();
   }
 
-  if (sprint) {
-    player.stamina = Math.max(0, player.stamina - 30 * dt);
+  // 体力消耗与恢复
+  if (sprint && player.stamina > 10) {
+    player.stamina = Math.max(0, player.stamina - 35 * dt);
   } else {
-    player.stamina = Math.min(player.staminaMax, player.stamina + 20 * dt);
+    const moving = (dx !== 0 || dy !== 0);
+    const recoverRate = moving ? 8 : 25;
+    player.stamina = Math.min(player.staminaMax, player.stamina + recoverRate * dt);
   }
 
   if (player.invincible > 0) player.invincible -= dt;
@@ -2030,6 +2073,16 @@ function update(dt) {
     }
   }
 
+  // 低体力提示（每3秒只提示一次，避免刷屏）
+  if (player.stamina < 10) {
+    if (!player._lowStaminaWarnTime || Date.now() - player._lowStaminaWarnTime > 3000) {
+      showToast(lang==='zh'?'体力耗尽！移动速度大幅降低！':'Stamina depleted! Movement slowed!');
+      player._lowStaminaWarnTime = Date.now();
+    }
+  } else {
+    player._lowStaminaWarnTime = 0;
+  }
+
   const hint = document.getElementById('interactHint');
   if (nearLever && !nearLever.activated) {
     hint.style.display = 'block';
@@ -2045,6 +2098,11 @@ function update(dt) {
   for (let i = items.length - 1; i >= 0; i--) {
     const item = items[i];
     item.bobOffset += dt * 3;
+    // 冷却倒计时
+    if (item.pickupCooldown > 0) {
+      item.pickupCooldown -= dt;
+      continue;
+    }
     if (Math.hypot(player.x - item.x, player.y - item.y) < 35) {
       if (item.type === 'potion') {
         player.hp = Math.min(player.hpMax, player.hp + 30);
@@ -2326,43 +2384,11 @@ function render() {
       ctx.arc(c.x, c.y + bob, c.size + 3, 0, Math.PI * 2);
       ctx.stroke();
 
-      // 悬停时显示容器内容预览
-      const previewY = c.y + bob - c.size - 35;
-      const previewItems = c.loot.slice(0, 5);
-      const previewWidth = Math.max(100, previewItems.length * 22 + 10);
-
-      // 背景
-      ctx.fillStyle = 'rgba(10,6,3,0.92)';
-      ctx.strokeStyle = '#d4a853';
-      ctx.lineWidth = 1;
-      roundRect(ctx, c.x - previewWidth/2, previewY - 18, previewWidth, 36, 6);
-      ctx.fill();
-      ctx.stroke();
-
-      // 物品图标
-      previewItems.forEach(function(it, i) {
-        ctx.font = '16px serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(it.icon, c.x - previewWidth/2 + 15 + i * 22, previewY);
-      });
-
-      // 数量提示
-      if (c.loot.length > 5) {
-        ctx.fillStyle = '#8b7355';
-        ctx.font = '10px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('+' + (c.loot.length - 5), c.x - previewWidth/2 + 15 + 5 * 22, previewY);
-      }
-
-      // 稀有度提示
-      const rareCount = c.loot.filter(function(it){ return it.rarity === 'rare'; }).length;
-      if (rareCount > 0) {
-        ctx.fillStyle = '#f1c40f';
-        ctx.font = '10px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('★' + rareCount, c.x, previewY + 14);
-      }
+      // 只显示容器类型和搜索提示，不显示内容
+      ctx.fillStyle = '#d4a853';
+      ctx.font = '11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText((lang==='zh'?'按F搜刮':'Press F'), c.x, c.y + bob - c.size - 12);
     }
 
     ctx.globalAlpha = 1;
@@ -2460,68 +2486,25 @@ function render() {
     ctx.fillRect(camera.x, camera.y, canvas.width, canvas.height);
   }
 
+  // 低体力视觉提示：体力低于20时屏幕边缘泛红
+  if (player.stamina < 20) {
+    const intensity = (20 - player.stamina) / 20 * 0.3;
+    const gradient = ctx.createRadialGradient(
+      camera.x + canvas.width / 2, camera.y + canvas.height / 2, canvas.width * 0.3,
+      camera.x + canvas.width / 2, camera.y + canvas.height / 2, canvas.width * 0.7
+    );
+    gradient.addColorStop(0, 'rgba(192,57,43,0)');
+    gradient.addColorStop(1, 'rgba(192,57,43,' + intensity + ')');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(camera.x, camera.y, canvas.width, canvas.height);
+  }
+
   ctx.restore();
 
-  // Evac indicator
-  if (evacOpen && evacPoint) {
-    const angle = Math.atan2(evacPoint.y - player.y, evacPoint.x - player.x);
-    const dist = Math.hypot(evacPoint.x - player.x, evacPoint.y - player.y);
-    const indicator = document.getElementById('evacIndicator');
-    if (dist > 300) {
-      indicator.style.display = 'flex';
-      indicator.style.transform = 'translateY(-50%) rotate(' + angle + 'rad)';
-    } else {
-      indicator.style.display = 'none';
-    }
-  }
+
 }
 
-function renderMinimap() {
-  if (gameState !== 'playing' || !mapData) return;
-  const mm = mmCanvas;
-  const mctx = mmCtx;
-  const scale = mm.width / (mapData.width * TILE_SIZE);
 
-  mctx.fillStyle = '#0d0603';
-  mctx.fillRect(0, 0, mm.width, mm.height);
-
-  for (let y = 0; y < mapData.height; y++) {
-    for (let x = 0; x < mapData.width; x++) {
-      if (mapData.data[y][x] === 1) {
-        mctx.fillStyle = '#2a1a0a';
-        mctx.fillRect(x * TILE_SIZE * scale, y * TILE_SIZE * scale, TILE_SIZE * scale + 1, TILE_SIZE * scale + 1);
-      }
-    }
-  }
-
-  // Containers on minimap
-  for (let c of containers) {
-    if (c.looted) continue;
-    mctx.fillStyle = '#d4a853';
-    mctx.beginPath();
-    mctx.arc(c.x * scale, c.y * scale, 2, 0, Math.PI*2);
-    mctx.fill();
-  }
-
-  for (let e of enemies) {
-    mctx.fillStyle = '#c0392b';
-    mctx.beginPath();
-    mctx.arc(e.x * scale, e.y * scale, 2, 0, Math.PI*2);
-    mctx.fill();
-  }
-
-  if (evacPoint) {
-    mctx.fillStyle = evacOpen ? '#27ae60' : '#555';
-    mctx.beginPath();
-    mctx.arc(evacPoint.x * scale, evacPoint.y * scale, 4, 0, Math.PI*2);
-    mctx.fill();
-  }
-
-  mctx.fillStyle = '#00bfff';
-  mctx.beginPath();
-  mctx.arc(player.x * scale, player.y * scale, 3, 0, Math.PI*2);
-  mctx.fill();
-}
 
 function renderMenuBg() {
   ctx.fillStyle = '#0a0a0a';
@@ -2546,7 +2529,15 @@ function updateHUD() {
   document.getElementById('hudHpVal').textContent = Math.ceil(player.hp);
   document.getElementById('hudHpMax').textContent = player.hpMax;
   document.getElementById('hpFill').style.width = (player.hp / player.hpMax * 100) + '%';
-  document.getElementById('staminaFill').style.width = (player.stamina / player.staminaMax * 100) + '%';
+  const staminaPercent = player.stamina / player.staminaMax * 100;
+  const staminaFill = document.getElementById('staminaFill');
+  staminaFill.style.width = staminaPercent + '%';
+  // 低体力时体力条变红
+  if (player.stamina < 20) {
+    staminaFill.style.background = 'linear-gradient(90deg, #c0392b, #e74c3c)';
+  } else {
+    staminaFill.style.background = 'linear-gradient(90deg, #27ae60, #2ecc71)';
+  }
   document.getElementById('gameTimer').textContent = formatTime(timeLimit - gameTime);
   document.getElementById('gameScore').textContent = (lang === 'zh' ? '摸金值: ' : 'Score: ') + score;
   document.getElementById('enemyCount').textContent = (lang === 'zh' ? '敌人: ' : 'Enemies: ') + enemies.length + ' | ' + (lang === 'zh' ? '容器: ' : 'Containers: ') + containers.filter(function(c){return !c.looted;}).length;
@@ -2590,6 +2581,40 @@ function renderBag() {
       div.className = 'inv-item';
       div.style.borderColor = '#27ae60';
       div.innerHTML = '<div class="item-icon">' + itemDef.icon + '</div><div class="item-name" style="color:#27ae60;">' + itemName(type) + '</div><div class="item-count">x' + safeCounts[type] + '</div>';
+
+      // 长按丢弃安全箱物品
+      let dropTimer = null;
+      let dropProgress = 0;
+      function startSafeDrop() {
+        dropProgress = 0;
+        div.style.transition = 'box-shadow 0.5s linear';
+        div.style.boxShadow = 'inset 0 0 0 0 rgba(192,57,43,0)';
+        dropTimer = setInterval(function() {
+          dropProgress += 0.1;
+          div.style.boxShadow = 'inset 0 0 0 ' + (dropProgress * 100) + '% rgba(192,57,43,' + (dropProgress * 0.5) + ')';
+          if (dropProgress >= 1) {
+            clearInterval(dropTimer);
+            dropTimer = null;
+            dropSafeBoxItem(type);
+          }
+        }, 50);
+      }
+      function cancelSafeDrop() {
+        if (dropTimer) { clearInterval(dropTimer); dropTimer = null; }
+        div.style.boxShadow = '';
+        div.style.transition = '';
+      }
+      div.onmousedown = startSafeDrop;
+      div.onmouseup = cancelSafeDrop;
+      div.onmouseleave = cancelSafeDrop;
+      div.addEventListener('touchstart', function(e) { e.preventDefault(); startSafeDrop(); }, {passive:false});
+      div.addEventListener('touchend', function(e) { e.preventDefault(); cancelSafeDrop(); });
+      div.addEventListener('touchcancel', cancelSafeDrop);
+      div.onmouseenter = function(e) {
+        showTooltip(e, '<b>' + itemName(type) + '</b><br>' + (lang==='zh'?'价值':'Value') + ': ' + itemDef.value + '<br><span style="color:#c0392b;">' + (lang==='zh'?'长按丢弃到地面':'Hold to drop') + '</span>');
+      };
+      div.onmouseleave = hideTooltip;
+
       grid.appendChild(div);
     }
   }
@@ -2674,16 +2699,17 @@ function dropItem(bagIndex) {
   if (!player.bag || bagIndex < 0 || bagIndex >= player.bag.length) return;
   const item = player.bag[bagIndex];
 
-  // 掉落到地面
+  // 掉落到地面，添加拾取冷却（2秒内无法被捡起）
   items.push({
-    x: player.x + (Math.random() - 0.5) * 60,
-    y: player.y + (Math.random() - 0.5) * 60,
+    x: player.x + (Math.random() - 0.5) * 80,
+    y: player.y + (Math.random() - 0.5) * 80,
     type: item.type,
     value: item.value,
     weight: item.weight,
     icon: item.icon,
     id: Date.now() + Math.random(),
-    bobOffset: Math.random() * Math.PI * 2
+    bobOffset: Math.random() * Math.PI * 2,
+    pickupCooldown: 2.0
   });
 
   // 从背包移除
@@ -2694,10 +2720,34 @@ function dropItem(bagIndex) {
   renderBag();
 }
 
-function toggleMap() {
-  const mm = document.getElementById('minimap');
-  mm.style.display = mm.style.display === 'none' ? 'block' : 'none';
+function dropSafeBoxItem(type) {
+  if (!player.safeBox || player.safeBox.length === 0) return;
+  let idx = -1;
+  for (let i = 0; i < player.safeBox.length; i++) {
+    if (player.safeBox[i].type === type) { idx = i; break; }
+  }
+  if (idx === -1) return;
+  const item = player.safeBox[idx];
+
+  items.push({
+    x: player.x + (Math.random() - 0.5) * 80,
+    y: player.y + (Math.random() - 0.5) * 80,
+    type: item.type,
+    value: item.value,
+    weight: item.weight,
+    icon: item.icon,
+    id: Date.now() + Math.random(),
+    bobOffset: Math.random() * Math.PI * 2,
+    pickupCooldown: 2.0
+  });
+
+  player.safeBox.splice(idx, 1);
+  showToast(itemName(item.type) + ' ' + (lang==='zh'?'从安全箱丢弃':'dropped from safebox'));
+  renderBag();
 }
+
+
+
 
 function togglePause() {
   if (gameState === 'playing') {
@@ -2831,13 +2881,13 @@ function endGame(reason) {
   document.getElementById('gameModal').style.display = 'flex';
 
   document.getElementById('gameUI').style.display = 'none';
-  document.getElementById('minimap').style.display = 'none';
+  
   document.getElementById('joystickZone').style.display = 'none';
   document.getElementById('lootBtn').style.display = 'none';
   document.getElementById('bagBtn').style.display = 'none';
   document.getElementById('shootBtn').style.display = 'none';
   document.getElementById('weaponBar').style.display = 'none';
-  document.getElementById('evacIndicator').style.display = 'none';
+  
   document.getElementById('bagPanel').style.display = 'none';
   document.getElementById('interactHint').style.display = 'none';
   bagOpen = false;
@@ -2847,13 +2897,13 @@ function returnToMenu() {
   gameState = 'menu';
   document.getElementById('mainMenu').style.display = 'flex';
   document.getElementById('gameUI').style.display = 'none';
-  document.getElementById('minimap').style.display = 'none';
+  
   document.getElementById('joystickZone').style.display = 'none';
   document.getElementById('lootBtn').style.display = 'none';
   document.getElementById('bagBtn').style.display = 'none';
   document.getElementById('shootBtn').style.display = 'none';
   document.getElementById('weaponBar').style.display = 'none';
-  document.getElementById('evacIndicator').style.display = 'none';
+  
   document.getElementById('bagPanel').style.display = 'none';
   document.getElementById('interactHint').style.display = 'none';
   bagOpen = false;
