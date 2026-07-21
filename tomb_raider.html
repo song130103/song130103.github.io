@@ -233,6 +233,51 @@
   }
   #shootBtn:active { background: rgba(192,57,43,0.5); transform: scale(0.95); }
 
+  /* 机关模式 */
+  #lootBtn {
+    position: fixed; bottom: 100px; right: 60px;
+    width: 80px; height: 80px; border-radius: 50%;
+    background: rgba(212,168,83,0.3); border: 2px solid rgba(212,168,83,0.6);
+    color: #d4a853; font-size: 14px; display: none;
+    align-items: center; justify-content: center; z-index: 200;
+    pointer-events: auto; cursor: pointer; user-select: none;
+    flex-direction: column;
+  }
+  #lootBtn:active { transform: scale(0.95); }
+  #lootBtn .btn-icon { font-size: 28px; line-height: 1; }
+  #lootBtn .btn-text { font-size: 11px; margin-top: 2px; }
+
+  #lootBtn.evac-mode {
+    background: rgba(39,174,96,0.3) !important;
+    border-color: rgba(39,174,96,0.8) !important;
+    color: #2ecc71 !important;
+    box-shadow: 0 0 15px rgba(39,174,96,0.4);
+    animation: evacPulse 1.5s infinite;
+  }
+  #lootBtn.evac-mode:active { background: rgba(39,174,96,0.5) !important; }
+
+  @keyframes evacPulse {
+    0% { box-shadow: 0 0 10px rgba(39,174,96,0.3); }
+    50% { box-shadow: 0 0 25px rgba(39,174,96,0.6); }
+    100% { box-shadow: 0 0 10px rgba(39,174,96,0.3); }
+  }
+
+  /* 机关模式 */
+  #lootBtn.lever-mode {
+    background: rgba(155,89,182,0.3) !important;
+    border-color: rgba(155,89,182,0.8) !important;
+    color: #9b59b6 !important;
+    box-shadow: 0 0 15px rgba(155,89,182,0.4);
+    animation: leverPulse 1.5s infinite;
+  }
+  #lootBtn.lever-mode:active { background: rgba(155,89,182,0.5) !important; }
+  @keyframes leverPulse {
+    0% { box-shadow: 0 0 10px rgba(155,89,182,0.3); }
+    50% { box-shadow: 0 0 25px rgba(155,89,182,0.6); }
+    100% { box-shadow: 0 0 10px rgba(155,89,182,0.3); }
+  }
+
+
   #bagBtn {
     position: fixed; top: 10px; right: 120px;
     width: 50px; height: 50px; border-radius: 8px;
@@ -240,37 +285,6 @@
     color: #d4a853; font-size: 20px; display: none;
     align-items: center; justify-content: center; z-index: 200;
     pointer-events: auto; cursor: pointer;
-  }
-
-  /* ===== 移动端搜刮按钮 ===== */
-  #lootBtn {
-    position: fixed; bottom: 100px; right: 160px;
-    width: 70px; height: 70px; border-radius: 50%;
-    background: rgba(212,168,83,0.3); border: 2px solid rgba(212,168,83,0.6);
-    color: #d4a853; font-size: 12px; display: none;
-    align-items: center; justify-content: center; z-index: 200;
-    pointer-events: auto; cursor: pointer; user-select: none;
-    flex-direction: column;
-    transition: all 0.3s ease;
-  }
-  #lootBtn:active { transform: scale(0.95); }
-  #lootBtn .loot-icon { font-size: 22px; transition: all 0.3s; }
-  #lootBtn .loot-text { font-size: 10px; margin-top: 2px; transition: all 0.3s; }
-  /* 撤离模式 */
-  #lootBtn.evac-mode {
-    background: rgba(39,174,96,0.3) !important;
-    border-color: rgba(46,204,113,0.8) !important;
-    color: #2ecc71 !important;
-    box-shadow: 0 0 15px rgba(46,204,113,0.4);
-    animation: evacPulse 1.5s infinite;
-  }
-  #lootBtn.evac-mode:active {
-    background: rgba(39,174,96,0.5) !important;
-  }
-  @keyframes evacPulse {
-    0% { box-shadow: 0 0 10px rgba(46,204,113,0.3); }
-    50% { box-shadow: 0 0 25px rgba(46,204,113,0.6); }
-    100% { box-shadow: 0 0 10px rgba(46,204,113,0.3); }
   }
 
   #minimap {
@@ -493,12 +507,7 @@
   <div id="joystickBase"><div id="joystickStick"></div></div>
 </div>
 
-<div id="shootBtn">射击</div>
-<!-- 移动端搜刮按钮 -->
-<div id="lootBtn">
-  <span class="loot-icon" id="lootIcon">&#x1F392;</span>
-  <span class="loot-text" id="lootText">搜刮</span>
-</div>
+<div id="lootBtn"><span class="btn-icon" id="lootIcon">&#x1F392;</span><span class="btn-text" id="lootText">搜刮</span></div>
 <div id="bagBtn">&#x1F392;</div>
 <canvas id="minimap"></canvas>
 
@@ -559,7 +568,7 @@ const I18N = {
     newGame: '重新开始', mapLocked: '地图未解锁', needLevel: '需要等级',
     weight: '负重', fullBag: '背包已满', looted: '拾取',
     noAmmo: '弹药不足', reloading: '换弹中...', evacReady: '撤离点已开启',
-    pressF: '按 F 搜刮', touchLoot: '点击搜刮', touchDoor: '靠近撤离点才能撤离', lowHp: '生命值过低',
+    pressF: '按 F 搜刮', touchLoot: '点击搜刮', lowHp: '生命值过低',
     settingsTitle: '设置', sound: '音效', music: '音乐', clearSave: '清除存档',
     equipTitle: '战前装备', lblLoadout: '当前装备', lblStash: '仓库物品', equipHint: '点击仓库物品装备，点击装备卸下',
     shopTitle: '黑市商城', shopBuy: '购买', shopOwned: '已拥有',
@@ -573,10 +582,15 @@ const I18N = {
     ],
     diff: ['简单', '普通', '困难', '极难', '传说'],
     items: {
-      gold: '金条', jade: '玉璧', bronze: '青铜器', pearl: '夜明珠',
+      gold: '金条', jade: '玉璧', bronze: '青铜鼎', pearl: '夜明珠',
       scroll: '古卷', sword: '古剑', armor: '金丝甲', potion: '还魂丹',
       ammo: '弹药箱', key: '墓门钥匙', coin: '古钱币', gem: '宝石',
-      chest: '宝箱', vase: '陶罐', skeleton: '遗骸', tablet: '石碑'
+      chest: '宝箱', vase: '陶罐', skeleton: '遗骸', tablet: '石碑',
+      pottery: '陶片', brick: '墓砖', bone: '骸骨', rope: '麻绳',
+      torch: '火把', scroll_frag: '残卷', clay: '泥塑', shell: '贝币',
+      feather: '翎羽', wood: '棺木', stone: '石料', dust: '骨灰',
+      button: '铜扣', nail: '棺钉', potion: '丹药', ammo: '箭矢',
+      lever: '机关', switch: '开关', altar: '祭坛'
     },
     weapons: {
       pistol: '洛阳铲手枪', smg: '连弩冲锋枪', shotgun: '散弹火铳', rifle: '狙击长弓'
@@ -595,7 +609,7 @@ const I18N = {
     newGame: 'New Game', mapLocked: 'Map Locked', needLevel: 'Need Level',
     weight: 'Weight', fullBag: 'Bag Full', looted: 'Looted',
     noAmmo: 'No Ammo', reloading: 'Reloading...', evacReady: 'Extraction Ready',
-    pressF: 'Press F to Loot', touchLoot: 'Tap to Loot', touchDoor: 'Get closer to evac point', lowHp: 'Low HP',
+    pressF: 'Press F to Loot', touchLoot: 'Tap to Loot', lowHp: 'Low HP',
     settingsTitle: 'Settings', sound: 'Sound', music: 'Music', clearSave: 'Clear Save',
     equipTitle: 'Pre-Raid Gear', lblLoadout: 'Current Loadout', lblStash: 'Stash Items', equipHint: 'Click stash to equip, click equipped to remove',
     shopTitle: 'Black Market', shopBuy: 'Buy', shopOwned: 'Owned',
@@ -609,10 +623,15 @@ const I18N = {
     ],
     diff: ['Easy', 'Normal', 'Hard', 'Extreme', 'Legend'],
     items: {
-      gold: 'Gold Bar', jade: 'Jade Disc', bronze: 'Bronze', pearl: 'Pearl',
+      gold: 'Gold Bar', jade: 'Jade Disc', bronze: 'Bronze Tripod', pearl: 'Pearl',
       scroll: 'Scroll', sword: 'Sword', armor: 'Armor', potion: 'Potion',
       ammo: 'Ammo Box', key: 'Key', coin: 'Coin', gem: 'Gem',
-      chest: 'Chest', vase: 'Vase', skeleton: 'Skeleton', tablet: 'Tablet'
+      chest: 'Chest', vase: 'Vase', skeleton: 'Skeleton', tablet: 'Tablet',
+      pottery: 'Pottery Shard', brick: 'Tomb Brick', bone: 'Bone', rope: 'Rope',
+      torch: 'Torch', scroll_frag: 'Fragment', clay: 'Clay Figurine', shell: 'Shell',
+      feather: 'Feather', wood: 'Coffin Wood', stone: 'Stone', dust: 'Ash',
+      button: 'Button', nail: 'Nail', potion: 'Elixir', ammo: 'Arrows',
+      lever: 'Lever', switch: 'Switch', altar: 'Altar'
     },
     weapons: {
       pistol: 'Pistol', smg: 'SMG', shotgun: 'Shotgun', rifle: 'Rifle'
@@ -664,7 +683,8 @@ function getDefaultSave() {
       accessory2: null,
       healing: null
     },
-    hpMax: 100, staminaMax: 100
+    hpMax: 100, staminaMax: 100,
+    safeBoxMax: 6  // 安全箱容量（随等级提升）
   };
 }
 let saveData = loadSave() || getDefaultSave();
@@ -695,19 +715,43 @@ const CONTAINER_TYPES = [
   { type: 'coffin', icon: '\u26B0\uFE0F', size: 30, lootCount: [3,6], color: '#2F4F4F' }
 ];
 
+// 机关类型（按下后开启撤离点）
+const LEVER_TYPES = [
+  { type: 'lever', icon: '\u2696\uFE0F', size: 28, color: '#8B0000', name: '机关' },
+  { type: 'switch', icon: '\uD83D\uDD11', size: 24, color: '#4a0080', name: '开关' },
+  { type: 'altar', icon: '\uD83D\uDDFF', size: 32, color: '#2F4F4F', name: '祭坛' }
+];
+
 // 战利品类型
 const LOOT_TYPES = [
-  { type: 'gold', value: 100, weight: 2, icon: '\uD83C\uDFC6', sellPrice: 80 },
-  { type: 'jade', value: 200, weight: 1.5, icon: '\uD83D\uDC8E', sellPrice: 160 },
-  { type: 'bronze', value: 50, weight: 3, icon: '\uD83C\uDFFA', sellPrice: 40 },
-  { type: 'pearl', value: 300, weight: 0.5, icon: '\u26AA', sellPrice: 240 },
-  { type: 'scroll', value: 150, weight: 0.3, icon: '\uD83D\uDCDC', sellPrice: 120 },
-  { type: 'sword', value: 250, weight: 4, icon: '\u2694\uFE0F', sellPrice: 200 },
-  { type: 'armor', value: 400, weight: 5, icon: '\uD83D\uDEE1\uFE0F', sellPrice: 320 },
-  { type: 'potion', value: 50, weight: 0.5, icon: '\uD83E\uDDEA', sellPrice: 40 },
-  { type: 'ammo', value: 10, weight: 0.2, icon: '\uD83D\uDD2B', sellPrice: 8 },
-  { type: 'coin', value: 20, weight: 0.1, icon: '\uD83E\uDE99', sellPrice: 16 },
-  { type: 'gem', value: 500, weight: 1, icon: '\uD83D\uDCA0', sellPrice: 400 }
+  // ===== 普通物品（大量刷新，70%概率）=====
+  { type: 'coin', value: 15, weight: 0.1, icon: '\uD83E\uDE99', sellPrice: 12, rarity: 'common' },
+  { type: 'pottery', value: 20, weight: 1.5, icon: '\uD83C\uDFFA', sellPrice: 15, rarity: 'common' },
+  { type: 'brick', value: 10, weight: 2, icon: '\uD83E\uDDF1', sellPrice: 8, rarity: 'common' },
+  { type: 'bone', value: 12, weight: 0.8, icon: '\uD83E\uDDB4', sellPrice: 10, rarity: 'common' },
+  { type: 'rope', value: 18, weight: 0.5, icon: '\uD83E\uDEA1', sellPrice: 14, rarity: 'common' },
+  { type: 'torch', value: 15, weight: 0.6, icon: '\uD83D\uDD26', sellPrice: 12, rarity: 'common' },
+  { type: 'scroll_frag', value: 25, weight: 0.2, icon: '\uD83D\uDCDC', sellPrice: 20, rarity: 'common' },
+  { type: 'clay', value: 8, weight: 1, icon: '\uD83C\uDF44', sellPrice: 6, rarity: 'common' },
+  { type: 'shell', value: 22, weight: 0.3, icon: '\uD83D\uDC1A', sellPrice: 18, rarity: 'common' },
+  { type: 'feather', value: 10, weight: 0.1, icon: '\uD83E\uDEB6', sellPrice: 8, rarity: 'common' },
+  { type: 'wood', value: 12, weight: 1.2, icon: '\uD83E\uDEB5', sellPrice: 10, rarity: 'common' },
+  { type: 'stone', value: 8, weight: 2.5, icon: '\uD83E\uDEA8', sellPrice: 6, rarity: 'common' },
+  { type: 'dust', value: 5, weight: 0.1, icon: '\uD83D\uDCAB', sellPrice: 4, rarity: 'common' },
+  { type: 'button', value: 15, weight: 0.1, icon: '\uD83D\uDD11', sellPrice: 12, rarity: 'common' },
+  { type: 'nail', value: 10, weight: 0.2, icon: '\uD83D\uDD28', sellPrice: 8, rarity: 'common' },
+  // ===== 珍贵物品（少量刷新，30%概率）=====
+  { type: 'gold', value: 100, weight: 2, icon: '\uD83C\uDFC6', sellPrice: 80, rarity: 'rare' },
+  { type: 'jade', value: 200, weight: 1.5, icon: '\uD83D\uDC8E', sellPrice: 160, rarity: 'rare' },
+  { type: 'pearl', value: 300, weight: 0.5, icon: '\u26AA', sellPrice: 240, rarity: 'rare' },
+  { type: 'scroll', value: 150, weight: 0.3, icon: '\uD83D\uDCDC', sellPrice: 120, rarity: 'rare' },
+  { type: 'sword', value: 250, weight: 4, icon: '\u2694\uFE0F', sellPrice: 200, rarity: 'rare' },
+  { type: 'armor', value: 400, weight: 5, icon: '\uD83D\uDEE1\uFE0F', sellPrice: 320, rarity: 'rare' },
+  { type: 'gem', value: 500, weight: 1, icon: '\uD83D\uDCA0', sellPrice: 400, rarity: 'rare' },
+  { type: 'bronze', value: 80, weight: 3, icon: '\uD83C\uDFA8', sellPrice: 65, rarity: 'rare' },
+  // ===== 功能物品 =====
+  { type: 'potion', value: 50, weight: 0.5, icon: '\uD83E\uDDEA', sellPrice: 40, rarity: 'common' },
+  { type: 'ammo', value: 10, weight: 0.2, icon: '\uD83D\uDD2B', sellPrice: 8, rarity: 'common' }
 ];
 
 // 商城商品
@@ -731,6 +775,7 @@ let player = {};
 let enemies = [];
 let bullets = [];
 let containers = [];  // 可搜刮的容器
+let levers = [];      // 机关
 let items = [];       // 地面上的物品（从容器搜出后）
 let particles = [];
 let camera = { x: 0, y: 0 };
@@ -751,6 +796,7 @@ let bagOpen = false;
 let isMobile = false;
 let modalCallback = null;
 let nearContainer = null;  // 当前靠近的容器
+let nearLever = null;      // 当前靠近的机关
 let lootingContainer = null; // 正在搜刮的容器
 let selectedItems = {};  // 仓库中选中要出售的物品
 
@@ -784,6 +830,7 @@ function setupControls() {
     keys[e.code] = true;
     if (e.code === 'KeyF' && gameState === 'playing') {
       if (lootingContainer) closeLoot();
+      else if (nearLever && !nearLever.activated) activateLever();
       else if (nearContainer) openContainer(nearContainer);
       else tryEvac();
     }
@@ -852,13 +899,7 @@ function setupControls() {
     joystick.dy = dy / maxDist;
   }
 
-  const shootBtn = document.getElementById('shootBtn');
-  shootBtn.addEventListener('touchstart', function(e) { e.preventDefault(); shootTouch = true; shoot(); }, {passive:false});
-  shootBtn.addEventListener('touchend', function(e) { e.preventDefault(); shootTouch = false; });
-  shootBtn.addEventListener('touchcancel', function(e) { shootTouch = false; });
-
-  document.getElementById('bagBtn').addEventListener('click', toggleBag);
-
+  const shootBtn = document.getElementById('lootBtn');
   // ===== 移动端搜刮按钮事件 =====
   const lootBtn = document.getElementById('lootBtn');
   lootBtn.addEventListener('touchstart', function(e) {
@@ -866,6 +907,8 @@ function setupControls() {
     if (gameState !== 'playing') return;
     if (lootingContainer) {
       closeLoot();
+    } else if (nearLever && !nearLever.activated) {
+      activateLever();
     } else if (nearContainer) {
       openContainer(nearContainer);
     } else {
@@ -877,12 +920,16 @@ function setupControls() {
     if (gameState !== 'playing') return;
     if (lootingContainer) {
       closeLoot();
+    } else if (nearLever && !nearLever.activated) {
+      activateLever();
     } else if (nearContainer) {
       openContainer(nearContainer);
     } else {
       tryEvac();
     }
   });
+
+  document.getElementById('bagBtn').addEventListener('click', toggleBag);
 }
 
 function updateUI() {
@@ -1281,12 +1328,20 @@ function generateContainerLoot(containerType) {
   const count = contDef.lootCount[0] + Math.floor(Math.random() * (contDef.lootCount[1] - contDef.lootCount[0] + 1));
   const loot = [];
   for (let i = 0; i < count; i++) {
-    const itemDef = LOOT_TYPES[Math.floor(Math.random() * LOOT_TYPES.length)];
+    const roll = Math.random();
+    let pool;
+    if (roll < 0.7) {
+      pool = LOOT_TYPES.filter(function(it) { return it.rarity === 'common'; });
+    } else {
+      pool = LOOT_TYPES.filter(function(it) { return it.rarity === 'rare'; });
+    }
+    const itemDef = pool[Math.floor(Math.random() * pool.length)];
     loot.push({
       type: itemDef.type,
       value: itemDef.value,
       weight: itemDef.weight,
       icon: itemDef.icon,
+      rarity: itemDef.rarity,
       id: Date.now() + i + Math.random()
     });
   }
@@ -1322,6 +1377,9 @@ function startGame(mapIndex) {
     bag: [],
     bagMax: 50,
     bagWeight: 0,
+    safeBox: [],
+    safeBoxMax: saveData.safeBoxMax || 6,
+    safeBoxWeight: 0,
     invincible: 0,
     reloading: false,
     lastShot: 0,
@@ -1395,6 +1453,22 @@ function startGame(mapIndex) {
   };
   evacOpen = false;
 
+  // 生成机关（按下后开启撤离点）
+  levers = [];
+  const leverRoom = mapInfo.rooms[Math.floor(Math.random() * mapInfo.rooms.length)];
+  const leverDef = LEVER_TYPES[Math.floor(Math.random() * LEVER_TYPES.length)];
+  levers.push({
+    x: leverRoom.cx * TILE_SIZE,
+    y: leverRoom.cy * TILE_SIZE,
+    type: leverDef.type,
+    icon: leverDef.icon,
+    size: leverDef.size,
+    color: leverDef.color,
+    activated: false,
+    id: Date.now() + '_lever',
+    bobOffset: Math.random() * Math.PI * 2
+  });
+
   // 生成容器（可搜刮的）
   containers = [];
   for (let i = 0; i < mapInfo.config.containerCount; i++) {
@@ -1426,6 +1500,7 @@ function startGame(mapIndex) {
   gameTime = 0;
   timeLimit = mapInfo.config.time;
   nearContainer = null;
+  nearLever = null;
   lootingContainer = null;
   evacPoint = null;
   evacOpen = false;
@@ -1440,9 +1515,8 @@ function startGame(mapIndex) {
 
   if (isMobile) {
     document.getElementById('joystickZone').style.display = 'block';
-    document.getElementById('shootBtn').style.display = 'flex';
-    document.getElementById('bagBtn').style.display = 'flex';
     document.getElementById('lootBtn').style.display = 'flex';
+    document.getElementById('bagBtn').style.display = 'flex';
   }
 
   updateWeaponBar();
@@ -1465,7 +1539,7 @@ function openContainer(container) {
   lootingContainer = container;
   const panel = document.getElementById('lootPanel');
   panel.style.display = 'block';
-  document.getElementById('lootTitle').textContent = containerName(container.type) + ' - ' + container.loot.length + ' ' + (lang==='zh'?'件物品':'items');
+  document.getElementById('lootTitle').textContent = containerName(container.type) + ' - ' + container.loot.length + ' ' + (lang==='zh'?'件物品':'items') + ' | ' + (lang==='zh'?'安全箱':'Safe') + ': ' + player.safeBox.length + '/' + player.safeBoxMax;
 
   const grid = document.getElementById('lootGrid');
   grid.innerHTML = '';
@@ -1473,15 +1547,51 @@ function openContainer(container) {
   container.loot.forEach(function(item, idx) {
     const div = document.createElement('div');
     div.className = 'loot-item';
-    div.innerHTML = '<div class="item-icon">' + item.icon + '</div><div class="item-name">' + itemName(item.type) + '</div>';
-    div.onclick = function() {
-      takeLootItem(container, idx);
+    const isRare = item.rarity === 'rare';
+    const rareTag = isRare ? '<span style="color:#f1c40f;font-size:8px;">★</span>' : '';
+    div.innerHTML = '<div class="item-icon">' + item.icon + '</div><div class="item-name">' + rareTag + itemName(item.type) + '</div>';
+
+    let pressTimer = null;
+    div.onmousedown = function() {
+      pressTimer = setTimeout(function() {
+        pressTimer = null;
+        takeLootItem(container, idx, true);
+      }, 500);
     };
+    div.onmouseup = function() {
+      if (pressTimer) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+        takeLootItem(container, idx, false);
+      }
+    };
+    div.onmouseleave = function() {
+      if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+    };
+    div.addEventListener('touchstart', function(e) {
+      e.preventDefault();
+      pressTimer = setTimeout(function() {
+        pressTimer = null;
+        takeLootItem(container, idx, true);
+      }, 500);
+    }, {passive:false});
+    div.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      if (pressTimer) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+        takeLootItem(container, idx, false);
+      }
+    });
+    div.addEventListener('touchcancel', function() {
+      if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+    });
+
     grid.appendChild(div);
   });
 }
 
-function takeLootItem(container, idx) {
+function takeLootItem(container, idx, toSafeBox) {
   const item = container.loot[idx];
   if (!item) return;
 
@@ -1496,44 +1606,60 @@ function takeLootItem(container, idx) {
     showToast('+20 Ammo');
     container.loot.splice(idx, 1);
   } else {
-    if (player.bagWeight + item.weight <= player.bagMax) {
-      player.bag.push({
-        type: item.type,
-        value: item.value,
-        weight: item.weight,
-        icon: item.icon,
-        id: item.id
-      });
-      player.bagWeight += item.weight;
-      score += item.value;
-      loots++;
-      showToast(itemName(item.type) + ' +1');
-      container.loot.splice(idx, 1);
+    if (toSafeBox) {
+      if (player.safeBox.length < player.safeBoxMax) {
+        player.safeBox.push({
+          type: item.type,
+          value: item.value,
+          weight: item.weight,
+          icon: item.icon,
+          id: item.id
+        });
+        score += item.value;
+        loots++;
+        showToast('[' + (lang==='zh'?'安全箱':'Safe') + '] ' + itemName(item.type) + ' +1');
+        container.loot.splice(idx, 1);
+      } else {
+        showToast(lang==='zh'?'安全箱已满':'SafeBox Full');
+      }
     } else {
-      showToast(t('fullBag'));
-      // 放到地上
-      items.push({
-        x: player.x + (Math.random() - 0.5) * 40,
-        y: player.y + (Math.random() - 0.5) * 40,
-        type: item.type,
-        value: item.value,
-        weight: item.weight,
-        icon: item.icon,
-        id: item.id,
-        bobOffset: Math.random() * Math.PI * 2
-      });
-      container.loot.splice(idx, 1);
-      showToast(itemName(item.type) + ' ' + (lang==='zh'?'掉落在地':'dropped'));
+      if (player.bagWeight + item.weight <= player.bagMax) {
+        player.bag.push({
+          type: item.type,
+          value: item.value,
+          weight: item.weight,
+          icon: item.icon,
+          id: item.id
+        });
+        player.bagWeight += item.weight;
+        score += item.value;
+        loots++;
+        showToast(itemName(item.type) + ' +1');
+        container.loot.splice(idx, 1);
+      } else {
+        showToast(t('fullBag'));
+        items.push({
+          x: player.x + (Math.random() - 0.5) * 40,
+          y: player.y + (Math.random() - 0.5) * 40,
+          type: item.type,
+          value: item.value,
+          weight: item.weight,
+          icon: item.icon,
+          id: item.id,
+          bobOffset: Math.random() * Math.PI * 2
+        });
+        container.loot.splice(idx, 1);
+        showToast(itemName(item.type) + ' ' + (lang==='zh'?'掉落在地':'dropped'));
+      }
     }
   }
 
-  // 更新搜刮界面
   if (container.loot.length === 0) {
     container.looted = true;
     closeLoot();
     showToast(lang==='zh'?'搜刮完毕':'Looted');
   } else {
-    openContainer(container); // 刷新
+    openContainer(container);
   }
 }
 
@@ -1658,6 +1784,18 @@ function update(dt) {
     }
   }
 
+  // Check near levers
+  nearLever = null;
+  let nearestLeverDist = 60;
+  for (let l of levers) {
+    if (l.activated) continue;
+    const dist = Math.hypot(player.x - l.x, player.y - l.y);
+    if (dist < nearestLeverDist) {
+      nearestLeverDist = dist;
+      nearLever = l;
+    }
+  }
+
   // Check near containers
   nearContainer = null;
   let nearestDist = 50;
@@ -1671,30 +1809,14 @@ function update(dt) {
   }
 
   const hint = document.getElementById('interactHint');
-  if (nearContainer && !lootingContainer) {
+  if (nearLever && !nearLever.activated) {
+    hint.style.display = 'block';
+    hint.textContent = (lang==='zh'?'按 F 启动机关':'Press F to activate lever');
+  } else if (nearContainer && !lootingContainer) {
     hint.style.display = 'block';
     hint.textContent = (lang==='zh'?'按 F 搜刮 ':'Press F to loot ') + containerName(nearContainer.type);
   } else {
     hint.style.display = 'none';
-  }
-
-  // 移动端：靠近撤离点时切换按钮样式
-  if (isMobile && evacPoint) {
-    const lootBtn = document.getElementById('lootBtn');
-    const lootIcon = document.getElementById('lootIcon');
-    const lootText = document.getElementById('lootText');
-    const distToEvac = Math.hypot(player.x - evacPoint.x, player.y - evacPoint.y);
-    const nearEvac = distToEvac < 120;
-
-    if (nearEvac && evacOpen) {
-      lootBtn.classList.add('evac-mode');
-      lootIcon.textContent = '🚪';
-      lootText.textContent = lang === 'zh' ? '撤离' : 'Evac';
-    } else {
-      lootBtn.classList.remove('evac-mode');
-      lootIcon.textContent = '💼';
-      lootText.textContent = lang === 'zh' ? '搜刮' : 'Loot';
-    }
   }
 
   // Pickup ground items
@@ -1743,11 +1865,41 @@ function update(dt) {
     if (p.life <= 0) particles.splice(i, 1);
   }
 
-  // Evac point
-  if (!evacOpen && kills >= Math.max(3, Math.floor(mapData.config.enemyCount * 0.25))) {
-    evacOpen = true;
-    showToast(t('evacReady'));
+
+
+  // 移动端：根据靠近目标切换按钮样式
+  if (isMobile) {
+    const lootBtn = document.getElementById('lootBtn');
+    const lootIcon = document.getElementById('lootIcon');
+    const lootText = document.getElementById('lootText');
+    if (nearLever && !nearLever.activated) {
+      lootBtn.classList.add('lever-mode');
+      lootBtn.classList.remove('evac-mode');
+      lootIcon.textContent = '⚙️';
+      lootText.textContent = lang === 'zh' ? '机关' : 'Lever';
+    } else if (evacPoint && evacOpen) {
+      const distToEvac = Math.hypot(player.x - evacPoint.x, player.y - evacPoint.y);
+      const nearEvac = distToEvac < 120;
+      if (nearEvac) {
+        lootBtn.classList.add('evac-mode');
+        lootBtn.classList.remove('lever-mode');
+        lootIcon.textContent = '🚪';
+        lootText.textContent = lang === 'zh' ? '撤离' : 'Evac';
+      } else {
+        lootBtn.classList.remove('evac-mode');
+        lootBtn.classList.remove('lever-mode');
+        lootIcon.textContent = '💼';
+        lootText.textContent = lang === 'zh' ? '搜刮' : 'Loot';
+      }
+    } else {
+      lootBtn.classList.remove('evac-mode');
+      lootBtn.classList.remove('lever-mode');
+      lootIcon.textContent = '💼';
+      lootText.textContent = lang === 'zh' ? '搜刮' : 'Loot';
+    }
   }
+
+    // 撤离点由机关激活，不再通过击杀数触发
 
   camera.x = player.x - canvas.width / 2;
   camera.y = player.y - canvas.height / 2;
@@ -1872,6 +2024,32 @@ function render() {
         ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
       }
     }
+  }
+
+  // Levers
+  for (let l of levers) {
+    const bob = Math.sin(l.bobOffset + Date.now()/500) * 3;
+    if (l.activated) ctx.globalAlpha = 0.4;
+    ctx.fillStyle = l.activated ? 'rgba(100,100,100,0.2)' : 'rgba(155,89,182,0.3)';
+    ctx.beginPath();
+    ctx.arc(l.x, l.y + bob, l.size + 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = l.color;
+    ctx.beginPath();
+    ctx.arc(l.x, l.y + bob, l.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = (l.size * 1.2) + 'px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(l.icon, l.x, l.y + bob);
+    if (!l.activated && nearLever === l) {
+      ctx.strokeStyle = '#9b59b6';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(l.x, l.y + bob, l.size + 3, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
   }
 
   // Evac point
@@ -2137,9 +2315,29 @@ function toggleBag() {
 function renderBag() {
   const grid = document.getElementById('bagGrid');
   grid.innerHTML = '';
-  if (!player.bag || player.bag.length === 0) {
-    grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#8b7355; padding:20px;">' + (lang==='zh'?'背包空空如也...':'Bag is empty...') + '</div>';
-  } else {
+  if (player.safeBox && player.safeBox.length > 0) {
+    const safeHeader = document.createElement('div');
+    safeHeader.style.cssText = 'grid-column:1/-1; color:#27ae60; font-size:14px; padding:5px; border-bottom:1px solid #2a1a0a;';
+    safeHeader.textContent = (lang==='zh'?'安全箱':'SafeBox') + ' (' + player.safeBox.length + '/' + player.safeBoxMax + ')';
+    grid.appendChild(safeHeader);
+    const safeCounts = {};
+    for (let item of player.safeBox) {
+      safeCounts[item.type] = (safeCounts[item.type] || 0) + 1;
+    }
+    for (let type in safeCounts) {
+      const itemDef = LOOT_TYPES.find(function(it) { return it.type === type; });
+      const div = document.createElement('div');
+      div.className = 'inv-item';
+      div.style.borderColor = '#27ae60';
+      div.innerHTML = '<div class="item-icon">' + itemDef.icon + '</div><div class="item-name" style="color:#27ae60;">' + itemName(type) + '</div><div class="item-count">x' + safeCounts[type] + '</div>';
+      grid.appendChild(div);
+    }
+  }
+  if (player.bag && player.bag.length > 0) {
+    const bagHeader = document.createElement('div');
+    bagHeader.style.cssText = 'grid-column:1/-1; color:#d4a853; font-size:14px; padding:5px; border-bottom:1px solid #2a1a0a; margin-top:10px;';
+    bagHeader.textContent = lang==='zh'?'背包':'Bag';
+    grid.appendChild(bagHeader);
     const counts = {};
     for (let item of player.bag) {
       counts[item.type] = (counts[item.type] || 0) + 1;
@@ -2152,7 +2350,10 @@ function renderBag() {
       grid.appendChild(div);
     }
   }
-  document.getElementById('bagWeight').textContent = (lang==='zh'?'负重':'Weight') + ': ' + (player.bagWeight || 0).toFixed(1) + '/' + player.bagMax;
+  if ((!player.bag || player.bag.length === 0) && (!player.safeBox || player.safeBox.length === 0)) {
+    grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#8b7355; padding:20px;">' + (lang==='zh'?'空空如也...':'Empty...') + '</div>';
+  }
+  document.getElementById('bagWeight').innerHTML = (lang==='zh'?'安全箱':'Safe') + ': ' + (player.safeBox ? player.safeBox.length : 0) + '/' + player.safeBoxMax + '<br>' + (lang==='zh'?'背包负重':'Weight') + ': ' + (player.bagWeight || 0).toFixed(1) + '/' + player.bagMax;
 }
 
 function toggleMap() {
@@ -2178,6 +2379,14 @@ function tryEvac() {
   } else {
     showToast(t('touchDoor'));
   }
+}
+
+function activateLever() {
+  if (!nearLever || nearLever.activated) return;
+  nearLever.activated = true;
+  evacOpen = true;
+  showToast(lang==='zh'?'机关已启动！撤离点开启！':'Lever activated! Evac point open!');
+  createParticles(nearLever.x, nearLever.y, '#9b59b6', 20);
 }
 
 function showToast(msg) {
@@ -2209,12 +2418,34 @@ function modalAction() {
 function endGame(reason) {
   gameState = 'over';
   delete saveData.currentRun;
-
-  // 背包物品转入仓库
-  if (player.bag && player.bag.length > 0) {
-    for (let item of player.bag) {
-      saveData.warehouse[item.type] = (saveData.warehouse[item.type] || 0) + 1;
+  let savedItems = 0;
+  let lostItems = 0;
+  if (reason === 'evacuated') {
+    if (player.safeBox && player.safeBox.length > 0) {
+      for (let item of player.safeBox) {
+        saveData.warehouse[item.type] = (saveData.warehouse[item.type] || 0) + 1;
+        savedItems++;
+      }
     }
+    if (player.bag && player.bag.length > 0) {
+      for (let item of player.bag) {
+        saveData.warehouse[item.type] = (saveData.warehouse[item.type] || 0) + 1;
+        savedItems++;
+      }
+    }
+    showToast(lang==='zh'?'全部物品已带回仓库！':'All items saved!');
+  } else {
+    if (player.safeBox && player.safeBox.length > 0) {
+      for (let item of player.safeBox) {
+        saveData.warehouse[item.type] = (saveData.warehouse[item.type] || 0) + 1;
+        savedItems++;
+      }
+    }
+    if (player.bag && player.bag.length > 0) {
+      lostItems = player.bag.length;
+    }
+    const msg = lang==='zh' ? '安全箱内' + savedItems + '件物品已保留，背包中' + lostItems + '件物品已掉落！' : savedItems + ' safebox items saved, ' + lostItems + ' bag items lost!';
+    showToast(msg);
   }
 
   saveData.gold = (saveData.gold || 0) + score;
@@ -2264,9 +2495,7 @@ function endGame(reason) {
   document.getElementById('gameUI').style.display = 'none';
   document.getElementById('minimap').style.display = 'none';
   document.getElementById('joystickZone').style.display = 'none';
-  document.getElementById('shootBtn').style.display = 'none';
-  const lootBtnEnd = document.getElementById('lootBtn');
-  if (lootBtnEnd) { lootBtnEnd.style.display = 'none'; lootBtnEnd.classList.remove('evac-mode'); }
+  document.getElementById('lootBtn').style.display = 'none';
   document.getElementById('bagBtn').style.display = 'none';
   document.getElementById('weaponBar').style.display = 'none';
   document.getElementById('evacIndicator').style.display = 'none';
@@ -2281,9 +2510,7 @@ function returnToMenu() {
   document.getElementById('gameUI').style.display = 'none';
   document.getElementById('minimap').style.display = 'none';
   document.getElementById('joystickZone').style.display = 'none';
-  document.getElementById('shootBtn').style.display = 'none';
-  const lootBtnRet = document.getElementById('lootBtn');
-  if (lootBtnRet) { lootBtnRet.style.display = 'none'; lootBtnRet.classList.remove('evac-mode'); }
+  document.getElementById('lootBtn').style.display = 'none';
   document.getElementById('bagBtn').style.display = 'none';
   document.getElementById('weaponBar').style.display = 'none';
   document.getElementById('evacIndicator').style.display = 'none';
