@@ -287,6 +287,19 @@
     pointer-events: auto; cursor: pointer;
   }
 
+  #shootBtn {
+    position: fixed; bottom: 100px; right: 60px;
+    width: 80px; height: 80px; border-radius: 50%;
+    background: rgba(192,57,43,0.3); border: 2px solid rgba(192,57,43,0.6);
+    color: #e74c3c; font-size: 32px; display: none;
+    align-items: center; justify-content: center; z-index: 200;
+    pointer-events: auto; cursor: pointer; user-select: none;
+    box-shadow: 0 0 15px rgba(192,57,43,0.3);
+    transition: all 0.1s;
+  }
+  #shootBtn:active { background: rgba(192,57,43,0.6); transform: scale(0.92); box-shadow: 0 0 25px rgba(192,57,43,0.5); }
+
+
   #minimap {
     position: fixed; top: 10px; right: 10px;
     width: 150px; height: 150px; border-radius: 8px;
@@ -410,6 +423,49 @@
     padding: 8px 20px; border-radius: 20px; color: #d4a853;
     font-size: 14px; z-index: 250; display: none; pointer-events: none;
   }
+
+  /* 操作提示 */
+  #tutorialOverlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.92); z-index: 2000;
+    display: none; align-items: center; justify-content: center;
+    overflow-y: auto; padding: 20px;
+  }
+  #tutorialContent {
+    background: linear-gradient(135deg, #1a0f0a, #0d0603);
+    border: 2px solid #d4a853; border-radius: 16px;
+    padding: 30px; max-width: 500px; width: 100%;
+    text-align: center; animation: tutorialFadeIn 0.5s ease;
+  }
+  @keyframes tutorialFadeIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  #tutorialTitle {
+    color: #d4a853; font-size: 24px; margin-bottom: 20px;
+    text-shadow: 0 0 10px rgba(212,168,83,0.3);
+  }
+  .tutorial-section { margin-bottom: 15px; text-align: left; }
+  .tutorial-section h3 {
+    color: #d4a853; font-size: 16px; margin-bottom: 10px;
+    border-bottom: 1px solid #3a2a1a; padding-bottom: 5px;
+  }
+  .tutorial-section p {
+    color: #8b7355; font-size: 13px; margin: 6px 0;
+    line-height: 1.5;
+  }
+  .key {
+    display: inline-block; background: #2a1a0a;
+    border: 1px solid #d4a853; border-radius: 4px;
+    color: #d4a853; padding: 2px 8px; font-size: 12px;
+    margin-right: 6px; min-width: 50px; text-align: center;
+  }
+  .icon {
+    display: inline-block; font-size: 16px;
+    margin-right: 6px; width: 24px; text-align: center;
+  }
+  #tutorialDesktop, #tutorialMobile { display: none; }
+
 </style>
 </head>
 <body>
@@ -420,6 +476,38 @@
 <div class="item-tooltip" id="tooltip"></div>
 
 <!-- 主菜单 -->
+
+<!-- 首次操作提示 -->
+<div id="tutorialOverlay" style="display:none;">
+  <div id="tutorialContent">
+    <h2 id="tutorialTitle">操作指南 / Controls</h2>
+    <div id="tutorialDesktop">
+      <div class="tutorial-section">
+        <h3>&#x1F5A5; PC端 / Desktop</h3>
+        <p><span class="key">W A S D</span> 移动 / Move</p>
+        <p><span class="key">Mouse</span> 瞄准 / Aim</p>
+        <p><span class="key">L-Click</span> 开火 / Fire</p>
+        <p><span class="key">R</span> 换弹 / Reload</p>
+        <p><span class="key">F</span> 搜刮/机关/撤离 / Loot/Lever/Evac</p>
+        <p><span class="key">B / Tab</span> 背包 / Bag</p>
+        <p><span class="key">1-4</span> 切换武器 / Switch Weapon</p>
+        <p><span class="key">Shift</span> 冲刺 / Sprint</p>
+      </div>
+    </div>
+    <div id="tutorialMobile">
+      <div class="tutorial-section">
+        <h3>&#x1F4F1; 手机端 / Mobile</h3>
+        <p><span class="icon">&#x1F579;</span> 左摇杆移动 / Left joystick to move</p>
+        <p><span class="icon">&#x1F4A5;</span> 右下角按钮开火 / Bottom-right button to fire</p>
+        <p><span class="icon">&#x1F392;</span> 背包按钮查看物品 / Bag button for inventory</p>
+        <p><span class="icon">&#x2696;&#xFE0F;</span> 中间按钮搜刮/机关/撤离 / Center button for loot/lever/evac</p>
+        <p><span class="icon">&#x1F3C3;</span> 双击摇杆冲刺 / Double-tap joystick to sprint</p>
+      </div>
+    </div>
+    <button class="menu-btn" onclick="closeTutorial()" style="margin-top:20px; width:200px;">开始摸金 / Start Raid</button>
+  </div>
+</div>
+
 <div id="mainMenu">
   <div class="lang-switch">
     <button class="lang-btn active" onclick="setLang('zh')">中文</button>
@@ -509,6 +597,7 @@
 
 <div id="lootBtn"><span class="btn-icon" id="lootIcon">&#x1F392;</span><span class="btn-text" id="lootText">搜刮</span></div>
 <div id="bagBtn">&#x1F392;</div>
+<div id="shootBtn">&#x1F4A5;</div>
 <canvas id="minimap"></canvas>
 
 <div id="weaponBar"></div>
@@ -801,6 +890,38 @@ let lootingContainer = null; // 正在搜刮的容器
 let selectedItems = {};  // 仓库中选中要出售的物品
 
 // ===== 初始化 =====
+
+// ===== 首次操作提示 =====
+const TUTORIAL_KEY = 'tomb_raider_tutorial_shown';
+
+function showTutorial() {
+  const overlay = document.getElementById('tutorialOverlay');
+  const desktop = document.getElementById('tutorialDesktop');
+  const mobile = document.getElementById('tutorialMobile');
+
+  overlay.style.display = 'flex';
+
+  if (isMobile) {
+    mobile.style.display = 'block';
+    desktop.style.display = 'none';
+  } else {
+    desktop.style.display = 'block';
+    mobile.style.display = 'none';
+  }
+}
+
+function closeTutorial() {
+  document.getElementById('tutorialOverlay').style.display = 'none';
+  try { localStorage.setItem(TUTORIAL_KEY, 'true'); } catch(e) {}
+}
+
+function checkFirstTime() {
+  try {
+    const shown = localStorage.getItem(TUTORIAL_KEY);
+    if (!shown) showTutorial();
+  } catch(e) { showTutorial(); }
+}
+
 function init() {
   canvas = document.getElementById('gameCanvas');
   ctx = canvas.getContext('2d');
@@ -815,6 +936,8 @@ function init() {
   if (saveData.currentRun) {
     document.getElementById('btnContinue').style.display = 'block';
   }
+  
+  checkFirstTime();
   requestAnimationFrame(gameLoop);
 }
 
@@ -927,6 +1050,28 @@ function setupControls() {
     } else {
       tryEvac();
     }
+  });
+
+    // 滚轮开火
+  canvas.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    if (gameState !== 'playing') return;
+    shoot();
+  }, { passive: false });
+
+  // 开火按钮事件
+  const shootBtn = document.getElementById('shootBtn');
+  shootBtn.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    shootTouch = true;
+    shoot();
+  }, {passive:false});
+  shootBtn.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    shootTouch = false;
+  });
+  shootBtn.addEventListener('touchcancel', function(e) {
+    shootTouch = false;
   });
 
   document.getElementById('bagBtn').addEventListener('click', toggleBag);
@@ -1046,32 +1191,39 @@ function startFromEquip() {
 
 // ===== 装备界面渲染 =====
 function renderEquipScreen() {
-  document.getElementById('equipMoney').textContent = '\uD83D\uDCB0 ' + saveData.money;
+  document.getElementById('equipMoney').textContent = '������ ' + saveData.money;
 
-  // 装备栏
+  // 装备栏 - 角色形象 + 装备槽环绕布局
   const loadoutGrid = document.getElementById('loadoutGrid');
   loadoutGrid.innerHTML = '';
+
+  // 创建角色展示区
+  const charArea = document.createElement('div');
+  charArea.style.cssText = 'grid-column:1/-1; display:flex; align-items:center; justify-content:center; padding:15px; background:rgba(20,10,5,0.5); border-radius:10px; margin-bottom:10px;';
+  charArea.innerHTML = '<div style="font-size:60px;">������</div><div style="margin-left:15px; text-align:left;"><div style="color:#d4a853; font-size:16px;">Lv.' + saveData.level + ' ' + (lang==='zh'?'摸金校剉':'Tomb Raider') + '</div><div style="color:#8b7355; font-size:12px; margin-top:4px;">HP: ' + saveData.hpMax + ' | STM: ' + saveData.staminaMax + '</div><div style="color:#8b7355; font-size:12px;">' + (lang==='zh'?'安全箱':'Safe') + ': ' + saveData.safeBoxMax + '</div></div>';
+  loadoutGrid.appendChild(charArea);
+
   const slots = [
-    { key: 'weapon', label: lang==='zh'?'主武器':'Weapon', icon: '\uD83D\uDD2B' },
-    { key: 'armor', label: lang==='zh'?'护甲':'Armor', icon: '\uD83D\uDEE1\uFE0F' },
-    { key: 'accessory1', label: lang==='zh'?'饰品1':'Acc1', icon: '\uD83D\uDC8D' },
-    { key: 'accessory2', label: lang==='zh'?'饰品2':'Acc2', icon: '\uD83D\uDC8E' },
-    { key: 'healing', label: lang==='zh'?'药品':'Med', icon: '\uD83E\uDDEA' },
-    { key: 'empty', label: '', icon: '' }
+    { key: 'weapon', label: lang==='zh'?'主武器':'Weapon', icon: '������', pos: 'weapon' },
+    { key: 'armor', label: lang==='zh'?'护甲':'Armor', icon: '������️', pos: 'armor' },
+    { key: 'accessory1', label: lang==='zh'?'饰品I':'Acc I', icon: '������', pos: 'acc1' },
+    { key: 'accessory2', label: lang==='zh'?'饰品II':'Acc II', icon: '������', pos: 'acc2' },
+    { key: 'healing', label: lang==='zh'?'药品':'Med', icon: '������', pos: 'heal' }
   ];
 
   slots.forEach(function(slot) {
-    if (slot.key === 'empty') return;
     const div = document.createElement('div');
     const equipped = saveData.loadout[slot.key];
     div.className = 'loadout-slot' + (equipped ? ' occupied' : '');
     let icon = slot.icon;
     let name = slot.label;
+    let detail = '';
     if (equipped && slot.key === 'weapon') {
       icon = WEAPONS[equipped].icon;
       name = weaponName(equipped);
+      detail = '<div style="font-size:9px; color:#8b7355;">DMG:' + WEAPONS[equipped].damage + ' FR:' + WEAPONS[equipped].fireRate + 'ms</div>';
     }
-    div.innerHTML = '<span class="slot-label">' + slot.label + '</span><div class="slot-icon">' + icon + '</div><div class="slot-name">' + (equipped ? name : '') + '</div>';
+    div.innerHTML = '<span class="slot-label">' + slot.label + '</span><div class="slot-icon">' + icon + '</div><div class="slot-name">' + (equipped ? name : (lang==='zh'?'空':'Empty')) + '</div>' + detail;
     div.onclick = function() {
       if (equipped && slot.key === 'weapon') {
         saveData.loadout.weapon = null;
@@ -1079,6 +1231,12 @@ function renderEquipScreen() {
         saveGame(saveData);
       }
     };
+    div.onmouseenter = function(e) {
+      if (equipped && slot.key === 'weapon') {
+        showTooltip(e, '<b>' + weaponName(equipped) + '</b><br>������ ' + WEAPONS[equipped].damage + ' | ⏱ ' + WEAPONS[equipped].fireRate + 'ms<br>������ ' + WEAPONS[equipped].range + ' | ������ ' + WEAPONS[equipped].maxAmmo);
+      }
+    };
+    div.onmouseleave = hideTooltip;
     loadoutGrid.appendChild(div);
   });
 
@@ -1088,16 +1246,20 @@ function renderEquipScreen() {
 
   // 显示已拥有的武器
   saveData.ownedWeapons.forEach(function(wepKey) {
-    if (saveData.loadout.weapon === wepKey) return; // 已装备
+    if (saveData.loadout.weapon === wepKey) return;
     const wep = WEAPONS[wepKey];
     const div = document.createElement('div');
     div.className = 'stash-item';
-    div.innerHTML = '<div class="item-icon">' + wep.icon + '</div><div class="item-name">' + weaponName(wepKey) + '</div>';
+    div.innerHTML = '<div class="item-icon">' + wep.icon + '</div><div class="item-name">' + weaponName(wepKey) + '</div><div style="font-size:9px; color:#8b7355;">������' + wep.damage + ' ⏱' + wep.fireRate + '</div>';
     div.onclick = function() {
       saveData.loadout.weapon = wepKey;
       renderEquipScreen();
       saveGame(saveData);
     };
+    div.onmouseenter = function(e) {
+      showTooltip(e, '<b>' + weaponName(wepKey) + '</b><br>Damage: ' + wep.damage + '<br>Fire Rate: ' + wep.fireRate + 'ms<br>Range: ' + wep.range + '<br>Ammo: ' + wep.maxAmmo + '/' + wep.totalAmmo);
+    };
+    div.onmouseleave = hideTooltip;
     stashGrid.appendChild(div);
   });
 
@@ -1108,7 +1270,12 @@ function renderEquipScreen() {
     if (!itemDef) continue;
     const div = document.createElement('div');
     div.className = 'stash-item';
-    div.innerHTML = '<div class="item-icon">' + itemDef.icon + '</div><div class="item-name">' + itemName(type) + '</div><div class="item-count">x' + wh[type] + '</div>';
+    const rarityColor = itemDef.rarity === 'rare' ? '#f1c40f' : '#8b7355';
+    div.innerHTML = '<div class="item-icon">' + itemDef.icon + '</div><div class="item-name" style="color:' + rarityColor + '">' + itemName(type) + '</div><div class="item-count">x' + wh[type] + '</div><div style="font-size:9px; color:#8b7355;">������' + itemDef.sellPrice + '</div>';
+    div.onmouseenter = function(e) {
+      showTooltip(e, '<b>' + itemName(type) + '</b><br>' + (lang==='zh'?'价值':'Value') + ': ' + itemDef.value + '<br>' + (lang==='zh'?'出售价':'Sell') + ': ' + itemDef.sellPrice + '<br>' + (lang==='zh'?'重量':'Weight') + ': ' + itemDef.weight);
+    };
+    div.onmouseleave = hideTooltip;
     stashGrid.appendChild(div);
   }
 }
@@ -1515,6 +1682,7 @@ function startGame(mapIndex) {
     document.getElementById('joystickZone').style.display = 'block';
     document.getElementById('lootBtn').style.display = 'flex';
     document.getElementById('bagBtn').style.display = 'flex';
+    document.getElementById('shootBtn').style.display = 'flex';
   }
 
   updateWeaponBar();
@@ -1546,8 +1714,17 @@ function openContainer(container) {
     const div = document.createElement('div');
     div.className = 'loot-item';
     const isRare = item.rarity === 'rare';
-    const rareTag = isRare ? '<span style="color:#f1c40f;font-size:8px;">★</span>' : '';
-    div.innerHTML = '<div class="item-icon">' + item.icon + '</div><div class="item-name">' + rareTag + itemName(item.type) + '</div>';
+    const itemDef = LOOT_TYPES.find(function(it) { return it.type === item.type; });
+    const rarityColor = isRare ? '#f1c40f' : '#8b7355';
+    const rarityTag = isRare ? '<span style="color:#f1c40f;font-size:10px;">★★★</span>' : '<span style="color:#8b7355;font-size:10px;">★</span>';
+
+    div.innerHTML = 
+      '<div class="item-icon" style="font-size:28px;">' + item.icon + '</div>' +
+      '<div class="item-name" style="color:' + rarityColor + '; font-weight:bold;">' + itemName(item.type) + '</div>' +
+      '<div style="font-size:9px; color:#8b7355; margin:2px 0;">' + rarityTag + '</div>' +
+      '<div style="font-size:10px; color:#d4a853;">������ ' + item.value + ' | ⚖ ' + item.weight + 'kg</div>';
+
+    div.style.cssText = 'position:relative; padding:10px 5px;';
 
     let pressTimer = null;
     div.onmousedown = function() {
@@ -2316,7 +2493,7 @@ function renderBag() {
   if (player.safeBox && player.safeBox.length > 0) {
     const safeHeader = document.createElement('div');
     safeHeader.style.cssText = 'grid-column:1/-1; color:#27ae60; font-size:14px; padding:5px; border-bottom:1px solid #2a1a0a;';
-    safeHeader.textContent = (lang==='zh'?'安全箱':'SafeBox') + ' (' + player.safeBox.length + '/' + player.safeBoxMax + ')';
+    safeHeader.textContent = (lang==='zh'?'������️ 安全箱':'������️ SafeBox') + ' (' + player.safeBox.length + '/' + player.safeBoxMax + ')';
     grid.appendChild(safeHeader);
     const safeCounts = {};
     for (let item of player.safeBox) {
@@ -2333,25 +2510,103 @@ function renderBag() {
   }
   if (player.bag && player.bag.length > 0) {
     const bagHeader = document.createElement('div');
-    bagHeader.style.cssText = 'grid-column:1/-1; color:#d4a853; font-size:14px; padding:5px; border-bottom:1px solid #2a1a0a; margin-top:10px;';
-    bagHeader.textContent = lang==='zh'?'背包':'Bag';
+    bagHeader.style.cssText = 'grid-column:1/-1; color:#d4a853; font-size:14px; padding:5px; border-bottom:1px solid #2a1a0a; margin-top:10px; display:flex; justify-content:space-between; align-items:center;';
+    bagHeader.innerHTML = '<span>' + (lang==='zh'?'������ 背包':'������ Bag') + ' (' + player.bag.length + ' ' + (lang==='zh'?'件':'items') + ')</span><span style="font-size:11px; color:#8b7355;">' + (lang==='zh'?'长按丢弃':'Hold to drop') + '</span>';
     grid.appendChild(bagHeader);
-    const counts = {};
-    for (let item of player.bag) {
-      counts[item.type] = (counts[item.type] || 0) + 1;
-    }
-    for (let type in counts) {
+
+    // 按类型分组并记录索引
+    const bagByType = {};
+    player.bag.forEach(function(item, idx) {
+      if (!bagByType[item.type]) bagByType[item.type] = [];
+      bagByType[item.type].push({ item: item, idx: idx });
+    });
+
+    for (let type in bagByType) {
       const itemDef = LOOT_TYPES.find(function(it) { return it.type === type; });
+      const group = bagByType[type];
       const div = document.createElement('div');
       div.className = 'inv-item';
-      div.innerHTML = '<div class="item-icon">' + itemDef.icon + '</div><div class="item-name">' + itemName(type) + '</div><div class="item-count">x' + counts[type] + '</div>';
+      div.style.position = 'relative';
+      div.style.cursor = 'pointer';
+
+      const rarityColor = itemDef.rarity === 'rare' ? '#f1c40f' : '#d4a853';
+      div.innerHTML = 
+        '<div class="item-icon">' + itemDef.icon + '</div>' +
+        '<div class="item-name" style="color:' + rarityColor + '">' + itemName(type) + '</div>' +
+        '<div class="item-count">x' + group.length + '</div>' +
+        '<div style="font-size:9px; color:#8b7355;">' + itemDef.weight + 'kg</div>';
+
+      // 长按丢弃
+      let dropTimer = null;
+      let dropProgress = 0;
+
+      function startDrop() {
+        dropProgress = 0;
+        div.style.transition = 'box-shadow 0.5s linear';
+        div.style.boxShadow = 'inset 0 0 0 0 rgba(192,57,43,0)';
+        dropTimer = setInterval(function() {
+          dropProgress += 0.1;
+          div.style.boxShadow = 'inset 0 0 0 ' + (dropProgress * 100) + '% rgba(192,57,43,' + (dropProgress * 0.5) + ')';
+          if (dropProgress >= 1) {
+            clearInterval(dropTimer);
+            dropTimer = null;
+            dropItem(group[0].idx);
+          }
+        }, 50);
+      }
+
+      function cancelDrop() {
+        if (dropTimer) {
+          clearInterval(dropTimer);
+          dropTimer = null;
+        }
+        div.style.boxShadow = '';
+        div.style.transition = '';
+      }
+
+      div.onmousedown = startDrop;
+      div.onmouseup = cancelDrop;
+      div.onmouseleave = cancelDrop;
+      div.addEventListener('touchstart', function(e) { e.preventDefault(); startDrop(); }, {passive:false});
+      div.addEventListener('touchend', function(e) { e.preventDefault(); cancelDrop(); });
+      div.addEventListener('touchcancel', cancelDrop);
+
+      div.onmouseenter = function(e) {
+        showTooltip(e, '<b>' + itemName(type) + '</b><br>' + (lang==='zh'?'价值':'Value') + ': ' + itemDef.value + '<br>' + (lang==='zh'?'重量':'Weight') + ': ' + itemDef.weight + '<br><span style="color:#c0392b;">' + (lang==='zh'?'长按丢弃':'Hold to drop') + '</span>');
+      };
+      div.onmouseleave = hideTooltip;
+
       grid.appendChild(div);
     }
   }
   if ((!player.bag || player.bag.length === 0) && (!player.safeBox || player.safeBox.length === 0)) {
     grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#8b7355; padding:20px;">' + (lang==='zh'?'空空如也...':'Empty...') + '</div>';
   }
-  document.getElementById('bagWeight').innerHTML = (lang==='zh'?'安全箱':'Safe') + ': ' + (player.safeBox ? player.safeBox.length : 0) + '/' + player.safeBoxMax + '<br>' + (lang==='zh'?'背包负重':'Weight') + ': ' + (player.bagWeight || 0).toFixed(1) + '/' + player.bagMax;
+  document.getElementById('bagWeight').innerHTML = (lang==='zh'?'������️ 安全箱':'������️ Safe') + ': ' + (player.safeBox ? player.safeBox.length : 0) + '/' + player.safeBoxMax + '<br>' + (lang==='zh'?'������ 背包负重':'������ Weight') + ': ' + (player.bagWeight || 0).toFixed(1) + '/' + player.bagMax;
+}
+
+function dropItem(bagIndex) {
+  if (!player.bag || bagIndex < 0 || bagIndex >= player.bag.length) return;
+  const item = player.bag[bagIndex];
+
+  // 掉落到地面
+  items.push({
+    x: player.x + (Math.random() - 0.5) * 60,
+    y: player.y + (Math.random() - 0.5) * 60,
+    type: item.type,
+    value: item.value,
+    weight: item.weight,
+    icon: item.icon,
+    id: Date.now() + Math.random(),
+    bobOffset: Math.random() * Math.PI * 2
+  });
+
+  // 从背包移除
+  player.bagWeight -= item.weight;
+  player.bag.splice(bagIndex, 1);
+
+  showToast(itemName(item.type) + ' ' + (lang==='zh'?'已丢弃':'dropped'));
+  renderBag();
 }
 
 function toggleMap() {
@@ -2495,6 +2750,7 @@ function endGame(reason) {
   document.getElementById('joystickZone').style.display = 'none';
   document.getElementById('lootBtn').style.display = 'none';
   document.getElementById('bagBtn').style.display = 'none';
+  document.getElementById('shootBtn').style.display = 'none';
   document.getElementById('weaponBar').style.display = 'none';
   document.getElementById('evacIndicator').style.display = 'none';
   document.getElementById('bagPanel').style.display = 'none';
@@ -2510,6 +2766,7 @@ function returnToMenu() {
   document.getElementById('joystickZone').style.display = 'none';
   document.getElementById('lootBtn').style.display = 'none';
   document.getElementById('bagBtn').style.display = 'none';
+  document.getElementById('shootBtn').style.display = 'none';
   document.getElementById('weaponBar').style.display = 'none';
   document.getElementById('evacIndicator').style.display = 'none';
   document.getElementById('bagPanel').style.display = 'none';
