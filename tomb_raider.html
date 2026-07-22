@@ -668,7 +668,9 @@ const I18N = {
       torch: '火把', scroll_frag: '残卷', clay: '泥塑', shell: '贝币',
       feather: '翎羽', wood: '棺木', stone: '石料', dust: '骨灰',
       button: '铜扣', nail: '棺钉', potion: '丹药', ammo: '箭矢',
-      lever: '机关', switch: '开关', altar: '祭坛'
+      lever: '机关', switch: '开关', altar: '祭坛',
+      dragon_jade: '龙纹玉璧', imperial_seal: '传国玉玺', phoenix_crown: '凤冠',
+      celestial_sword: '天子剑', immortal_pill: '长生丹'
     },
     weapons: {
       pistol: '洛阳铲手枪', smg: '连弩冲锋枪', shotgun: '散弹火铳', rifle: '狙击长弓'
@@ -709,7 +711,9 @@ const I18N = {
       torch: 'Torch', scroll_frag: 'Fragment', clay: 'Clay Figurine', shell: 'Shell',
       feather: 'Feather', wood: 'Coffin Wood', stone: 'Stone', dust: 'Ash',
       button: 'Button', nail: 'Nail', potion: 'Elixir', ammo: 'Arrows',
-      lever: 'Lever', switch: 'Switch', altar: 'Altar'
+      lever: 'Lever', switch: 'Switch', altar: 'Altar',
+      dragon_jade: 'Dragon Jade', imperial_seal: 'Imperial Seal', phoenix_crown: 'Phoenix Crown',
+      celestial_sword: 'Celestial Sword', immortal_pill: 'Immortal Pill'
     },
     weapons: {
       pistol: 'Pistol', smg: 'SMG', shotgun: 'Shotgun', rifle: 'Rifle'
@@ -827,6 +831,14 @@ const LOOT_TYPES = [
   { type: 'armor', value: 400, weight: 5, icon: '\uD83D\uDEE1\uFE0F', sellPrice: 320, rarity: 'rare' },
   { type: 'gem', value: 500, weight: 1, icon: '\uD83D\uDCA0', sellPrice: 400, rarity: 'rare' },
   { type: 'bronze', value: 80, weight: 3, icon: '\uD83C\uDFA8', sellPrice: 65, rarity: 'rare' },
+  // ===== 功能物品 =====
+  { type: 'potion', value: 50, weight: 0.5, icon: '\uD83E\uDDEA', sellPrice: 40, rarity: 'common' },
+  // ===== 超级稀有物品（仅明十三陵产出，爆率极低）=====
+  { type: 'dragon_jade', value: 5000, weight: 3, icon: '\uD83D\uDC09', sellPrice: 4000, rarity: 'legendary', mapOnly: 4, dropRate: 0.02 },
+  { type: 'imperial_seal', value: 8000, weight: 2, icon: '\uD83D\uDC51', sellPrice: 6500, rarity: 'legendary', mapOnly: 4, dropRate: 0.015 },
+  { type: 'phoenix_crown', value: 6000, weight: 1.5, icon: '\uD83D\uDC45', sellPrice: 4800, rarity: 'legendary', mapOnly: 4, dropRate: 0.018 },
+  { type: 'celestial_sword', value: 10000, weight: 5, icon: '\u2694\uFE0F', sellPrice: 8000, rarity: 'legendary', mapOnly: 4, dropRate: 0.01 },
+  { type: 'immortal_pill', value: 3000, weight: 0.3, icon: '\uD83D\uDC8E', sellPrice: 2400, rarity: 'legendary', mapOnly: 4, dropRate: 0.025 },
   // ===== 功能物品 =====
   { type: 'potion', value: 50, weight: 0.5, icon: '\uD83E\uDDEA', sellPrice: 40, rarity: 'common' },
   { type: 'ammo', value: 10, weight: 0.2, icon: '\uD83D\uDD2B', sellPrice: 8, rarity: 'common' }
@@ -1218,6 +1230,19 @@ function renderEquipScreen() {
     '<div style="text-align:center;"><div style="color:#f1c40f; font-size:18px; font-weight:bold;">' + totalAmmo + '</div><div style="color:#8b7355; font-size:10px;">' + (lang==='zh'?'弹容':'AMMO') + '</div></div>';
   loadoutGrid.appendChild(statsArea);
 
+  // 显示拥有的超级稀有物品数量
+  let legendaryInWarehouse = 0;
+  for (let type in saveData.warehouse) {
+    const itemDef = LOOT_TYPES.find(function(it) { return it.type === type; });
+    if (itemDef && itemDef.rarity === 'legendary') legendaryInWarehouse += saveData.warehouse[type];
+  }
+  if (legendaryInWarehouse > 0) {
+    const legendBanner = document.createElement('div');
+    legendBanner.style.cssText = 'grid-column:1/-1; text-align:center; padding:8px; background:rgba(255,0,102,0.08); border:1px solid #ff0066; border-radius:8px; margin-bottom:10px;';
+    legendBanner.innerHTML = '<span style="color:#ff0066; font-size:14px; font-weight:bold;">🏆 ' + (lang==='zh'?'仓库中拥有传说级物品: ':'Legendary items in warehouse: ') + legendaryInWarehouse + ' 🏆</span>';
+    loadoutGrid.appendChild(legendBanner);
+  }
+
   const slots = [
     { key: 'weapon', label: lang==='zh'?'主武器':'Weapon', icon: '🔫', pos: 'weapon' },
     { key: 'armor', label: lang==='zh'?'护甲':'Armor', icon: '🛡️', pos: 'armor' },
@@ -1287,10 +1312,19 @@ function renderEquipScreen() {
     if (!itemDef) continue;
     const div = document.createElement('div');
     div.className = 'stash-item';
-    const rarityColor = itemDef.rarity === 'rare' ? '#f1c40f' : '#8b7355';
-    div.innerHTML = '<div class="item-icon">' + itemDef.icon + '</div><div class="item-name" style="color:' + rarityColor + '">' + itemName(type) + '</div><div class="item-count">x' + wh[type] + '</div><div style="font-size:9px; color:#8b7355;">💰' + itemDef.sellPrice + '</div>';
+    const isLegendary = itemDef.rarity === 'legendary';
+    const rarityColor = isLegendary ? '#ff0066' : (itemDef.rarity === 'rare' ? '#f1c40f' : '#8b7355');
+    const legendTag = isLegendary ? '<div style="font-size:8px; color:#ff0066; font-weight:bold;">🏆 传说</div>' : '';
+    const iconSize = isLegendary ? 'font-size:28px;' : '';
+    div.innerHTML = '<div class="item-icon" style="' + iconSize + '">' + itemDef.icon + '</div><div class="item-name" style="color:' + rarityColor + ';' + (isLegendary ? 'font-weight:bold;' : '') + '">' + itemName(type) + '</div>' + legendTag + '<div class="item-count">x' + wh[type] + '</div><div style="font-size:9px; color:#8b7355;">💰' + itemDef.sellPrice + '</div>';
+    if (isLegendary) {
+      div.style.borderColor = '#ff0066';
+      div.style.boxShadow = '0 0 8px rgba(255,0,102,0.2)';
+    }
     div.onmouseenter = function(e) {
-      showTooltip(e, '<b>' + itemName(type) + '</b><br>' + (lang==='zh'?'价值':'Value') + ': ' + itemDef.value + '<br>' + (lang==='zh'?'出售价':'Sell') + ': ' + itemDef.sellPrice + '<br>' + (lang==='zh'?'重量':'Weight') + ': ' + itemDef.weight);
+      let tip = '<b>' + itemName(type) + '</b><br>' + (lang==='zh'?'价值':'Value') + ': ' + itemDef.value + '<br>' + (lang==='zh'?'出售价':'Sell') + ': ' + itemDef.sellPrice + '<br>' + (lang==='zh'?'重量':'Weight') + ': ' + itemDef.weight;
+      if (isLegendary) tip += '<br><span style="color:#ff0066;">🔥 ' + (lang==='zh'?'传说级 - 明十三陵专属':'Legendary - Ming Tombs Exclusive') + '</span>';
+      showTooltip(e, tip);
     };
     div.onmouseleave = hideTooltip;
     stashGrid.appendChild(div);
@@ -1375,12 +1409,20 @@ function renderWarehouse() {
     const div = document.createElement('div');
     const isSelected = selectedItems[type];
     div.className = 'inv-item' + (isSelected ? ' selected' : '');
-    div.innerHTML = '<div class="item-icon">' + itemDef.icon + '</div><div class="item-name">' + itemName(type) + '</div><div class="item-count">x' + count + '</div>';
+    const isLegendary = itemDef.rarity === 'legendary';
+    const nameColor = isLegendary ? '#ff0066' : '#8b7355';
+    const borderStyle = isLegendary ? 'border-color:#ff0066; box-shadow:0 0 8px rgba(255,0,102,0.3);' : '';
+    div.innerHTML = '<div class="item-icon" style="font-size:' + (isLegendary ? '32px' : '28px') + ';">' + itemDef.icon + '</div><div class="item-name" style="color:' + nameColor + ';' + (isLegendary ? 'font-weight:bold;' : '') + '">' + itemName(type) + (isLegendary ? ' 🔥' : '') + '</div><div class="item-count">x' + count + '</div>';
+    if (borderStyle) div.style.cssText = borderStyle;
     div.onclick = function() {
       selectedItems[type] = !selectedItems[type];
       renderWarehouse();
     };
-    div.onmouseenter = function(e) { showTooltip(e, itemName(type) + '<br>' + (lang==='zh'?'价值':'Value') + ': ' + itemDef.value + '<br>' + (lang==='zh'?'出售价':'Sell') + ': ' + itemDef.sellPrice); };
+    div.onmouseenter = function(e) { 
+      let tip = '<b>' + itemName(type) + '</b><br>' + (lang==='zh'?'价值':'Value') + ': ' + itemDef.value + '<br>' + (lang==='zh'?'出售价':'Sell') + ': ' + itemDef.sellPrice;
+      if (isLegendary) tip += '<br><span style="color:#ff0066;">' + (lang==='zh'?'🏆 传说级物品 - 明十三陵专属':'🏆 Legendary - Ming Tombs Exclusive') + '</span>';
+      showTooltip(e, tip); 
+    };
     div.onmouseleave = hideTooltip;
     grid.appendChild(div);
   }
@@ -1514,6 +1556,33 @@ function generateContainerLoot(containerType) {
   for (let i = 0; i < count; i++) {
     const roll = Math.random();
     let pool;
+
+    // 明十三陵（mapIndex=4）才有极低概率出超级稀有
+    if (currentMap === 4 && roll < 0.03) {
+      // 3%概率尝试出超级稀有
+      const legendaryPool = LOOT_TYPES.filter(function(it) { 
+        return it.rarity === 'legendary' && (!it.mapOnly || it.mapOnly === 4); 
+      });
+      if (legendaryPool.length > 0) {
+        // 根据各自的 dropRate 再次判定
+        const candidate = legendaryPool[Math.floor(Math.random() * legendaryPool.length)];
+        if (Math.random() < (candidate.dropRate || 0.01)) {
+          loot.push({
+            type: candidate.type,
+            value: candidate.value,
+            weight: candidate.weight,
+            icon: candidate.icon,
+            rarity: candidate.rarity,
+            id: Date.now() + i + Math.random(),
+            revealed: false,
+            searching: false
+          });
+          continue; // 已添加传奇物品，跳过普通流程
+        }
+      }
+    }
+
+    // 普通掉落逻辑
     if (roll < 0.7) {
       pool = LOOT_TYPES.filter(function(it) { return it.rarity === 'common'; });
     } else {
@@ -1774,10 +1843,22 @@ function openContainer(container) {
     } else {
       // 已揭示 - 显示真实信息
       const isRare = item.rarity === 'rare';
+      const isLegendary = item.rarity === 'legendary';
       const itemDef = LOOT_TYPES.find(function(it) { return it.type === item.type; });
-      const rarityColor = isRare ? '#f1c40f' : '#8b7355';
-      const rarityTag = isRare ? '<span style="color:#f1c40f;font-size:10px;">★★★ 稀有</span>' : '<span style="color:#8b7355;font-size:10px;">★ 普通</span>';
-      const bgStyle = isRare ? 'background:rgba(241,196,15,0.05); border-color:rgba(241,196,15,0.3);' : '';
+      let rarityColor, rarityTag, bgStyle;
+      if (isLegendary) {
+        rarityColor = '#ff0066';
+        rarityTag = '<span style="color:#ff0066;font-size:10px;font-weight:bold;">🔥🔥🔥 传说</span>';
+        bgStyle = 'background:rgba(255,0,102,0.08); border-color:rgba(255,0,102,0.5); box-shadow:0 0 10px rgba(255,0,102,0.2);';
+      } else if (isRare) {
+        rarityColor = '#f1c40f';
+        rarityTag = '<span style="color:#f1c40f;font-size:10px;">★★★ 稀有</span>';
+        bgStyle = 'background:rgba(241,196,15,0.05); border-color:rgba(241,196,15,0.3);';
+      } else {
+        rarityColor = '#8b7355';
+        rarityTag = '<span style="color:#8b7355;font-size:10px;">★ 普通</span>';
+        bgStyle = '';
+      }
 
       div.innerHTML = 
         '<div class="item-icon" style="font-size:28px;">' + item.icon + '</div>' +
@@ -1835,7 +1916,12 @@ function searchLootItem(container, idx) {
   setTimeout(function() {
     item.revealed = true;
     item.searching = false;
-    showToast((lang==='zh'?'发现: ':'Found: ') + itemName(item.type));
+    const isLegendary = item.rarity === 'legendary';
+    if (isLegendary) {
+      showToast('🏆 ' + (lang==='zh'?'传说级发现!!! ':'LEGENDARY FOUND!!! ') + itemName(item.type) + ' 🏆', true);
+    } else {
+      showToast((lang==='zh'?'发现: ':'Found: ') + itemName(item.type));
+    }
     openContainer(container);
   }, 800);
 }
@@ -1849,6 +1935,7 @@ function takeLootItem(container, idx, toSafeBox) {
     return;
   }
 
+  const isLegendary = item.rarity === 'legendary';
   if (item.type === 'potion') {
     player.hp = Math.min(player.hpMax, player.hp + 30);
     showToast('+30 HP');
@@ -1871,7 +1958,11 @@ function takeLootItem(container, idx, toSafeBox) {
         });
         score += item.value;
         loots++;
-        showToast('[' + (lang==='zh'?'安全箱':'Safe') + '] ' + itemName(item.type) + ' +1');
+        if (isLegendary) {
+          showToast('🏆 [' + (lang==='zh'?'安全箱':'Safe') + '] ' + itemName(item.type) + ' ' + (lang==='zh'?'已获得!!!':'ACQUIRED!!!') + ' 🏆', true);
+        } else {
+          showToast('[' + (lang==='zh'?'安全箱':'Safe') + '] ' + itemName(item.type) + ' +1');
+        }
         container.loot.splice(idx, 1);
       } else {
         showToast(lang==='zh'?'安全箱已满':'SafeBox Full');
@@ -1888,7 +1979,11 @@ function takeLootItem(container, idx, toSafeBox) {
         player.bagWeight += item.weight;
         score += item.value;
         loots++;
-        showToast(itemName(item.type) + ' +1');
+        if (isLegendary) {
+          showToast('🏆 ' + itemName(item.type) + ' ' + (lang==='zh'?'已获得!!!':'ACQUIRED!!!') + ' 🏆', true);
+        } else {
+          showToast(itemName(item.type) + ' +1');
+        }
         container.loot.splice(idx, 1);
       } else {
         showToast(t('fullBag'));
@@ -2126,7 +2221,12 @@ function update(dt) {
           player.bagWeight += item.weight;
           score += item.value;
           loots++;
-          showToast(itemName(item.type) + ' +1');
+          const isLegendaryGround = item.rarity === 'legendary';
+          if (isLegendaryGround) {
+            showToast('🏆 ' + itemName(item.type) + ' ' + (lang==='zh'?'已获得!!!':'ACQUIRED!!!') + ' 🏆', true);
+          } else {
+            showToast(itemName(item.type) + ' +1');
+          }
           items.splice(i, 1);
         } else {
           showToast(t('fullBag'));
@@ -2397,11 +2497,25 @@ function render() {
   // Ground items (掉落的)
   for (let item of items) {
     const bob = Math.sin(item.bobOffset) * 4;
-    ctx.fillStyle = 'rgba(212,168,83,0.3)';
+    const isLegendary = item.rarity === 'legendary';
+    if (isLegendary) {
+      // 超级稀有物品特殊光效
+      const pulse = Math.sin(Date.now() / 200) * 0.3 + 0.7;
+      ctx.fillStyle = 'rgba(255,0,102,' + (pulse * 0.4) + ')';
+      ctx.beginPath();
+      ctx.arc(item.x, item.y + bob, 22, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,0,102,' + pulse + ')';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(item.x, item.y + bob, 18, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.fillStyle = isLegendary ? 'rgba(255,0,102,0.5)' : 'rgba(212,168,83,0.3)';
     ctx.beginPath();
-    ctx.arc(item.x, item.y + bob, 14, 0, Math.PI * 2);
+    ctx.arc(item.x, item.y + bob, isLegendary ? 16 : 14, 0, Math.PI * 2);
     ctx.fill();
-    ctx.font = '20px serif';
+    ctx.font = isLegendary ? '24px serif' : '20px serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(item.icon, item.x, item.y + bob);
@@ -2639,12 +2753,17 @@ function renderBag() {
       div.style.position = 'relative';
       div.style.cursor = 'pointer';
 
-      const rarityColor = itemDef.rarity === 'rare' ? '#f1c40f' : '#d4a853';
+      const isLegendary = itemDef.rarity === 'legendary';
+      const rarityColor = isLegendary ? '#ff0066' : (itemDef.rarity === 'rare' ? '#f1c40f' : '#d4a853');
+      const legendBadge = isLegendary ? '<div style="position:absolute; top:2px; left:2px; font-size:10px;">🔥</div>' : '';
+      const borderStyle = isLegendary ? 'border-color:#ff0066; box-shadow:0 0 6px rgba(255,0,102,0.2);' : '';
       div.innerHTML = 
-        '<div class="item-icon">' + itemDef.icon + '</div>' +
-        '<div class="item-name" style="color:' + rarityColor + '">' + itemName(type) + '</div>' +
+        legendBadge +
+        '<div class="item-icon" style="font-size:' + (isLegendary ? '26px' : '28px') + ';">' + itemDef.icon + '</div>' +
+        '<div class="item-name" style="color:' + rarityColor + ';' + (isLegendary ? 'font-weight:bold;' : '') + '">' + itemName(type) + '</div>' +
         '<div class="item-count">x' + group.length + '</div>' +
         '<div style="font-size:9px; color:#8b7355;">' + itemDef.weight + 'kg</div>';
+      if (borderStyle) div.style.cssText += borderStyle;
 
       // 长按丢弃
       let dropTimer = null;
@@ -2777,11 +2896,33 @@ function activateLever() {
   createParticles(nearLever.x, nearLever.y, '#9b59b6', 20);
 }
 
-function showToast(msg) {
+function showToast(msg, isLegendary) {
   const toast = document.getElementById('toast');
   toast.textContent = msg;
   toast.style.display = 'block';
-  setTimeout(function() { toast.style.display = 'none'; }, 2000);
+  // 超级稀有物品特殊提示样式
+  if (isLegendary) {
+    toast.style.border = '2px solid #ff0066';
+    toast.style.boxShadow = '0 0 20px rgba(255,0,102,0.5), 0 0 40px rgba(255,0,102,0.2)';
+    toast.style.color = '#ff6699';
+    toast.style.fontWeight = 'bold';
+    toast.style.fontSize = '18px';
+    setTimeout(function() { 
+      toast.style.display = 'none';
+      toast.style.border = '1px solid #d4a853';
+      toast.style.boxShadow = 'none';
+      toast.style.color = '#d4a853';
+      toast.style.fontWeight = 'normal';
+      toast.style.fontSize = '16px';
+    }, 3500);
+  } else {
+    toast.style.border = '1px solid #d4a853';
+    toast.style.boxShadow = 'none';
+    toast.style.color = '#d4a853';
+    toast.style.fontWeight = 'normal';
+    toast.style.fontSize = '16px';
+    setTimeout(function() { toast.style.display = 'none'; }, 2000);
+  }
 }
 
 function showModal(title, btnText, callback) {
@@ -2869,10 +3010,28 @@ function endGame(reason) {
 
   document.getElementById('modalTitle').textContent = titles[reason] || t('gameOver');
   document.getElementById('modalText').textContent = texts[reason] || '';
+  // 统计超级稀有物品
+  let legendaryCount = 0;
+  let legendaryNames = [];
+  for (let item of player.safeBox) {
+    if (item.rarity === 'legendary') { legendaryCount++; legendaryNames.push(itemName(item.type)); }
+  }
+  for (let item of player.bag) {
+    if (item.rarity === 'legendary') { legendaryCount++; legendaryNames.push(itemName(item.type)); }
+  }
+
+  let legendaryHtml = '';
+  if (legendaryCount > 0) {
+    legendaryHtml = '<div style="margin-top:15px; padding:10px; border:2px solid #ff0066; border-radius:8px; background:rgba(255,0,102,0.05);">' +
+      '<div style="color:#ff0066; font-size:16px; font-weight:bold;">🏆 ' + (lang==='zh'?'传说级收获':'Legendary Loot') + ': ' + legendaryCount + '</div>' +
+      '<div style="color:#ff6699; font-size:12px; margin-top:5px;">' + legendaryNames.join(' | ') + '</div></div>';
+  }
+
   document.getElementById('modalStats').innerHTML = 
     '<div class="stat-box"><div class="stat-val">' + score + '</div><div class="stat-label">' + t('score') + '</div></div>' +
     '<div class="stat-box"><div class="stat-val">' + kills + '</div><div class="stat-label">' + t('killed') + '</div></div>' +
-    '<div class="stat-box"><div class="stat-val">' + loots + '</div><div class="stat-label">' + t('looted') + '</div></div>';
+    '<div class="stat-box"><div class="stat-val">' + loots + '</div><div class="stat-label">' + t('looted') + '</div></div>' +
+    legendaryHtml;
   document.getElementById('modalBtn').textContent = t('newGame');
   modalCallback = function() {
     hideModal();
