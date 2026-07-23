@@ -767,8 +767,8 @@ function getDefaultSave() {
       accessory2: null,
       healing: null
     },
-    hpMax: 100, staminaMax: 100,
-    safeBoxMax: 6  // 安全箱容量（随等级提升）
+    hpMax: 100, staminaMax: 80,
+    safeBoxMax: 0  // 安全箱需要购买解锁
   };
 }
 let saveData = loadSave() || getDefaultSave();
@@ -1254,6 +1254,19 @@ function renderEquipScreen() {
     loadoutGrid.appendChild(legendBanner);
   }
 
+  // 安全箱状态显示
+  if (saveData.safeBoxMax === 0) {
+    const safeboxBanner = document.createElement('div');
+    safeboxBanner.style.cssText = 'grid-column:1/-1; text-align:center; padding:8px; background:rgba(192,57,43,0.08); border:1px solid #c0392b; border-radius:8px; margin-bottom:10px;';
+    safeboxBanner.innerHTML = '<span style="color:#c0392b; font-size:13px; font-weight:bold;">🔒 ' + (lang==='zh'?'安全箱未解锁！请在商城购买':'Safebox locked! Buy in shop') + '</span>';
+    loadoutGrid.appendChild(safeboxBanner);
+  } else {
+    const safeboxBanner = document.createElement('div');
+    safeboxBanner.style.cssText = 'grid-column:1/-1; text-align:center; padding:8px; background:rgba(39,174,96,0.08); border:1px solid #27ae60; border-radius:8px; margin-bottom:10px;';
+    safeboxBanner.innerHTML = '<span style="color:#27ae60; font-size:13px; font-weight:bold;">🔓 ' + (lang==='zh'?'安全箱容量: ':'Safebox: ') + saveData.safeBoxMax + ' ' + (lang==='zh'?'格':'slots') + '</span>';
+    loadoutGrid.appendChild(safeboxBanner);
+  }
+
   const slots = [
     { key: 'weapon', label: lang==='zh'?'主武器':'Weapon', icon: '🔫', pos: 'weapon' },
     { key: 'armor', label: lang==='zh'?'护甲':'Armor', icon: '🛡️', pos: 'armor' },
@@ -1375,6 +1388,16 @@ function buyItem(item) {
     showToast(lang==='zh'?'资金不足':'Not enough money');
     return;
   }
+
+  // 安全箱升级检查
+  if (item.type === 'upgrade' && item.id.startsWith('safebox')) {
+    const targetSize = parseInt(item.id.replace('safebox', '')) * 2;
+    if (saveData.safeBoxMax >= targetSize) {
+      showToast(lang==='zh'?'已拥有更大或同等安全箱':'Already have equal or larger safebox');
+      return;
+    }
+  }
+
   saveData.money -= item.price;
   if (item.type === 'weapon') {
     saveData.ownedWeapons.push(item.id);
@@ -1382,6 +1405,10 @@ function buyItem(item) {
     // 护甲直接放入装备
   } else if (item.type === 'consumable') {
     // 消耗品
+  } else if (item.type === 'upgrade' && item.id.startsWith('safebox')) {
+    // 安全箱升级
+    const newSize = parseInt(item.id.replace('safebox', '')) * 2;
+    saveData.safeBoxMax = newSize;
   }
   saveGame(saveData);
   renderShop();
@@ -1637,7 +1664,7 @@ function startGame(mapIndex) {
     hp: saveData.hpMax || 100,
     hpMax: saveData.hpMax || 100,
     stamina: saveData.staminaMax || 100,
-    staminaMax: saveData.staminaMax || 100,
+    staminaMax: saveData.staminaMax || 80,
     speed: 3,
     angle: 0,
     weapon: equippedWeapon,
@@ -1646,7 +1673,7 @@ function startGame(mapIndex) {
     bagMax: 50,
     bagWeight: 0,
     safeBox: [],
-    safeBoxMax: saveData.safeBoxMax || 6,
+    safeBoxMax: saveData.safeBoxMax || 0,
     safeBoxWeight: 0,
     invincible: 0,
     reloading: false,
@@ -1739,7 +1766,7 @@ function startGame(mapIndex) {
 
   // 生成墙壁机关（随机刷新在墙壁上）
   wallTraps = [];
-  const trapCount = 8 + mapIndex * 4; // 随难度增加
+  const trapCount = 3 + mapIndex * 2; // 随难度增加，但数量大幅减少
   for (let i = 0; i < trapCount; i++) {
     // 找到墙壁位置
     let tx, ty, attempts = 0;
@@ -1757,14 +1784,18 @@ function startGame(mapIndex) {
         type: trapDef.type,
         name: trapDef.name,
         icon: trapDef.icon,
-        damage: trapDef.damage * (1 + mapIndex * 0.3),
+        damage: trapDef.damage * (1.5 + mapIndex * 0.5),  // 伤害更高，更突然
         color: trapDef.color,
         size: trapDef.size,
-        cooldown: trapDef.cooldown,
+        cooldown: trapDef.cooldown * 0.5,  // 冷却更短，更频繁
         lastTrigger: 0,
         active: false,
         id: Date.now() + '_trap_' + i,
-        bobOffset: Math.random() * Math.PI * 2
+        bobOffset: Math.random() * Math.PI * 2,
+        // 机关可被攻击破坏
+        hp: 20 + mapIndex * 10,  // 血量降低，更容易破坏但更难发现
+        maxHp: 20 + mapIndex * 10,
+        destroyed: false
       });
     }
   }
@@ -1858,7 +1889,11 @@ function openContainer(container) {
   // 添加操作提示
   const hintDiv = document.createElement('div');
   hintDiv.style.cssText = 'grid-column:1/-1; text-align:center; color:#8b7355; font-size:11px; padding:5px; border-bottom:1px solid #3a2a1a; margin-bottom:5px;';
-  hintDiv.innerHTML = lang==='zh' ? '点击"?"搜索物品 | 搜索后单击拾取到背包 | 长按0.5秒放入安全箱' : 'Click "?" to search | Click to bag | Hold 0.5s for safebox';
+  if (player.safeBoxMax > 0) {
+    hintDiv.innerHTML = lang==='zh' ? '点击"?"搜索物品 | 搜索后单击拾取到背包 | 长按0.5秒放入安全箱' : 'Click "?" to search | Click to bag | Hold 0.5s for safebox';
+  } else {
+    hintDiv.innerHTML = lang==='zh' ? '点击"?"搜索物品 | 搜索后单击拾取到背包 | 🔒 安全箱未解锁' : 'Click "?" to search | Click to bag | 🔒 Safebox locked';
+  }
   grid.appendChild(hintDiv);
 
   container.loot.forEach(function(item, idx) {
@@ -2104,8 +2139,8 @@ function update(dt) {
     // 摇杆幅度控制速度：0~1 映射到 0.3~1.0 速度比例
     const joyMag = joystick.magnitude || 0;
     const speedMult = 0.3 + joyMag * 0.7;
-    // 摇杆推到最大(>0.8)且体力充足时，进入冲刺状态
-    if (joyMag > 0.85 && player.stamina > 1) {
+    // 摇杆推到最大(>0.95)且体力充足时，进入冲刺状态（更难触发，避免误操作）
+    if (joyMag > 0.95 && player.stamina > 20) {
       speed = player.speed * 1.25;
       isSprinting = true;
     }
@@ -2132,13 +2167,44 @@ function update(dt) {
     shoot();
   }
 
-  // 体力消耗与恢复
+  // 体力消耗与恢复（更现实的体力系统）
   if (isSprinting) {
-    player.stamina = Math.max(0, player.stamina - 10 * dt);
+    // 冲刺消耗体力，且体力低于15时无法冲刺（有"疲劳缓冲"）
+    if (player.stamina > 15) {
+      player.stamina = Math.max(0, player.stamina - 8 * dt);
+    } else {
+      // 体力过低强制停止冲刺
+      isSprinting = false;
+    }
   } else {
     const moving = (dx !== 0 || dy !== 0);
-    const recoverRate = moving ? 4 : 12;
+    // 正常移动时缓慢恢复（边走边恢复，但很慢）
+    // 静止时恢复较快
+    // 如果体力耗尽过，需要完全静止才能恢复
+    let recoverRate;
+    if (player.stamina <= 0) {
+      // 体力耗尽后，必须完全静止才能恢复，且恢复很慢
+      if (moving) {
+        recoverRate = 0; // 移动时体力为0无法恢复
+      } else {
+        recoverRate = 3; // 静止时缓慢恢复
+      }
+    } else {
+      recoverRate = moving ? 1.5 : 8;
+    }
     player.stamina = Math.min(player.staminaMax, player.stamina + recoverRate * dt);
+  }
+
+  // 体力越低速度越慢 - 线性衰减，更有策略性
+  const staminaRatio = player.stamina / player.staminaMax;
+  if (staminaRatio > 0.7) {
+    player.speed = 3;  // 体力充足，满速
+  } else if (staminaRatio > 0.4) {
+    player.speed = 3 * (0.6 + staminaRatio * 0.4);  // 体力中等，速度逐渐下降
+  } else if (staminaRatio > 0.1) {
+    player.speed = 3 * (0.3 + staminaRatio * 0.3);  // 体力低，速度大幅降低
+  } else {
+    player.speed = 3 * 0.15;  // 体力几乎耗尽，几乎爬不动
   }
 
   if (player.invincible > 0) player.invincible -= dt;
@@ -2156,13 +2222,36 @@ function update(dt) {
       continue;
     }
 
+    // 子弹击中敌人
+    let hit = false;
     for (let j = enemies.length - 1; j >= 0; j--) {
       const e = enemies[j];
       if (Math.hypot(b.x - e.x, b.y - e.y) < e.size + 5) {
         e.hp -= b.damage;
         createParticles(b.x, b.y, '#e74c3c', 5);
         bullets.splice(i, 1);
+        hit = true;
         if (e.hp <= 0) killEnemy(j);
+        break;
+      }
+    }
+    if (hit) continue;
+
+    // 子弹击中墙壁机关（可以打坏机关）
+    for (let j = wallTraps.length - 1; j >= 0; j--) {
+      const trap = wallTraps[j];
+      if (trap.destroyed) continue;
+      if (Math.hypot(b.x - trap.x, b.y - trap.y) < trap.size + 8) {
+        trap.hp -= b.damage;
+        createParticles(b.x, b.y, trap.color, 4);
+        bullets.splice(i, 1);
+        hit = true;
+        if (trap.hp <= 0) {
+          // 机关被摧毁
+          trap.destroyed = true;
+          createParticles(trap.x, trap.y, trap.color, 15);
+          showToast((lang==='zh'?'机关已摧毁！':'Trap destroyed!'));
+        }
         break;
       }
     }
@@ -2170,20 +2259,22 @@ function update(dt) {
 
   // Update wall traps
   for (let trap of wallTraps) {
+    if (trap.destroyed) continue; // 已摧毁的机关不再触发
+
     const distToPlayer = Math.hypot(player.x - trap.x, player.y - trap.y);
     const now = Date.now() / 1000;
 
-    // 玩家靠近时触发
-    if (distToPlayer < 120 && now - trap.lastTrigger > trap.cooldown) {
+    // 玩家靠近时触发 - 范围更大，更突然
+    if (distToPlayer < 160 && now - trap.lastTrigger > trap.cooldown * 0.6) {
       trap.lastTrigger = now;
       trap.active = true;
 
       // 造成伤害
       if (player.invincible <= 0) {
-        player.hp -= trap.damage;
+        player.hp -= trap.damage * 1.5;
         player.invincible = 0.8;
         createParticles(player.x, player.y, trap.color, 10);
-        showToast((lang==='zh'?'中了' + trap.name + '! 受到 ':'Hit by ' + trap.name + '! Took ') + Math.floor(trap.damage) + (lang==='zh'?'点伤害!':' damage!'));
+        showToast((lang==='zh'?'啊！':'Ouch!'));
       }
 
       // 创建机关发射效果
@@ -2197,7 +2288,7 @@ function update(dt) {
       }
 
       // 0.5秒后机关复位
-      setTimeout(function() { trap.active = false; }, 500);
+      setTimeout(function() { if (!trap.destroyed) trap.active = false; }, 500);
     }
   }
 
@@ -2257,10 +2348,15 @@ function update(dt) {
     }
   }
 
-  // 低体力提示（每3秒只提示一次，避免刷屏）
-  if (player.stamina < 5) {
+  // 低体力提示 - 突发性短提示，只影响体力
+  if (player.stamina <= 0) {
     if (!player._lowStaminaWarnTime || Date.now() - player._lowStaminaWarnTime > 3000) {
-      showToast(lang==='zh'?'体力耗尽！移动速度大幅降低！':'Stamina depleted! Movement slowed!');
+      staminaToast(lang==='zh'?'喘...':'Gasp...');
+      player._lowStaminaWarnTime = Date.now();
+    }
+  } else if (player.stamina < 15) {
+    if (!player._lowStaminaWarnTime || Date.now() - player._lowStaminaWarnTime > 5000) {
+      staminaToast(lang==='zh'?'...':'...');
       player._lowStaminaWarnTime = Date.now();
     }
   } else {
@@ -2535,6 +2631,21 @@ function render() {
   // Wall traps (墙壁机关)
   for (let trap of wallTraps) {
     const bob = Math.sin(trap.bobOffset + Date.now()/800) * 2;
+
+    // 被摧毁的机关显示为残骸
+    if (trap.destroyed) {
+      ctx.fillStyle = 'rgba(80,60,40,0.3)';
+      ctx.beginPath();
+      ctx.arc(trap.x, trap.y, trap.size * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#5a4a3a';
+      ctx.font = (trap.size * 0.8) + 'px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('💥', trap.x, trap.y);
+      continue;
+    }
+
     const isActive = trap.active;
 
     // 机关底座
@@ -2564,15 +2675,23 @@ function render() {
       ctx.stroke();
     }
 
-    // 靠近时警告
+    // 靠近时警告 - 预警范围更小，更突然
     const distToPlayer = Math.hypot(player.x - trap.x, player.y - trap.y);
-    if (distToPlayer < 150 && !isActive) {
-      const warnAlpha = (150 - distToPlayer) / 150 * 0.5;
+    if (distToPlayer < 80 && !isActive) {
+      const warnAlpha = (80 - distToPlayer) / 80 * 0.8;
       ctx.strokeStyle = 'rgba(255,0,0,' + warnAlpha + ')';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.arc(trap.x, trap.y + bob, trap.size + 8, 0, Math.PI * 2);
       ctx.stroke();
+    }
+
+    // 显示机关血量条（被攻击时）
+    if (trap.hp < trap.maxHp) {
+      ctx.fillStyle = '#1a0f0a';
+      ctx.fillRect(trap.x - 15, trap.y + bob - trap.size - 12, 30, 4);
+      ctx.fillStyle = '#c0392b';
+      ctx.fillRect(trap.x - 15, trap.y + bob - trap.size - 12, 30 * (trap.hp / trap.maxHp), 4);
     }
   }
 
@@ -2728,17 +2847,25 @@ function render() {
     ctx.fillRect(camera.x, camera.y, canvas.width, canvas.height);
   }
 
-  // 低体力视觉提示：体力低于20时屏幕边缘泛红
-  if (player.stamina < 20) {
-    const intensity = (20 - player.stamina) / 20 * 0.3;
+  // 低体力视觉提示：更明显的疲劳效果
+  if (player.stamina < 30) {
+    const intensity = (30 - player.stamina) / 30 * 0.5;
+    // 屏幕边缘泛红，体力越低越红
     const gradient = ctx.createRadialGradient(
-      camera.x + canvas.width / 2, camera.y + canvas.height / 2, canvas.width * 0.3,
-      camera.x + canvas.width / 2, camera.y + canvas.height / 2, canvas.width * 0.7
+      camera.x + canvas.width / 2, camera.y + canvas.height / 2, canvas.width * 0.2,
+      camera.x + canvas.width / 2, camera.y + canvas.height / 2, canvas.width * 0.8
     );
     gradient.addColorStop(0, 'rgba(192,57,43,0)');
     gradient.addColorStop(1, 'rgba(192,57,43,' + intensity + ')');
     ctx.fillStyle = gradient;
     ctx.fillRect(camera.x, camera.y, canvas.width, canvas.height);
+
+    // 体力耗尽时额外效果：屏幕轻微震动
+    if (player.stamina <= 0) {
+      const shakeX = (Math.random() - 0.5) * 3;
+      const shakeY = (Math.random() - 0.5) * 3;
+      ctx.translate(shakeX, shakeY);
+    }
   }
 
   ctx.restore();
@@ -2776,9 +2903,13 @@ function updateHUD() {
   staminaFill.style.width = staminaPercent + '%';
   document.getElementById('hudStamVal').textContent = Math.ceil(player.stamina);
   document.getElementById('hudStamMax').textContent = player.staminaMax;
-  // 低体力时体力条变红
-  if (player.stamina < 20) {
+  // 体力条颜色根据状态变化（更直观的反馈）
+  if (player.stamina <= 0) {
+    staminaFill.style.background = 'linear-gradient(90deg, #8b0000, #c0392b)';
+  } else if (player.stamina < 20) {
     staminaFill.style.background = 'linear-gradient(90deg, #c0392b, #e74c3c)';
+  } else if (player.stamina < 50) {
+    staminaFill.style.background = 'linear-gradient(90deg, #f39c12, #f1c40f)';
   } else {
     staminaFill.style.background = 'linear-gradient(90deg, #27ae60, #2ecc71)';
   }
@@ -3055,6 +3186,22 @@ function showToast(msg, isLegendary) {
   }
 }
 
+// 体力提示专用 - 极简短、突发性
+function staminaToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.style.display = 'block';
+  toast.style.border = '1px solid #c0392b';
+  toast.style.color = '#e74c3c';
+  toast.style.fontSize = '14px';
+  toast.style.fontWeight = 'normal';
+  setTimeout(function() { 
+    toast.style.display = 'none';
+    toast.style.border = '1px solid #d4a853';
+    toast.style.color = '#d4a853';
+  }, 500);
+}
+
 function showModal(title, btnText, callback) {
   modalCallback = callback;
   document.getElementById('modalTitle').textContent = title;
@@ -3081,7 +3228,8 @@ function endGame(reason) {
   let savedItems = 0;
   let lostItems = 0;
   if (reason === 'evacuated') {
-    if (player.safeBox && player.safeBox.length > 0) {
+    // 撤离时：有安全箱的保留安全箱+背包，没有的只保留背包
+    if (player.safeBoxMax > 0 && player.safeBox && player.safeBox.length > 0) {
       for (let item of player.safeBox) {
         saveData.warehouse[item.type] = (saveData.warehouse[item.type] || 0) + 1;
         savedItems++;
@@ -3095,7 +3243,8 @@ function endGame(reason) {
     }
     showToast(lang==='zh'?'全部物品已带回仓库！':'All items saved!');
   } else {
-    if (player.safeBox && player.safeBox.length > 0) {
+    // 死亡时：只有安全箱内的物品保留（如果有安全箱）
+    if (player.safeBoxMax > 0 && player.safeBox && player.safeBox.length > 0) {
       for (let item of player.safeBox) {
         saveData.warehouse[item.type] = (saveData.warehouse[item.type] || 0) + 1;
         savedItems++;
@@ -3104,7 +3253,12 @@ function endGame(reason) {
     if (player.bag && player.bag.length > 0) {
       lostItems = player.bag.length;
     }
-    const msg = lang==='zh' ? '安全箱内' + savedItems + '件物品已保留，背包中' + lostItems + '件物品已掉落！' : savedItems + ' safebox items saved, ' + lostItems + ' bag items lost!';
+    let msg;
+    if (player.safeBoxMax > 0) {
+      msg = lang==='zh' ? '安全箱内' + savedItems + '件物品已保留，背包中' + lostItems + '件物品已掉落！' : savedItems + ' safebox items saved, ' + lostItems + ' bag items lost!';
+    } else {
+      msg = lang==='zh' ? '没有安全箱！背包中' + lostItems + '件物品全部掉落！' : 'No safebox! ' + lostItems + ' bag items lost!';
+    }
     showToast(msg);
   }
 
@@ -3123,7 +3277,7 @@ function endGame(reason) {
     saveData.level++;
     saveData.expNeed = Math.floor(saveData.expNeed * 1.5);
     saveData.hpMax += 10;
-    saveData.staminaMax += 5;
+    saveData.staminaMax += 3;
   }
 
   if (reason === 'evacuated' && currentMap < 4 && !saveData.unlockedMaps.includes(currentMap + 1)) {
