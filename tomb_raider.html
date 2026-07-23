@@ -299,6 +299,29 @@
   }
   #shootBtn:active { background: rgba(192,57,43,0.6); transform: scale(0.92); box-shadow: 0 0 25px rgba(192,57,43,0.5); }
 
+  /* 换弹按钮 */
+  #reloadBtn {
+    position: fixed; bottom: 195px; right: 75px;
+    width: 50px; height: 50px; border-radius: 50%;
+    background: rgba(212,168,83,0.3); border: 2px solid rgba(212,168,83,0.6);
+    color: #d4a853; font-size: 22px; display: none;
+    align-items: center; justify-content: center; z-index: 200;
+    pointer-events: auto; cursor: pointer; user-select: none;
+    box-shadow: 0 0 10px rgba(212,168,83,0.3);
+    transition: all 0.1s;
+  }
+  #reloadBtn:active { background: rgba(212,168,83,0.6); transform: scale(0.92); box-shadow: 0 0 20px rgba(212,168,83,0.5); }
+  #reloadBtn.reloading { 
+    background: rgba(192,57,43,0.4); 
+    border-color: rgba(192,57,43,0.8); 
+    color: #e74c3c;
+    animation: reloadSpin 1s linear infinite;
+  }
+  @keyframes reloadSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
 
 
 
@@ -586,6 +609,7 @@
 
 <div id="lootBtn"><span class="btn-icon" id="lootIcon">&#x1F392;</span><span class="btn-text" id="lootText">搜刮</span></div>
 <div id="bagBtn">&#x1F392;</div>
+<div id="reloadBtn">🔄</div>
 <div id="shootBtn">&#x1F4A5;</div>
 
 
@@ -1101,6 +1125,17 @@ function setupControls() {
     shootTouch = false;
   });
 
+  // 换弹按钮事件
+  const reloadBtn = document.getElementById('reloadBtn');
+  reloadBtn.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    reload();
+  }, {passive:false});
+  reloadBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    reload();
+  });
+
   document.getElementById('bagBtn').addEventListener('click', toggleBag);
 }
 
@@ -1553,6 +1588,11 @@ function updateWeaponBar() {
 
 function switchWeapon(w) {
   if (!player.weapons || !player.weapons[w]) return;
+  // 切换武器时中断当前换弹
+  if (player.reloading) {
+    player.reloading = false;
+    document.getElementById('reloadBtn').classList.remove('reloading');
+  }
   player.weapon = w;
   updateWeaponBar();
   updateHUD();
@@ -1864,6 +1904,7 @@ function startGame(mapIndex) {
     document.getElementById('lootBtn').style.display = 'flex';
     document.getElementById('bagBtn').style.display = 'flex';
     document.getElementById('shootBtn').style.display = 'flex';
+    document.getElementById('reloadBtn').style.display = 'flex';
   }
 
   updateWeaponBar();
@@ -2281,15 +2322,15 @@ function update(dt) {
     const distToPlayer = Math.hypot(player.x - trap.x, player.y - trap.y);
     const now = Date.now() / 1000;
 
-    // 玩家靠近时触发 - 范围更大，更突然
-    if (distToPlayer < 160 && now - trap.lastTrigger > trap.cooldown * 0.6) {
+    // 玩家靠近时触发
+    if (distToPlayer < 100 && now - trap.lastTrigger > trap.cooldown * 0.6) {
       trap.lastTrigger = now;
       trap.active = true;
 
       // 造成伤害
       if (player.invincible <= 0) {
-        player.hp -= trap.damage * 1.5;
-        player.invincible = 0.8;
+        player.hp -= trap.damage;
+        player.invincible = 1.5;
         createParticles(player.x, player.y, trap.color, 10);
         showToast((lang==='zh'?'啊！':'Ouch!'));
       }
@@ -2525,6 +2566,8 @@ function reload() {
   const wpn = player.weapons[player.weapon];
   if (!wpn || wpn.ammo >= wpnDef.maxAmmo || wpn.totalAmmo <= 0 || player.reloading) return;
   player.reloading = true;
+  const reloadBtn = document.getElementById('reloadBtn');
+  if (reloadBtn) reloadBtn.classList.add('reloading');
   showToast(t('reloading'));
   setTimeout(function() {
     const need = wpnDef.maxAmmo - wpn.ammo;
@@ -2532,6 +2575,7 @@ function reload() {
     wpn.ammo += take;
     wpn.totalAmmo -= take;
     player.reloading = false;
+    if (reloadBtn) reloadBtn.classList.remove('reloading');
   }, 1500);
 }
 
@@ -2694,7 +2738,7 @@ function render() {
 
     // 靠近时警告 - 预警范围更小，更突然
     const distToPlayer = Math.hypot(player.x - trap.x, player.y - trap.y);
-    if (distToPlayer < 80 && !isActive) {
+    if (distToPlayer < 60 && !isActive) {
       const warnAlpha = (80 - distToPlayer) / 80 * 0.8;
       ctx.strokeStyle = 'rgba(255,0,0,' + warnAlpha + ')';
       ctx.lineWidth = 2;
@@ -3347,6 +3391,7 @@ function endGame(reason) {
   document.getElementById('lootBtn').style.display = 'none';
   document.getElementById('bagBtn').style.display = 'none';
   document.getElementById('shootBtn').style.display = 'none';
+  document.getElementById('reloadBtn').style.display = 'none';
   document.getElementById('weaponBar').style.display = 'none';
   
   document.getElementById('bagPanel').style.display = 'none';
@@ -3364,6 +3409,7 @@ function returnToMenu() {
   document.getElementById('lootBtn').style.display = 'none';
   document.getElementById('bagBtn').style.display = 'none';
   document.getElementById('shootBtn').style.display = 'none';
+  document.getElementById('reloadBtn').style.display = 'none';
   document.getElementById('weaponBar').style.display = 'none';
   
   document.getElementById('bagPanel').style.display = 'none';
