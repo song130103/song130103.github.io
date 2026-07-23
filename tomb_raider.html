@@ -560,7 +560,7 @@
   <div class="hud-panel" id="hudTopLeft">
     <div style="color:#d4a853; font-size:14px;"><span id="hudHpLabel">生命</span>: <span id="hudHpVal">100</span>/<span id="hudHpMax">100</span></div>
     <div class="hp-bar"><div class="hp-fill" id="hpFill" style="width:100%"></div></div>
-    <div style="color:#8b7355; font-size:12px; margin-top:4px;"><span id="hudStamLabel">体力</span></div>
+    <div style="color:#8b7355; font-size:12px; margin-top:4px;"><span id="hudStamLabel">体力</span>: <span id="hudStamVal">100</span>/<span id="hudStamMax">100</span></div>
     <div class="stamina-bar"><div class="stamina-fill" id="staminaFill" style="width:100%"></div></div>
   </div>
   <div class="hud-panel" id="hudTopRight">
@@ -670,7 +670,8 @@ const I18N = {
       button: '铜扣', nail: '棺钉', potion: '丹药', ammo: '箭矢',
       lever: '机关', switch: '开关', altar: '祭坛',
       dragon_jade: '龙纹玉璧', imperial_seal: '传国玉玺', phoenix_crown: '凤冠',
-      celestial_sword: '天子剑', immortal_pill: '长生丹'
+      celestial_sword: '天子剑', immortal_pill: '长生丹',
+      arrow_wall: '暗箭墙', fire_wall: '火油喷口', spike_wall: '突刺墙', poison_dart: '毒镖孔'
     },
     weapons: {
       pistol: '洛阳铲手枪', smg: '连弩冲锋枪', shotgun: '散弹火铳', rifle: '狙击长弓'
@@ -713,7 +714,8 @@ const I18N = {
       button: 'Button', nail: 'Nail', potion: 'Elixir', ammo: 'Arrows',
       lever: 'Lever', switch: 'Switch', altar: 'Altar',
       dragon_jade: 'Dragon Jade', imperial_seal: 'Imperial Seal', phoenix_crown: 'Phoenix Crown',
-      celestial_sword: 'Celestial Sword', immortal_pill: 'Immortal Pill'
+      celestial_sword: 'Celestial Sword', immortal_pill: 'Immortal Pill',
+      arrow_wall: 'Arrow Wall', fire_wall: 'Fire Vent', spike_wall: 'Spike Wall', poison_dart: 'Poison Dart'
     },
     weapons: {
       pistol: 'Pistol', smg: 'SMG', shotgun: 'Shotgun', rifle: 'Rifle'
@@ -831,8 +833,6 @@ const LOOT_TYPES = [
   { type: 'armor', value: 400, weight: 5, icon: '\uD83D\uDEE1\uFE0F', sellPrice: 320, rarity: 'rare' },
   { type: 'gem', value: 500, weight: 1, icon: '\uD83D\uDCA0', sellPrice: 400, rarity: 'rare' },
   { type: 'bronze', value: 80, weight: 3, icon: '\uD83C\uDFA8', sellPrice: 65, rarity: 'rare' },
-  // ===== 功能物品 =====
-  { type: 'potion', value: 50, weight: 0.5, icon: '\uD83E\uDDEA', sellPrice: 40, rarity: 'common' },
   // ===== 超级稀有物品（仅明十三陵产出，爆率极低）=====
   { type: 'dragon_jade', value: 5000, weight: 3, icon: '\uD83D\uDC09', sellPrice: 4000, rarity: 'legendary', mapOnly: 4, dropRate: 0.02 },
   { type: 'imperial_seal', value: 8000, weight: 2, icon: '\uD83D\uDC51', sellPrice: 6500, rarity: 'legendary', mapOnly: 4, dropRate: 0.015 },
@@ -843,6 +843,15 @@ const LOOT_TYPES = [
   { type: 'potion', value: 50, weight: 0.5, icon: '\uD83E\uDDEA', sellPrice: 40, rarity: 'common' },
   { type: 'ammo', value: 10, weight: 0.2, icon: '\uD83D\uDD2B', sellPrice: 8, rarity: 'common' }
 ];
+
+// 墙壁机关类型
+const WALL_TRAP_TYPES = [
+  { type: 'arrow_wall', name: '暗箭墙', icon: '🏹', damage: 15, color: '#8B0000', size: 12, cooldown: 3 },
+  { type: 'fire_wall', name: '火油喷口', icon: '🔥', damage: 20, color: '#FF4500', size: 14, cooldown: 4 },
+  { type: 'spike_wall', name: '突刺墙', icon: '📌', damage: 25, color: '#696969', size: 12, cooldown: 3 },
+  { type: 'poison_dart', name: '毒镖孔', icon: '☠️', damage: 10, color: '#32CD32', size: 10, cooldown: 2 }
+];
+
 
 // 商城商品
 const SHOP_ITEMS = [
@@ -859,6 +868,7 @@ const SHOP_ITEMS = [
 // ===== 游戏状态 =====
 let canvas, ctx;
 let gameState = 'menu';
+let wallTraps = [];
 let currentMap = 0;
 let mapData = null;
 let player = {};
@@ -1033,6 +1043,7 @@ function setupControls() {
     joystick.active = true;
     joystick.dx = dx / maxDist;
     joystick.dy = dy / maxDist;
+    joystick.magnitude = Math.min(dist / maxDist, 1);
   }
 
   // ===== 移动端搜刮按钮事件 =====
@@ -1382,12 +1393,14 @@ function renderMapSelect() {
   const grid = document.getElementById('mapGrid');
   grid.innerHTML = '';
   for (let i = 0; i < 5; i++) {
-    const unlocked = saveData.unlockedMaps.includes(i);
-    const card = document.createElement('div');
-    card.className = 'map-card' + (unlocked ? '' : ' locked');
-    card.innerHTML = '<h3>' + t('mapNames')[i] + '</h3><p>' + t('mapDesc')[i] + '</p><div class="map-diff">' + t('diff')[i] + (unlocked ? '' : ' - ' + t('mapLocked')) + '</div>';
-    if (unlocked) card.onclick = function() { startGame(i); };
-    grid.appendChild(card);
+    (function(idx) {
+      const unlocked = saveData.unlockedMaps.includes(idx);
+      const card = document.createElement('div');
+      card.className = 'map-card' + (unlocked ? '' : ' locked');
+      card.innerHTML = '<h3>' + t('mapNames')[idx] + '</h3><p>' + t('mapDesc')[idx] + '</p><div class="map-diff">' + t('diff')[idx] + (unlocked ? '' : ' - ' + t('mapLocked')) + '</div>';
+      if (unlocked) card.onclick = function() { startGame(idx); };
+      grid.appendChild(card);
+    })(i);
   }
 }
 
@@ -1724,6 +1737,38 @@ function startGame(mapIndex) {
     bobOffset: Math.random() * Math.PI * 2
   });
 
+  // 生成墙壁机关（随机刷新在墙壁上）
+  wallTraps = [];
+  const trapCount = 8 + mapIndex * 4; // 随难度增加
+  for (let i = 0; i < trapCount; i++) {
+    // 找到墙壁位置
+    let tx, ty, attempts = 0;
+    do {
+      tx = Math.floor(Math.random() * mapData.width);
+      ty = Math.floor(Math.random() * mapData.height);
+      attempts++;
+    } while (attempts < 100 && mapData.data[ty][tx] !== 1);
+
+    if (mapData.data[ty][tx] === 1) {
+      const trapDef = WALL_TRAP_TYPES[Math.floor(Math.random() * WALL_TRAP_TYPES.length)];
+      wallTraps.push({
+        x: tx * TILE_SIZE + TILE_SIZE / 2,
+        y: ty * TILE_SIZE + TILE_SIZE / 2,
+        type: trapDef.type,
+        name: trapDef.name,
+        icon: trapDef.icon,
+        damage: trapDef.damage * (1 + mapIndex * 0.3),
+        color: trapDef.color,
+        size: trapDef.size,
+        cooldown: trapDef.cooldown,
+        lastTrigger: 0,
+        active: false,
+        id: Date.now() + '_trap_' + i,
+        bobOffset: Math.random() * Math.PI * 2
+      });
+    }
+  }
+
   // 生成容器（可搜刮的）
   containers = [];
   for (let i = 0; i < mapInfo.config.containerCount; i++) {
@@ -1936,6 +1981,7 @@ function takeLootItem(container, idx, toSafeBox) {
   }
 
   const isLegendary = item.rarity === 'legendary';
+
   if (item.type === 'potion') {
     player.hp = Math.min(player.hpMax, player.hp + 30);
     showToast('+30 HP');
@@ -2044,17 +2090,27 @@ function update(dt) {
 
   // 体力机制：体力为0时无法冲刺，移动速度降低50%
   let speed;
+  let isSprinting = false;
   if (player.stamina <= 0) {
     speed = player.speed * 0.5;
-  } else if (sprint && player.stamina > 10) {
-    speed = player.speed * 1.5;
+  } else if (sprint && player.stamina > 1) {
+    speed = player.speed * 1.25;
+    isSprinting = true;
   } else {
     speed = player.speed;
   }
 
   if (joystick.active) {
-    dx = joystick.dx * speed * 60 * dt;
-    dy = joystick.dy * speed * 60 * dt;
+    // 摇杆幅度控制速度：0~1 映射到 0.3~1.0 速度比例
+    const joyMag = joystick.magnitude || 0;
+    const speedMult = 0.3 + joyMag * 0.7;
+    // 摇杆推到最大(>0.8)且体力充足时，进入冲刺状态
+    if (joyMag > 0.85 && player.stamina > 1) {
+      speed = player.speed * 1.25;
+      isSprinting = true;
+    }
+    dx = joystick.dx * speed * speedMult * 60 * dt;
+    dy = joystick.dy * speed * speedMult * 60 * dt;
   } else {
     if (keys['KeyW'] || keys['ArrowUp']) dy -= speed * 60 * dt;
     if (keys['KeyS'] || keys['ArrowDown']) dy += speed * 60 * dt;
@@ -2077,11 +2133,11 @@ function update(dt) {
   }
 
   // 体力消耗与恢复
-  if (sprint && player.stamina > 10) {
-    player.stamina = Math.max(0, player.stamina - 35 * dt);
+  if (isSprinting) {
+    player.stamina = Math.max(0, player.stamina - 10 * dt);
   } else {
     const moving = (dx !== 0 || dy !== 0);
-    const recoverRate = moving ? 8 : 25;
+    const recoverRate = moving ? 4 : 12;
     player.stamina = Math.min(player.staminaMax, player.stamina + recoverRate * dt);
   }
 
@@ -2109,6 +2165,39 @@ function update(dt) {
         if (e.hp <= 0) killEnemy(j);
         break;
       }
+    }
+  }
+
+  // Update wall traps
+  for (let trap of wallTraps) {
+    const distToPlayer = Math.hypot(player.x - trap.x, player.y - trap.y);
+    const now = Date.now() / 1000;
+
+    // 玩家靠近时触发
+    if (distToPlayer < 120 && now - trap.lastTrigger > trap.cooldown) {
+      trap.lastTrigger = now;
+      trap.active = true;
+
+      // 造成伤害
+      if (player.invincible <= 0) {
+        player.hp -= trap.damage;
+        player.invincible = 0.8;
+        createParticles(player.x, player.y, trap.color, 10);
+        showToast((lang==='zh'?'中了' + trap.name + '! 受到 ':'Hit by ' + trap.name + '! Took ') + Math.floor(trap.damage) + (lang==='zh'?'点伤害!':' damage!'));
+      }
+
+      // 创建机关发射效果
+      const angle = Math.atan2(player.y - trap.y, player.x - trap.x);
+      for (let p = 0; p < 5; p++) {
+        createParticles(
+          trap.x + Math.cos(angle) * 20,
+          trap.y + Math.sin(angle) * 20,
+          trap.color, 6
+        );
+      }
+
+      // 0.5秒后机关复位
+      setTimeout(function() { trap.active = false; }, 500);
     }
   }
 
@@ -2169,7 +2258,7 @@ function update(dt) {
   }
 
   // 低体力提示（每3秒只提示一次，避免刷屏）
-  if (player.stamina < 10) {
+  if (player.stamina < 5) {
     if (!player._lowStaminaWarnTime || Date.now() - player._lowStaminaWarnTime > 3000) {
       showToast(lang==='zh'?'体力耗尽！移动速度大幅降低！':'Stamina depleted! Movement slowed!');
       player._lowStaminaWarnTime = Date.now();
@@ -2221,12 +2310,7 @@ function update(dt) {
           player.bagWeight += item.weight;
           score += item.value;
           loots++;
-          const isLegendaryGround = item.rarity === 'legendary';
-          if (isLegendaryGround) {
-            showToast('🏆 ' + itemName(item.type) + ' ' + (lang==='zh'?'已获得!!!':'ACQUIRED!!!') + ' 🏆', true);
-          } else {
-            showToast(itemName(item.type) + ' +1');
-          }
+          showToast(itemName(item.type) + ' +1');
           items.splice(i, 1);
         } else {
           showToast(t('fullBag'));
@@ -2448,6 +2532,50 @@ function render() {
     ctx.fillText('\uD83D\uDEAA', evacPoint.x, evacPoint.y + 8);
   }
 
+  // Wall traps (墙壁机关)
+  for (let trap of wallTraps) {
+    const bob = Math.sin(trap.bobOffset + Date.now()/800) * 2;
+    const isActive = trap.active;
+
+    // 机关底座
+    ctx.fillStyle = isActive ? 'rgba(255,0,0,0.4)' : 'rgba(100,100,100,0.2)';
+    ctx.beginPath();
+    ctx.arc(trap.x, trap.y + bob, trap.size + 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 机关本体
+    ctx.fillStyle = isActive ? '#ff3333' : trap.color;
+    ctx.beginPath();
+    ctx.arc(trap.x, trap.y + bob, trap.size, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 机关图标
+    ctx.font = (trap.size * 1.1) + 'px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(trap.icon, trap.x, trap.y + bob);
+
+    // 激活时闪烁效果
+    if (isActive) {
+      ctx.strokeStyle = 'rgba(255,0,0,0.8)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(trap.x, trap.y + bob, trap.size + 6, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // 靠近时警告
+    const distToPlayer = Math.hypot(player.x - trap.x, player.y - trap.y);
+    if (distToPlayer < 150 && !isActive) {
+      const warnAlpha = (150 - distToPlayer) / 150 * 0.5;
+      ctx.strokeStyle = 'rgba(255,0,0,' + warnAlpha + ')';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(trap.x, trap.y + bob, trap.size + 8, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+
   // Containers (可搜刮的)
   for (let c of containers) {
     const bob = Math.sin(c.bobOffset + Date.now()/500) * 2;
@@ -2646,6 +2774,8 @@ function updateHUD() {
   const staminaPercent = player.stamina / player.staminaMax * 100;
   const staminaFill = document.getElementById('staminaFill');
   staminaFill.style.width = staminaPercent + '%';
+  document.getElementById('hudStamVal').textContent = Math.ceil(player.stamina);
+  document.getElementById('hudStamMax').textContent = player.staminaMax;
   // 低体力时体力条变红
   if (player.stamina < 20) {
     staminaFill.style.background = 'linear-gradient(90deg, #c0392b, #e74c3c)';
@@ -2947,6 +3077,7 @@ function modalAction() {
 function endGame(reason) {
   gameState = 'over';
   delete saveData.currentRun;
+  wallTraps = [];
   let savedItems = 0;
   let lostItems = 0;
   if (reason === 'evacuated') {
@@ -3054,6 +3185,7 @@ function endGame(reason) {
 
 function returnToMenu() {
   gameState = 'menu';
+  wallTraps = [];
   document.getElementById('mainMenu').style.display = 'flex';
   document.getElementById('gameUI').style.display = 'none';
   
