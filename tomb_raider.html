@@ -768,7 +768,8 @@ function getDefaultSave() {
       healing: null
     },
     hpMax: 100, staminaMax: 80,
-    safeBoxMax: 0  // 安全箱需要购买解锁
+    safeBoxMax: 0,  // 安全箱需要购买解锁
+    purchasedUpgrades: []  // 已购买的升级项
   };
 }
 let saveData = loadSave() || getDefaultSave();
@@ -862,7 +863,10 @@ const SHOP_ITEMS = [
   { id: 'armor2', type: 'armor', name: '锁子甲', desc: '中级防护，+50生命上限', price: 2000, icon: '\uD83D\uDEE1\uFE0F' },
   { id: 'armor3', type: 'armor', name: '金丝软甲', desc: '高级防护，+100生命上限', price: 4000, icon: '\uD83D\uDC51' },
   { id: 'medkit', type: 'consumable', name: '医疗包x3', desc: '战斗中恢复50生命', price: 300, icon: '\uD83C\uDFE5' },
-  { id: 'ammo_pack', type: 'consumable', name: '弹药包', desc: '补充所有武器弹药', price: 500, icon: '\uD83D\uDDE1\uFE0F' }
+  { id: 'ammo_pack', type: 'consumable', name: '弹药包', desc: '补充所有武器弹药', price: 500, icon: '\uD83D\uDDE1\uFE0F' },
+  { id: 'safebox1', type: 'upgrade', name: '小安全箱', desc: '解锁2格安全箱空间，死亡时保留物品', price: 1500, icon: '\uD83D\uDCE6' },
+  { id: 'safebox2', type: 'upgrade', name: '中安全箱', desc: '解锁4格安全箱空间', price: 3000, icon: '\uD83D\uDCE6' },
+  { id: 'safebox3', type: 'upgrade', name: '大安全箱', desc: '解锁6格安全箱空间', price: 5000, icon: '\uD83D\uDCE6' }
 ];
 
 // ===== 游戏状态 =====
@@ -1363,7 +1367,12 @@ function renderShop() {
 
   SHOP_ITEMS.forEach(function(item) {
     const div = document.createElement('div');
-    const isOwned = item.type === 'weapon' && saveData.ownedWeapons.includes(item.id);
+    let isOwned = false;
+    if (item.type === 'weapon') {
+      isOwned = saveData.ownedWeapons.includes(item.id);
+    } else if (item.type === 'upgrade' && item.id.startsWith('safebox')) {
+      isOwned = saveData.purchasedUpgrades && saveData.purchasedUpgrades.includes(item.id);
+    }
     div.className = 'shop-card' + (isOwned ? ' owned' : '');
     div.innerHTML = 
       '<div class="shop-icon">' + item.icon + '</div>' +
@@ -1391,7 +1400,13 @@ function buyItem(item) {
 
   // 安全箱升级检查
   if (item.type === 'upgrade' && item.id.startsWith('safebox')) {
-    const targetSize = parseInt(item.id.replace('safebox', '')) * 2;
+    const safeboxSizes = { 'safebox1': 2, 'safebox2': 4, 'safebox3': 6 };
+    const targetSize = safeboxSizes[item.id] || 0;
+    if (!saveData.purchasedUpgrades) saveData.purchasedUpgrades = [];
+    if (saveData.purchasedUpgrades.includes(item.id)) {
+      showToast(lang==='zh'?'已购买此安全箱':'Already purchased this safebox');
+      return;
+    }
     if (saveData.safeBoxMax >= targetSize) {
       showToast(lang==='zh'?'已拥有更大或同等安全箱':'Already have equal or larger safebox');
       return;
@@ -1406,9 +1421,11 @@ function buyItem(item) {
   } else if (item.type === 'consumable') {
     // 消耗品
   } else if (item.type === 'upgrade' && item.id.startsWith('safebox')) {
-    // 安全箱升级
-    const newSize = parseInt(item.id.replace('safebox', '')) * 2;
+    const safeboxSizes = { 'safebox1': 2, 'safebox2': 4, 'safebox3': 6 };
+    const newSize = safeboxSizes[item.id] || 0;
     saveData.safeBoxMax = newSize;
+    if (!saveData.purchasedUpgrades) saveData.purchasedUpgrades = [];
+    saveData.purchasedUpgrades.push(item.id);
   }
   saveGame(saveData);
   renderShop();
