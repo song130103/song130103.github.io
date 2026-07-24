@@ -478,6 +478,22 @@
   }
   #tutorialDesktop, #tutorialMobile { display: none; }
 
+/* 密码房样式 */
+.pw-btn:hover { background: #3a1a1a !important; transform: scale(1.05); box-shadow: 0 0 10px rgba(255,0,102,0.3); }
+.pw-btn:active { transform: scale(0.95); }
+#passwordPanel .loot-close { position: absolute; top: 10px; right: 15px; color: #ff0066; font-size: 24px; cursor: pointer; }
+.pw-digit-filled { border-color: #ff0066 !important; color: #ff0066 !important; box-shadow: 0 0 10px rgba(255,0,102,0.3); }
+.pw-digit-correct { border-color: #27ae60 !important; color: #27ae60 !important; }
+.pw-digit-wrong { border-color: #c0392b !important; color: #c0392b !important; animation: pwShake 0.3s; }
+@keyframes pwShake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
+
+/* 密码机关样式 */
+.password-lever-glow { animation: pwLeverPulse 1.5s infinite; }
+@keyframes pwLeverPulse { 0%{box-shadow:0 0 10px rgba(255,0,102,0.3);} 50%{box-shadow:0 0 25px rgba(255,0,102,0.6);} 100%{box-shadow:0 0 10px rgba(255,0,102,0.3);} }
+
+/* 密码房样式 */
+.password-room-locked { border-color: #ff0066 !important; }
+.password-room-open { border-color: #27ae60 !important; }
 </style>
 </head>
 <body>
@@ -622,6 +638,52 @@
   <div class="loot-grid" id="lootGrid"></div>
 </div>
 
+<!-- 密码房面板 -->
+<div id="passwordPanel" style="position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:90%; max-width:400px; background:rgba(10,6,3,0.98); border:3px solid #ff0066; border-radius:16px; padding:25px; display:none; z-index:500; pointer-events:auto; box-shadow:0 0 40px rgba(255,0,102,0.4);">
+  <span class="loot-close" onclick="closePasswordPanel()" style="color:#ff0066;">&#x2715;</span>
+  <h3 style="text-align:center; color:#ff0066; font-size:22px; margin-bottom:5px; text-shadow:0 0 15px rgba(255,0,102,0.5);">🔐 密码房</h3>
+  <p style="text-align:center; color:#8b7355; font-size:12px; margin-bottom:20px;">找到3个密码机关，输入密码开启</p>
+
+  <div style="text-align:center; margin-bottom:15px;">
+    <div id="passwordDisplay" style="display:inline-flex; gap:15px; padding:15px 25px; background:rgba(255,0,102,0.08); border:2px solid #ff0066; border-radius:12px;">
+      <span id="pwDigit1" style="width:45px; height:55px; line-height:55px; background:#1a0f0a; border:2px solid #3a2a1a; border-radius:8px; color:#d4a853; font-size:28px; font-weight:bold; text-align:center;">?</span>
+      <span id="pwDigit2" style="width:45px; height:55px; line-height:55px; background:#1a0f0a; border:2px solid #3a2a1a; border-radius:8px; color:#d4a853; font-size:28px; font-weight:bold; text-align:center;">?</span>
+      <span id="pwDigit3" style="width:45px; height:55px; line-height:55px; background:#1a0f0a; border:2px solid #3a2a1a; border-radius:8px; color:#d4a853; font-size:28px; font-weight:bold; text-align:center;">?</span>
+    </div>
+  </div>
+
+  <div id="pwNumpad" style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-width:240px; margin:0 auto 15px;">
+    <button class="pw-btn" onclick="inputPasswordDigit('1')" style="padding:15px; background:#2a1a0a; border:2px solid #ff0066; border-radius:8px; color:#ff0066; font-size:20px; font-weight:bold; cursor:pointer; transition:all 0.2s;">1</button>
+    <button class="pw-btn" onclick="inputPasswordDigit('2')" style="padding:15px; background:#2a1a0a; border:2px solid #ff0066; border-radius:8px; color:#ff0066; font-size:20px; font-weight:bold; cursor:pointer; transition:all 0.2s;">2</button>
+    <button class="pw-btn" onclick="inputPasswordDigit('3')" style="padding:15px; background:#2a1a0a; border:2px solid #ff0066; border-radius:8px; color:#ff0066; font-size:20px; font-weight:bold; cursor:pointer; transition:all 0.2s;">3</button>
+    <button class="pw-btn" onclick="inputPasswordDigit('4')" style="padding:15px; background:#2a1a0a; border:2px solid #ff0066; border-radius:8px; color:#ff0066; font-size:20px; font-weight:bold; cursor:pointer; transition:all 0.2s;">4</button>
+    <button class="pw-btn" onclick="inputPasswordDigit('5')" style="padding:15px; background:#2a1a0a; border:2px solid #ff0066; border-radius:8px; color:#ff0066; font-size:20px; font-weight:bold; cursor:pointer; transition:all 0.2s;">5</button>
+    <button class="pw-btn" onclick="inputPasswordDigit('6')" style="padding:15px; background:#2a1a0a; border:2px solid #ff0066; border-radius:8px; color:#ff0066; font-size:20px; font-weight:bold; cursor:pointer; transition:all 0.2s;">6</button>
+    <button class="pw-btn" onclick="inputPasswordDigit('7')" style="padding:15px; background:#2a1a0a; border:2px solid #ff0066; border-radius:8px; color:#ff0066; font-size:20px; font-weight:bold; cursor:pointer; transition:all 0.2s;">7</button>
+    <button class="pw-btn" onclick="inputPasswordDigit('8')" style="padding:15px; background:#2a1a0a; border:2px solid #ff0066; border-radius:8px; color:#ff0066; font-size:20px; font-weight:bold; cursor:pointer; transition:all 0.2s;">8</button>
+    <button class="pw-btn" onclick="inputPasswordDigit('9')" style="padding:15px; background:#2a1a0a; border:2px solid #ff0066; border-radius:8px; color:#ff0066; font-size:20px; font-weight:bold; cursor:pointer; transition:all 0.2s;">9</button>
+    <button class="pw-btn" onclick="inputPasswordDigit('0')" style="padding:15px; background:#2a1a0a; border:2px solid #ff0066; border-radius:8px; color:#ff0066; font-size:20px; font-weight:bold; cursor:pointer; transition:all 0.2s; grid-column:2;">0</button>
+  </div>
+
+  <div style="display:flex; gap:10px; justify-content:center;">
+    <button onclick="clearPasswordInput()" style="padding:10px 20px; background:#c0392b; border:none; border-radius:6px; color:#fff; font-size:14px; cursor:pointer;">清除</button>
+    <button onclick="submitPassword()" style="padding:10px 30px; background:#ff0066; border:none; border-radius:6px; color:#fff; font-size:16px; font-weight:bold; cursor:pointer; box-shadow:0 0 15px rgba(255,0,102,0.4);">确认开启</button>
+  </div>
+
+  <div id="pwHint" style="text-align:center; margin-top:15px; color:#8b7355; font-size:12px;"></div>
+  <div id="pwCollected" style="text-align:center; margin-top:10px; color:#27ae60; font-size:13px; font-weight:bold;"></div>
+</div>
+
+<!-- 密码机关提示弹窗 -->
+<div id="passwordDigitModal" style="position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(10,6,3,0.95); border:3px solid #ff0066; border-radius:16px; padding:30px 40px; display:none; z-index:600; text-align:center; pointer-events:auto; box-shadow:0 0 50px rgba(255,0,102,0.5);">
+  <div style="font-size:60px; margin-bottom:10px;">🔑</div>
+  <h3 style="color:#ff0066; font-size:24px; margin-bottom:10px;">发现密码碎片！</h3>
+  <div id="pwDigitDisplay" style="font-size:48px; color:#ff0066; font-weight:bold; margin:15px 0; text-shadow:0 0 20px rgba(255,0,102,0.5);">?</div>
+  <p style="color:#8b7355; font-size:14px;">这是密码的第 <span id="pwDigitIndex" style="color:#ff0066; font-weight:bold;">?</span> 位</p>
+  <p style="color:#8b7355; font-size:12px; margin-top:5px;">已收集: <span id="pwCollectedCount" style="color:#27ae60;">0</span>/3</p>
+  <button onclick="closePasswordDigitModal()" style="margin-top:15px; padding:10px 30px; background:#ff0066; border:none; border-radius:6px; color:#fff; font-size:16px; cursor:pointer;">确定</button>
+</div>
+
 <!-- 背包面板 -->
 <div id="bagPanel">
   <span class="bag-close" onclick="toggleBag()">&#x2715;</span>
@@ -683,6 +745,8 @@ const I18N = {
       '传说级古墓，千古之谜，唯有强者能入'
     ],
     diff: ['简单', '普通', '困难', '极难', '传说'],
+    passwordRoom: '密码房', passwordDigit: '密码碎片', passwordFound: '发现密码',
+    passwordWrong: '密码错误', passwordCorrect: '密码正确！',
     items: {
       gold: '金条', jade: '玉璧', bronze: '青铜鼎', pearl: '夜明珠',
       scroll: '古卷', sword: '古剑', armor: '金丝甲', potion: '还魂丹',
@@ -727,6 +791,8 @@ const I18N = {
       'Legendary tomb, only the strong survive'
     ],
     diff: ['Easy', 'Normal', 'Hard', 'Extreme', 'Legend'],
+    passwordRoom: 'Password Room', passwordDigit: 'Password Digit', passwordFound: 'Password Found',
+    passwordWrong: 'Wrong Password', passwordCorrect: 'Password Correct!',
     items: {
       gold: 'Gold Bar', jade: 'Jade Disc', bronze: 'Bronze Tripod', pearl: 'Pearl',
       scroll: 'Scroll', sword: 'Sword', armor: 'Armor', potion: 'Potion',
@@ -904,6 +970,11 @@ let enemies = [];
 let bullets = [];
 let containers = [];  // 可搜刮的容器
 let levers = [];      // 机关
+let passwordLevers = []; // 密码机关（明十三陵专属）
+let passwordRoom = null; // 密码房
+let collectedPasswords = []; // 已收集的密码数字
+let passwordInput = ''; // 当前输入的密码
+let passwordRoomOpen = false; // 密码房是否开启
 let items = [];       // 地面上的物品（从容器搜出后）
 let particles = [];
 let camera = { x: 0, y: 0 };
@@ -1004,6 +1075,8 @@ function setupControls() {
     keys[e.code] = true;
     if (e.code === 'KeyF' && gameState === 'playing') {
       if (lootingContainer) closeLoot();
+      else if (nearPasswordLever && !nearPasswordLever.activated) activatePasswordLever(nearPasswordLever);
+      else if (nearPasswordRoom && passwordRoom.locked) openPasswordRoomPanel();
       else if (nearLever && !nearLever.activated) activateLever();
       else if (nearContainer) openContainer(nearContainer);
       else tryEvac();
@@ -1081,6 +1154,10 @@ function setupControls() {
     if (gameState !== 'playing') return;
     if (lootingContainer) {
       closeLoot();
+    } else if (nearPasswordLever && !nearPasswordLever.activated) {
+      activatePasswordLever(nearPasswordLever);
+    } else if (nearPasswordRoom && passwordRoom.locked) {
+      openPasswordRoomPanel();
     } else if (nearLever && !nearLever.activated) {
       activateLever();
     } else if (nearContainer) {
@@ -1094,6 +1171,10 @@ function setupControls() {
     if (gameState !== 'playing') return;
     if (lootingContainer) {
       closeLoot();
+    } else if (nearPasswordLever && !nearPasswordLever.activated) {
+      activatePasswordLever(nearPasswordLever);
+    } else if (nearPasswordRoom && passwordRoom.locked) {
+      openPasswordRoomPanel();
     } else if (nearLever && !nearLever.activated) {
       activateLever();
     } else if (nearContainer) {
@@ -1821,6 +1902,84 @@ function startGame(mapIndex) {
     bobOffset: Math.random() * Math.PI * 2
   });
 
+  // ===== 明十三陵专属：密码房系统 =====
+  passwordLevers = [];
+  passwordRoom = null;
+  collectedPasswords = [];
+  passwordInput = '';
+  passwordRoomOpen = false;
+
+  if (mapIndex === 4) {
+    // 生成3个密码机关，分布在不同房间
+    const usedRooms = [];
+    const passwordDigits = [];
+    for (let d = 0; d < 3; d++) {
+      passwordDigits.push(Math.floor(Math.random() * 10)); // 0-9随机数字
+    }
+    // 保存到存档中用于验证
+    saveData._passwordDigits = passwordDigits;
+
+    for (let i = 0; i < 3; i++) {
+      let roomIdx;
+      do {
+        roomIdx = 1 + Math.floor(Math.random() * (mapInfo.rooms.length - 1));
+      } while (usedRooms.includes(roomIdx));
+      usedRooms.push(roomIdx);
+
+      const pwRoom = mapInfo.rooms[roomIdx];
+      passwordLevers.push({
+        x: pwRoom.cx * TILE_SIZE,
+        y: pwRoom.cy * TILE_SIZE,
+        digit: passwordDigits[i],
+        index: i,
+        icon: '\uD83D\uDD11',
+        size: 28,
+        color: '#ff0066',
+        activated: false,
+        id: Date.now() + '_pw_' + i,
+        bobOffset: Math.random() * Math.PI * 2
+      });
+    }
+
+    // 生成密码房（在距离起点最远的房间之一）
+    let maxDist = 0;
+    let pwRoomIdx = 0;
+    for (let r = 0; r < mapInfo.rooms.length; r++) {
+      const d = Math.hypot(mapInfo.rooms[r].cx - startRoom.cx, mapInfo.rooms[r].cy - startRoom.cy);
+      if (d > maxDist && !usedRooms.includes(r)) {
+        maxDist = d;
+        pwRoomIdx = r;
+      }
+    }
+    const pwRoom = mapInfo.rooms[pwRoomIdx];
+    passwordRoom = {
+      x: pwRoom.cx * TILE_SIZE,
+      y: pwRoom.cy * TILE_SIZE,
+      radius: 80,
+      locked: true,
+      loot: []
+    };
+
+    // 密码房内预生成超级稀有物品（100%刷新）
+    const legendaryItems = LOOT_TYPES.filter(function(it) {
+      return it.rarity === 'legendary' && (!it.mapOnly || it.mapOnly === 4);
+    });
+    // 随机选2-3个传说物品
+    const lootCount = 2 + Math.floor(Math.random() * 2);
+    for (let i = 0; i < lootCount; i++) {
+      const itemDef = legendaryItems[Math.floor(Math.random() * legendaryItems.length)];
+      passwordRoom.loot.push({
+        type: itemDef.type,
+        value: itemDef.value,
+        weight: itemDef.weight,
+        icon: itemDef.icon,
+        rarity: itemDef.rarity,
+        id: Date.now() + '_pwloot_' + i,
+        revealed: true
+      });
+    }
+  }
+
   // 生成墙壁机关（随机刷新在墙壁上）
   wallTraps = [];
   const trapCount = 3 + mapIndex * 2; // 随难度增加，但数量大幅减少
@@ -2394,6 +2553,25 @@ function update(dt) {
     }
   }
 
+  // Check near password levers (明十三陵专属)
+  let nearPasswordLever = null;
+  let nearestPwLeverDist = 60;
+  for (let pl of passwordLevers) {
+    if (pl.activated) continue;
+    const dist = Math.hypot(player.x - pl.x, player.y - pl.y);
+    if (dist < nearestPwLeverDist) {
+      nearestPwLeverDist = dist;
+      nearPasswordLever = pl;
+    }
+  }
+
+  // Check near password room
+  let nearPasswordRoom = false;
+  if (passwordRoom && passwordRoom.locked) {
+    const dist = Math.hypot(player.x - passwordRoom.x, player.y - passwordRoom.y);
+    nearPasswordRoom = dist < passwordRoom.radius;
+  }
+
   // Check near containers
   nearContainer = null;
   let nearestDist = 50;
@@ -2422,14 +2600,30 @@ function update(dt) {
   }
 
   const hint = document.getElementById('interactHint');
-  if (nearLever && !nearLever.activated) {
+  if (nearPasswordLever && !nearPasswordLever.activated) {
+    hint.style.display = 'block';
+    hint.textContent = (lang==='zh'?'按 F 获取密码碎片 (' + (nearPasswordLever.index + 1) + '/3)':'Press F for password digit (' + (nearPasswordLever.index + 1) + '/3)');
+    hint.style.borderColor = '#ff0066';
+    hint.style.color = '#ff0066';
+  } else if (nearPasswordRoom && passwordRoom.locked) {
+    hint.style.display = 'block';
+    hint.textContent = (lang==='zh'?'按 F 输入密码开启密码房':'Press F to enter password');
+    hint.style.borderColor = '#ff0066';
+    hint.style.color = '#ff0066';
+  } else if (nearLever && !nearLever.activated) {
     hint.style.display = 'block';
     hint.textContent = (lang==='zh'?'按 F 启动机关':'Press F to activate lever');
+    hint.style.borderColor = '#d4a853';
+    hint.style.color = '#d4a853';
   } else if (nearContainer && !lootingContainer) {
     hint.style.display = 'block';
     hint.textContent = (lang==='zh'?'按 F 搜刮 ':'Press F to loot ') + containerName(nearContainer.type);
+    hint.style.borderColor = '#d4a853';
+    hint.style.color = '#d4a853';
   } else {
     hint.style.display = 'none';
+    hint.style.borderColor = '#d4a853';
+    hint.style.color = '#d4a853';
   }
 
   // Pickup ground items
@@ -2490,9 +2684,31 @@ function update(dt) {
     const lootBtn = document.getElementById('lootBtn');
     const lootIcon = document.getElementById('lootIcon');
     const lootText = document.getElementById('lootText');
-    if (nearLever && !nearLever.activated) {
+    if (nearPasswordLever && !nearPasswordLever.activated) {
       lootBtn.classList.add('lever-mode');
       lootBtn.classList.remove('evac-mode');
+      lootBtn.style.background = 'rgba(255,0,102,0.3)';
+      lootBtn.style.borderColor = 'rgba(255,0,102,0.8)';
+      lootBtn.style.color = '#ff0066';
+      lootBtn.style.boxShadow = '0 0 15px rgba(255,0,102,0.4)';
+      lootIcon.textContent = '🔑';
+      lootText.textContent = lang === 'zh' ? '密码' : 'Pw';
+    } else if (nearPasswordRoom && passwordRoom.locked) {
+      lootBtn.classList.add('lever-mode');
+      lootBtn.classList.remove('evac-mode');
+      lootBtn.style.background = 'rgba(255,0,102,0.3)';
+      lootBtn.style.borderColor = 'rgba(255,0,102,0.8)';
+      lootBtn.style.color = '#ff0066';
+      lootBtn.style.boxShadow = '0 0 15px rgba(255,0,102,0.4)';
+      lootIcon.textContent = '🔐';
+      lootText.textContent = lang === 'zh' ? '密码房' : 'PwRoom';
+    } else if (nearLever && !nearLever.activated) {
+      lootBtn.classList.add('lever-mode');
+      lootBtn.classList.remove('evac-mode');
+      lootBtn.style.background = '';
+      lootBtn.style.borderColor = '';
+      lootBtn.style.color = '';
+      lootBtn.style.boxShadow = '';
       lootIcon.textContent = '⚙️';
       lootText.textContent = lang === 'zh' ? '机关' : 'Lever';
     } else if (evacPoint && evacOpen) {
@@ -2501,17 +2717,29 @@ function update(dt) {
       if (nearEvac) {
         lootBtn.classList.add('evac-mode');
         lootBtn.classList.remove('lever-mode');
+        lootBtn.style.background = '';
+        lootBtn.style.borderColor = '';
+        lootBtn.style.color = '';
+        lootBtn.style.boxShadow = '';
         lootIcon.textContent = '🚪';
         lootText.textContent = lang === 'zh' ? '撤离' : 'Evac';
       } else {
         lootBtn.classList.remove('evac-mode');
         lootBtn.classList.remove('lever-mode');
+        lootBtn.style.background = '';
+        lootBtn.style.borderColor = '';
+        lootBtn.style.color = '';
+        lootBtn.style.boxShadow = '';
         lootIcon.textContent = '💼';
         lootText.textContent = lang === 'zh' ? '搜刮' : 'Loot';
       }
     } else {
       lootBtn.classList.remove('evac-mode');
       lootBtn.classList.remove('lever-mode');
+      lootBtn.style.background = '';
+      lootBtn.style.borderColor = '';
+      lootBtn.style.color = '';
+      lootBtn.style.boxShadow = '';
       lootIcon.textContent = '💼';
       lootText.textContent = lang === 'zh' ? '搜刮' : 'Loot';
     }
@@ -2671,6 +2899,101 @@ function render() {
       ctx.stroke();
     }
     ctx.globalAlpha = 1;
+  }
+
+  // 密码机关（明十三陵专属）
+  for (let pl of passwordLevers) {
+    const bob = Math.sin(pl.bobOffset + Date.now()/400) * 4;
+    const pulse = Math.sin(Date.now()/300) * 0.3 + 0.7;
+
+    if (pl.activated) {
+      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = 'rgba(100,100,100,0.2)';
+    } else {
+      // 脉冲光效
+      ctx.fillStyle = 'rgba(255,0,102,' + (pulse * 0.4) + ')';
+      ctx.beginPath();
+      ctx.arc(pl.x, pl.y + bob, pl.size + 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,0,102,0.25)';
+    }
+
+    ctx.beginPath();
+    ctx.arc(pl.x, pl.y + bob, pl.size + 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = pl.activated ? '#666' : pl.color;
+    ctx.beginPath();
+    ctx.arc(pl.x, pl.y + bob, pl.size, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.font = (pl.size * 1.3) + 'px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(pl.icon, pl.x, pl.y + bob);
+
+    // 显示序号
+    if (!pl.activated) {
+      ctx.fillStyle = '#ff0066';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.fillText('#' + (pl.index + 1), pl.x, pl.y + bob - pl.size - 10);
+    }
+
+    ctx.globalAlpha = 1;
+  }
+
+  // 密码房
+  if (passwordRoom) {
+    const bob = Math.sin(Date.now()/500) * 5;
+    const pulse = Math.sin(Date.now()/400) * 0.3 + 0.7;
+
+    if (passwordRoom.locked) {
+      // 锁定状态 - 红色脉冲
+      ctx.fillStyle = 'rgba(255,0,102,' + (pulse * 0.2) + ')';
+      ctx.beginPath();
+      ctx.arc(passwordRoom.x, passwordRoom.y + bob, passwordRoom.radius + 10, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = 'rgba(255,0,102,' + pulse + ')';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([8, 4]);
+      ctx.beginPath();
+      ctx.arc(passwordRoom.x, passwordRoom.y + bob, passwordRoom.radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = '#ff0066';
+      ctx.font = 'bold 28px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('🔐', passwordRoom.x, passwordRoom.y + bob);
+
+      ctx.fillStyle = '#ff0066';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.fillText(lang==='zh'?'密码房':'Pw Room', passwordRoom.x, passwordRoom.y + bob + 30);
+    } else {
+      // 开启状态 - 绿色
+      ctx.fillStyle = 'rgba(39,174,96,' + (pulse * 0.3) + ')';
+      ctx.beginPath();
+      ctx.arc(passwordRoom.x, passwordRoom.y + bob, passwordRoom.radius + 10, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#27ae60';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(passwordRoom.x, passwordRoom.y + bob, passwordRoom.radius, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.fillStyle = '#2ecc71';
+      ctx.font = 'bold 28px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('🔓', passwordRoom.x, passwordRoom.y + bob);
+
+      ctx.fillStyle = '#2ecc71';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.fillText(lang==='zh'?'已开启':'Opened', passwordRoom.x, passwordRoom.y + bob + 30);
+    }
   }
 
   // Evac point
@@ -2976,7 +3299,16 @@ function updateHUD() {
   }
   document.getElementById('gameTimer').textContent = formatTime(timeLimit - gameTime);
   document.getElementById('gameScore').textContent = (lang === 'zh' ? '摸金值: ' : 'Score: ') + score;
-  document.getElementById('enemyCount').textContent = (lang === 'zh' ? '敌人: ' : 'Enemies: ') + enemies.length + ' | ' + (lang === 'zh' ? '容器: ' : 'Containers: ') + containers.filter(function(c){return !c.looted;}).length;
+  let enemyCountText = (lang === 'zh' ? '敌人: ' : 'Enemies: ') + enemies.length + ' | ' + (lang === 'zh' ? '容器: ' : 'Containers: ') + containers.filter(function(c){return !c.looted;}).length;
+  // 明十三陵显示密码收集进度
+  if (currentMap === 4 && passwordLevers.length > 0) {
+    const collected = passwordLevers.filter(function(pl) { return pl.activated; }).length;
+    enemyCountText += ' | ' + (lang === 'zh' ? '🔑密码: ' : '🔑Pw: ') + collected + '/3';
+    if (passwordRoomOpen) {
+      enemyCountText += ' ' + (lang === 'zh' ? '✓已开启' : '✓Open');
+    }
+  }
+  document.getElementById('enemyCount').textContent = enemyCountText;
   document.getElementById('ammoDisplay').textContent = wpn.ammo + ' / ' + wpn.totalAmmo;
   document.getElementById('weaponName').textContent = weaponName(player.weapon) + (player.reloading ? ' [' + t('reloading') + ']' : '');
   document.getElementById('mapName').textContent = t('mapNames')[currentMap];
@@ -3218,6 +3550,146 @@ function activateLever() {
   createParticles(nearLever.x, nearLever.y, '#9b59b6', 20);
 }
 
+// ===== 密码房系统函数 =====
+
+function activatePasswordLever(pwLever) {
+  if (pwLever.activated) return;
+  pwLever.activated = true;
+
+  // 显示密码数字弹窗
+  const modal = document.getElementById('passwordDigitModal');
+  document.getElementById('pwDigitDisplay').textContent = pwLever.digit;
+  document.getElementById('pwDigitIndex').textContent = (pwLever.index + 1);
+
+  // 记录已收集
+  if (!collectedPasswords.includes(pwLever.digit + '_' + pwLever.index)) {
+    collectedPasswords.push(pwLever.digit + '_' + pwLever.index);
+  }
+  document.getElementById('pwCollectedCount').textContent = collectedPasswords.length;
+  modal.style.display = 'block';
+
+  createParticles(pwLever.x, pwLever.y, '#ff0066', 25);
+  showToast('🔑 ' + (lang==='zh'?'获得密码第':'Got password digit') + (pwLever.index + 1) + (lang==='zh'?'位: ':'th: ') + pwLever.digit, true);
+}
+
+function closePasswordDigitModal() {
+  document.getElementById('passwordDigitModal').style.display = 'none';
+}
+
+function openPasswordRoomPanel() {
+  if (!passwordRoom || passwordRoomOpen) return;
+  const panel = document.getElementById('passwordPanel');
+  panel.style.display = 'block';
+  passwordInput = '';
+  updatePasswordDisplay();
+
+  // 显示已收集的密码提示
+  const hintEl = document.getElementById('pwCollected');
+  if (collectedPasswords.length > 0) {
+    let hintText = lang==='zh'?'已收集密码: ':'Collected: ';
+    collectedPasswords.forEach(function(cp) {
+      const parts = cp.split('_');
+      hintText += '第' + (parseInt(parts[1]) + 1) + '位=' + parts[0] + ' ';
+    });
+    hintEl.textContent = hintText;
+  } else {
+    hintEl.textContent = lang==='zh'?'尚未收集任何密码碎片':'No password digits collected yet';
+  }
+
+  document.getElementById('pwHint').textContent = lang==='zh'?'输入3位密码开启密码房':'Enter 3-digit password to open';
+}
+
+function closePasswordPanel() {
+  document.getElementById('passwordPanel').style.display = 'none';
+  passwordInput = '';
+}
+
+function inputPasswordDigit(digit) {
+  if (passwordInput.length < 3) {
+    passwordInput += digit;
+    updatePasswordDisplay();
+  }
+}
+
+function clearPasswordInput() {
+  passwordInput = '';
+  updatePasswordDisplay();
+  // 清除错误状态
+  for (let i = 1; i <= 3; i++) {
+    document.getElementById('pwDigit' + i).classList.remove('pw-digit-wrong');
+  }
+}
+
+function updatePasswordDisplay() {
+  for (let i = 1; i <= 3; i++) {
+    const el = document.getElementById('pwDigit' + i);
+    if (i <= passwordInput.length) {
+      el.textContent = passwordInput[i - 1];
+      el.classList.add('pw-digit-filled');
+      el.classList.remove('pw-digit-wrong');
+    } else {
+      el.textContent = '?';
+      el.classList.remove('pw-digit-filled');
+      el.classList.remove('pw-digit-wrong');
+    }
+  }
+}
+
+function submitPassword() {
+  if (passwordInput.length !== 3) {
+    showToast(lang==='zh'?'请输入完整3位密码':'Enter complete 3-digit password');
+    return;
+  }
+
+  const correctPassword = saveData._passwordDigits ? saveData._passwordDigits.join('') : '';
+
+  if (passwordInput === correctPassword) {
+    // 密码正确！
+    passwordRoomOpen = true;
+    passwordRoom.locked = false;
+
+    // 将密码房物品放到地面上
+    for (let item of passwordRoom.loot) {
+      items.push({
+        x: passwordRoom.x + (Math.random() - 0.5) * 60,
+        y: passwordRoom.y + (Math.random() - 0.5) * 60,
+        type: item.type,
+        value: item.value,
+        weight: item.weight,
+        icon: item.icon,
+        rarity: item.rarity,
+        id: item.id,
+        bobOffset: Math.random() * Math.PI * 2,
+        pickupCooldown: 0
+      });
+    }
+
+    // 视觉反馈
+    for (let i = 1; i <= 3; i++) {
+      document.getElementById('pwDigit' + i).classList.add('pw-digit-correct');
+    }
+
+    createParticles(passwordRoom.x, passwordRoom.y, '#ff0066', 50);
+    createParticles(passwordRoom.x, passwordRoom.y, '#f1c40f', 30);
+
+    showToast('🏆🏆🏆 ' + (lang==='zh'?'密码正确！密码房开启！传说级宝物已出现！':'Password correct! Room opened! Legendary loot!') + ' 🏆🏆🏆', true);
+
+    setTimeout(function() {
+      closePasswordPanel();
+    }, 1500);
+  } else {
+    // 密码错误
+    for (let i = 1; i <= 3; i++) {
+      document.getElementById('pwDigit' + i).classList.add('pw-digit-wrong');
+    }
+    showToast(lang==='zh'?'密码错误！请重新输入':'Wrong password! Try again');
+    setTimeout(function() {
+      passwordInput = '';
+      updatePasswordDisplay();
+    }, 800);
+  }
+}
+
 function showToast(msg, isLegendary) {
   const toast = document.getElementById('toast');
   toast.textContent = msg;
@@ -3286,6 +3758,11 @@ function endGame(reason) {
   gameState = 'over';
   delete saveData.currentRun;
   wallTraps = [];
+  passwordLevers = [];
+  passwordRoom = null;
+  collectedPasswords = [];
+  passwordInput = '';
+  passwordRoomOpen = false;
   let savedItems = 0;
   let lostItems = 0;
   if (reason === 'evacuated') {
@@ -3402,6 +3879,13 @@ function endGame(reason) {
 function returnToMenu() {
   gameState = 'menu';
   wallTraps = [];
+  passwordLevers = [];
+  passwordRoom = null;
+  collectedPasswords = [];
+  passwordInput = '';
+  passwordRoomOpen = false;
+  document.getElementById('passwordPanel').style.display = 'none';
+  document.getElementById('passwordDigitModal').style.display = 'none';
   document.getElementById('mainMenu').style.display = 'flex';
   document.getElementById('gameUI').style.display = 'none';
   
