@@ -1,0 +1,74 @@
+<link rel="stylesheet" href="../style.css">
+<body
+<div>
+    WeChat
+    <button onclick="add('weixin://','WeChat','https://pp.myapp.com/ma_icon/0/icon_10910_1783590847/256')">
+        Add to application list
+    </button>
+</div>
+<div>
+    QQ
+    <button onclick="add('mqq://','QQ','https://pp.myapp.com/ma_icon/0/icon_6633_1783476267/256')">
+        Add to application list
+    </button>
+</div>
+<div>
+    Douyin(TikTok)
+    <button onclick="add('douyin://','Douyin (TikTok)','https://pp.myapp.com/ma_icon/0/icon_42350811_1783418776/256')">
+        Add to application list
+    </button>
+</div>
+<div>
+    Email
+    <button onclick="add('mailto://','Email','https://pp.myapp.com/ma_icon/0/icon_1129680_1778489755/256')">
+        Add to application list
+    </button>
+</div>
+<div>
+    Call
+    <button onclick="add('tel://','Call','https://pp.myapp.com/ma_icon/0/icon_1129680_1778489755/256')">
+        Add to application list
+    </button>
+</div>
+<div>
+    Message
+    <button onclick="add('sms://','Message','https://pp.myapp.com/ma_icon/0/icon_54484065_1783444157/256')">
+        Add to application list
+    </button>
+</div>
+<div>
+    Image
+    <button onclick="add('content://media/external/images/media/','Image','https://pp.myapp.com/ma_icon/0/icon_54368462_1779757249/256')">
+        Add to application list
+    </button>
+</div>
+<div>
+    System settings
+    <button onclick="add('settings://','System settings','https://pp.myapp.com/ma_icon/0/icon_54423574_1781597993/256')">
+        Add to application list
+    </button>
+</div>
+<p>If you cannot find the application you want here, just send an email to 972059313@qq.com to tell us!</p>
+
+<script src="../script.js"></script>
+<script>
+function add(url,name,ico){
+    const html = `<hr>
+<div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0.1);border-radius:50%;transition:all 0.3s ease;" oncontextmenu="removeSelection(event,&quot;${url}&quot;,&quot;${name}&quot;,&quot;${ico}&quot;)">
+<img src="${ico}" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%;" alt="${name}" onclick="location.href='${url}'">
+</div>`;
+
+    getItem('/usr/zdesktop/preference/desktop_icon.html', res => {
+        // 容错：本地无存储则res为空字符串
+        let old = res || "";
+        // 新图标追加在底部
+        const newAll = old + html;
+        // 保存本地存储
+        saveItemLS('/usr/zdesktop/preference/desktop_icon.html', newAll);
+
+        // 修复1：判断桌面applist容器是否存在，避免报错无法添加
+        alert('Add successfully. Please refresh Zhubuntu.');
+    });
+}
+</script>
+</body>
