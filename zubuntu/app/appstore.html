@@ -1,8 +1,5 @@
 <link rel="stylesheet" href="../style.css">
-<body>
-<div style="width:100%;height:6vh;background:#449944;color:white;padding:0">
-    <center>App Store</center>
-</div>
+<body
 <div>
     WeChat
     <button onclick="add('weixin://','WeChat','https://pp.myapp.com/ma_icon/0/icon_10910_1783590847/256')">
@@ -61,19 +58,15 @@ function add(url,name,ico){
 <img src="${ico}" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%;" alt="${name}" onclick="location.href='${url}'">
 </div>`;
 
-    getItem(1, res => {
+    getItem('/usr/zdesktop/preference/desktop_icon.html', res => {
         // 容错：本地无存储则res为空字符串
         let old = res || "";
         // 新图标追加在底部
         const newAll = old + html;
         // 保存本地存储
-        saveItemLS(1, newAll);
+        saveItemLS('/usr/zdesktop/preference/desktop_icon.html', newAll);
 
         // 修复1：判断桌面applist容器是否存在，避免报错无法添加
-        const appBox = document.getElementById('applist');
-        if(appBox){
-            appBox.innerHTML = defaltApp + newAll;
-        }
         alert('Add successfully. Please refresh Zhubuntu.');
     });
 }
