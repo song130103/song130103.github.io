@@ -38,7 +38,7 @@ const defaltApp = `
 </div>
 <hr>
 <div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;transition:all 0.3s ease;">
-<img src="img/1.webp" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" onclick="opn('bt')">
+<img src="img/1.webp" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" onclick="opn('bt','Community')">
 </div>
 <hr>
 <div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;transition:all 0.3s ease;">
@@ -55,7 +55,7 @@ getItem('/usr/zdesktop/preference/desktop_background_image.var', res => {
     if (!(res == '')) {
         document.getElementById('desktop').style.backgroundImage = res;
         document.getElementById('desktop').style.backgroundRepeat = 'no-repeat';
-        document.getElementById('desktop').style.backgroundSize = 'cover';
+        document.getElementById('desktop').style.backgroundSize = 'cover';document.getElementById('desktop').style.backgroundPosition = 'center center';
     }
 });
 const wd = document.getElementById('wd');
@@ -174,12 +174,39 @@ setInterval(() => {
 
 // 设置面板开关
 function options() {
+    document.getElementById('y2').value=document.getElementById('aud').volume;
     document.getElementById('opt').style.display = 'block';
 }
-function hide() {
-    document.getElementById('opt').style.display = 'none';
-}
 
+    function hide() {
+    document.getElementById('opt').style.display = 'none';
+    // 统一提取元素，减少重复DOM查询
+    const audio1 = document.getElementById('aud');
+    const audio2 = document.getElementById('auds');
+    const volume = document.getElementById('y2').value / 100;
+
+    // 统一配置音频参数
+    const audioConfig = {
+        type: 'audio/ogg',
+        src: './audio-volume-change.mp3' // 建议替换mp3，兼容性更强
+    };
+
+    audio1.volume = volume;
+    audio1.type = audioConfig.type;
+    audio1.src = audioConfig.src;
+    audio1.load();
+
+    audio2.volume = volume;
+    audio2.type = audioConfig.type;
+    audio2.src = audioConfig.src;
+    audio2.load();
+
+    // 两个音频都执行播放，捕获错误弹窗
+    audio1.play().catch(err => alert("aud播放错误：" + err));
+    audio1.muted=false;
+    
+}
+ 
 // 锁屏解锁
 function lc() {
     document.getElementById('lockscreen').style.display = 'flex';
@@ -331,8 +358,229 @@ submitInstallLanyuePackage();
 function lanyueOpen(a){
     getItem('/usr/app/'+a, res => {
         let finalCode = res;
-        const lanyueCodeList=['文档.','主体.','获取元素(','HTML内容=','样式.','宽度:','高度:','宽度=','高度=','窗口.','警告(','地址.','链接到=','打开(','大标题>','副标题>','小标题>','段落>','超链接>','<图片','唯一标识=','居中>','粗体>','斜体>','下划线>','删除线>','引用>','<输入框','输入提示=','资源链接=','视频>','音频>','内联样式>','按下执行=','css类=','声明函数','定时执行(','延时执行(','添加事件监听器(','({[转义]})','<容器','容器>','<视频','<音频','location.href=','window.open('];
-        const JavaScriptList=['document.','body.','getElementById(','innerHTML=','style.','width:','height:','width=','height=','window.','alert(','location.','href=','open(','h1>','h2>','h3>','p>','<img','id=','center>','b>','i>','u>','del>','q>','<input','placeholder=','src=','video>','audio>','style>','onclick=','class=','function','setInterval(','setTimeout(','addEventListener(','','<div','div>','<video','<audio','',''];
+        const lanyueCodeList = [
+    '文档.',
+    '主体.',
+    '获取元素(',
+    'HTML内容=',
+    '样式.',
+    '宽度:',
+    '高度:',
+    '宽度=',
+    '高度=',
+    '窗口.',
+    '警告(',
+    '地址.',
+    '链接到=',
+    '打开(',
+    '大标题>',
+    '副标题>',
+    '小标题>',
+    '段落>',
+    '超链接>',
+    '<图片',
+    '唯一标识=',
+    '居中>',
+    '粗体>',
+    '斜体>',
+    '下划线>',
+    '删除线>',
+    '引用>',
+    '<输入框',
+    '输入提示=',
+    '资源链接=',
+    '视频>',
+    'audio>',
+    '内联样式>',
+    '按下执行=',
+    'CSS类=',
+    '声明函数',
+    '定时执行(',
+    '延时执行(',
+    '添加事件监听器(',
+    '({[转义]})',
+    '<容器',
+    '容器>',
+    '<视频',
+    '如果(',
+    '否则如果(',
+    '否则{',
+    '捕捉错误(',
+    '声明变量',
+    '声明常量',
+    '获取本地文件(',
+    '写入本地文件(',
+    '字号:',
+    '像素;',
+    '拒绝默认事件(',
+    '<HTML内容',
+    'HTML内容>',
+    '<元数据',
+    '元数据>',
+    '头部>',
+    '语言="英文"',
+    '字符设置="',
+    '类别="',
+    '类型="',
+    '尺寸="',
+    'PNG图片',
+    '<链接',
+    '图标',
+    'SVG图片',
+    '任何',
+    '名称=',
+    '视口',
+    '内容=',
+    '设备宽度',
+    '初始缩放=',
+    '<主要内容',
+    '主要内容>',
+    '<按钮',
+    '按钮>',
+    '<动画',
+    '动画>',
+    '<路径',
+    '路径>',
+    '<大标题',
+    '<副标题',
+    '<小标题',
+    '<输入框',
+    '<表单',
+    '<导航栏',
+    '"提交"',
+    '标题=',
+    '<脚本',
+    '脚本>',
+    'WOFF2字体',
+    '作为=',
+    '跨域=',
+    '匿名',
+    '"字体"',
+    '"样式表"',
+    '<部分',
+    '部分>',
+    '<上部',
+    '上部>',
+    '<主体',
+    '主体>',
+    // 新增缺失映射关键字
+    '名称=',
+    '填充='
+];
+
+// 清理掉空字符串、严格对齐下标
+const JavaScriptList = [
+    'document.',
+    'body.',
+    'getElementById(',
+    'innerHTML=',
+    'style.',
+    'width:',
+    'height:',
+    'width=',
+    'height=',
+    'window.',
+    'alert(',
+    'location.',
+    'href=',
+    'open(',
+    'h1>',
+    'h2>',
+    'h3>',
+    'p>',
+    '<a',
+    '<img',
+    'id=',
+    'center>',
+    'b>',
+    'i>',
+    'u>',
+    'del>',
+    'q>',
+    '<input',
+    'placeholder=',
+    'src=',
+    'video>',
+    'audio>',
+    'style>',
+    'onclick=',
+    'class=',
+    'function',
+    'setInterval(',
+    'setTimeout(',
+    'addEventListener(',
+    '', // 转义占位无对应原生代码
+    '<div',
+    'div>',
+    '<video muted',
+    'if(',
+    'else if(',
+    'else{',
+    'catch(',
+    'let',
+    'const',
+    'getItem(',
+    'saveItemLS(',
+    'font-size',
+    'px;',
+    'preventDefault(',
+    '<html',
+    'html>',
+    '<meta',
+    'meta>',
+    'head>',
+    'lang="en"',
+    'charset="',
+    'rel="',
+    'type="',
+    'sizes="',
+    'image/png',
+    '<link',
+    'icon',
+    'image/svg+xml',
+    'any',
+    'name=',
+    'viewport',
+    'content=',
+    'device-width',
+    'initial-scale=',
+    '<main',
+    'main>',
+    '<button',
+    'button>',
+    '<animate',
+    'animate>',
+    '<path',
+    'path>',
+    '<h1',
+    '<h2',
+    '<h3',
+    '<input',
+    '<form',
+    '<nav',
+    '"submit"',
+    'title=',
+    '<script',
+    'script>',
+    'font/woff2',
+    'as=',
+    'crossorigin=',
+    'anonymous',
+    '"font"',
+    '"stylesheet"',
+    '<section',
+    'section>',
+    '<div',    // 修复：<上部 不再映射article，改用div
+    'div>',
+    '<body',   // 重大修复：<主体 正确映射body（原错误映射main）
+    'body>',
+    // 新增关键字对应值
+    'name=',
+    'fill='
+];
+
+// 构建映射对象（推荐用Object，查询更快）
+
         for(let i=0;i<lanyueCodeList.length;i++){
             finalCode=finalCode.replaceAll(lanyueCodeList[i],JavaScriptList[i]);
         }
