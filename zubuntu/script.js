@@ -28,26 +28,29 @@ const defaltApp = `
 <div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;display:flex;text-align:center;justify-content:center">
 <img src="img/3.webp" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" onclick="opn('firefox','ChinaSo Browser')">
 </div>
-<hr>
+
 <div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;transition:all 0.3s ease;">
 <img src="img/4.jpg" style="width:100%;height:100%;object-fit:contain;border-radius:50%" onclick="opn('calc','Professional Calculator')">
 </div>
-<hr>
+
 <div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;transition:all 0.3s ease;">
 <img src="img/2.webp" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" onclick="opn('bash','JS Terminal')">
 </div>
-<hr>
+
 <div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;transition:all 0.3s ease;">
 <img src="img/1.webp" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" onclick="opn('bt','Community')">
 </div>
-<hr>
+
 <div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;transition:all 0.3s ease;">
 <img src="img/add.svg" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" onclick="document.getElementById('maskAddApp').style.display='block'">
 </div>
-<hr>
+
 <div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;transition:all 0.3s ease;"><img src="img/5.png" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" onclick="opn('novelReader','Poetry Ready')"></div>
-<hr>
-<div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;transition:all 0.3s ease;"><img src="img/6.png" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" onclick="opn('appstore','App Center')"></div>`;
+
+<div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;transition:all 0.3s ease;"><img src="img/6.png" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" onclick="opn('appstore','App Center')"></div>
+
+
+<div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;transition:all 0.3s ease;"><img src="img/mc.ico" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%" onclick="opn('mc','Minecraft')"></div>`;
 
 
 // 读取壁纸
@@ -127,9 +130,9 @@ function closeWindow() {
 // 窗口最大化
 function fullWindow() {
     wd.style.top = '3vh';
-    wd.style.left = '17vw';
+    wd.style.left = '6vw';
     wd.style.height = '97vh';
-    wd.style.width = '83vw';
+    wd.style.width = '94vw';
     wd.style.bottom = '0';
     wd.style.right = '0';
     wds.style.borderRadius = '0';
@@ -279,7 +282,7 @@ function sbmta() {
     const name = document.getElementById('userAppName').value.replace(/"/g, '&quot;');
     const url = document.getElementById('userAppURI').value.replace(/"/g, '&quot;');
     const ico = document.getElementById('userAppIcon').value.replace(/"/g, '&quot;');
-    const html = `<hr>
+    const html = `
 <div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0.1);border-radius:50%;transition:all 0.3s ease;" oncontextmenu="removeSelection(event,&quot;${url}&quot;,&quot;${name}&quot;,&quot;${ico}&quot;)">
 <img src="${ico}" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%;" alt="${name}" onclick="${url}">
 </div>`;
@@ -304,13 +307,21 @@ function removeSelection(event, uri, name, ico) {
     document.getElementById('maskRemoveApp').style.display = 'block';
 }
 // 普通应用确认删除
+// 普通应用确认删除【重写修复版】
 function removeAppYes() {
-    const rmvctt = `<hr>
+    // 构建不带换行的匹配文本，去除所有换行、空格干扰
+    const searchHtml = `
 <div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0.1);border-radius:50%;transition:all 0.3s ease;" oncontextmenu="removeSelection(event,&quot;${removingAppURI}&quot;,&quot;${removingAppName}&quot;,&quot;${removingAppIco}&quot;)">
 <img src="${removingAppIco}" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%;" alt="${removingAppName}" onclick="${removingAppURI}">
-</div>`;
+</div>`.replace(/[\r\n\s]+/g," ");
+
     getItem('/usr/zdesktop/preference/desktop_icon.html', acti => {
-        const newHtml = acti.replace(rmvctt, '');
+        // 将储存的html同样压缩换行空格
+        let raw = acti.replace(/[\r\n]+/g," ");
+        // 使用正则全局替换，清空全部匹配
+        const reg = new RegExp(searchHtml.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),"g");
+        const newHtml = raw.replace(reg,"");
+
         saveItemLS('/usr/zdesktop/preference/desktop_icon.html', newHtml);
         document.getElementById('applist').innerHTML = defaltApp + newHtml;
     });
@@ -337,7 +348,7 @@ function submitInstallLanyuePackage(){
             saveItemLS(savePath,text);
             const ico = firstLine.replace(/<!--/g,'').replace(/-->/g,'');
             // 【重要】生成模板和删除模板严格保持格式、属性顺序、换行完全一致
-            const html = `<hr>
+            const html = `
 <div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0.1);border-radius:50%;transition:all 0.3s ease;" oncontextmenu="removeLanyueSelection(event,&quot;${savePath}&quot;,&quot;${lanyueAppName}&quot;,&quot;${ico}&quot;)">
 <img src="${ico}" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%;" alt="${lanyueAppName.replace('.zap','')}" onclick="lanyueOpen(&quot;${lanyueAppName}&quot;)">
 </div>`;
@@ -609,15 +620,18 @@ function removeLanyueSelection(event, path, name, ico){
 
 // ========== Lanyue应用确认删除（核心修复） ==========
 function removeAppYesLanyue() {
-    // 【和安装模板100%一致】：换行、属性顺序、alt处理完全相同，保证精确匹配
-    const rmvctt = `<hr>
+    const searchHtml = `
 <div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0.1);border-radius:50%;transition:all 0.3s ease;" oncontextmenu="removeLanyueSelection(event,&quot;${removingAppPath}&quot;,&quot;${removingAppName}&quot;,&quot;${removingAppIco}&quot;)">
 <img src="${removingAppIco}" style="width:100%;height:100%;object-fit:contain;transition:all 0.3s ease;border-radius:50%;" alt="${removingAppName.replace('.zap','')}" onclick="lanyueOpen(&quot;${removingAppName}&quot;)">
-</div>`;
+</div>`.replace(/[\r\n\s]+/g," ");
+
     getItem('/usr/zdesktop/preference/desktop_icon.html', acti => {
-        const newHtml = acti.replace(rmvctt, '');
+        let raw = acti.replace(/[\r\n]+/g," ");
+        const reg = new RegExp(searchHtml.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),"g");
+        const newHtml = raw.replace(reg,"");
+
         saveItemLS('/usr/zdesktop/preference/desktop_icon.html', newHtml);
-        saveItemLS(removingAppPath, ''); // 同时清空应用包数据
+localStorage.removeItem(removingAppPath);
         document.getElementById('applist').innerHTML = defaltApp + newHtml;
     });
     document.getElementById('maskRemoveAppLanyue').style.display = 'none';
