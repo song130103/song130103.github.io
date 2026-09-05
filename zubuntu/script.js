@@ -95,7 +95,7 @@ function start(o) {
 // 读取引导弹窗开关记录
 getItem('/usr/zdesktop/var/guide.var', res => {
     if (!(res == 1)) {
-        opn('guide');
+        opn('install/index.html');
     }
 });
 
