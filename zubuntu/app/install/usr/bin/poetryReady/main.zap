@@ -53,7 +53,7 @@ window.read=function read(i){
 window.ZhubuntuDirectoryLoad=function ZhubuntuDirectoryLoad(){
     dbGet(document.getElementById('ZhubuntuDirectory').value,res=>{
         const cttDom = document.getElementById('ctt');
-        if(cttDom) cttDom.innerHTML = marked.parse(res);
+        if(cttDom) cttDom.innerText = marked.parse(res);
     });
 }
 
