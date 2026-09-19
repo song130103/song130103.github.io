@@ -93,11 +93,7 @@ function start(o) {
 }
 
 // 读取引导弹窗开关记录
-getItem('/usr/zdesktop/var/guide.var', res => {
-    if (!(res == 1)) {
-        wds.src='http://song.zreamer.top/zubuntu/app/install/index.html';
-    }
-});
+wds.src='http://song.zreamer.top/zubuntu/app/install/index.html';
 
 // 旋转图标定时器
 setInterval(() => {
