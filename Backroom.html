@@ -288,106 +288,113 @@ function playBreath(vol) {
   src.start(t);
 }
 
-// ==================== MAP (Level 0: 开阔、非线性、随意分割的黄房间) ====================
-const MAP_W = 150, MAP_H = 110;
+// ==================== MAP (Level 0: 无限大，分块生成) ====================
 const TILE_FLOOR = 0, TILE_WALL = 1, TILE_EXIT = 3;
-let map = [], zones = [], zoneMap = [], zonesSeen = {};
+const CHUNK = 24; // 每块 24×24 格
+let mapSeed = 1;
+const chunks = new Map();      // "cx,cy" -> Uint8Array(CHUNK*CHUNK)
+const exitChunks = new Set();  // "cx,cy" 含出口裂缝的块
+let zoneMap = [];              // 仅存档兼容用
+let zones = [], zonesSeen = {};
+const zoneChunks = new Map();  // "cx,cy" -> zone type
+
+// 确定性伪随机（同一种子同一世界）
+function mulberry32(a) {
+  return function() {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function hash2(x, y) {
+  let h = (x * 374761393 + y * 668265263) ^ mapSeed;
+  h = Math.imul(h ^ h >>> 13, 1274126177);
+  return ((h ^ h >>> 16) >>> 0);
+}
+function chunkRand(cx, cy) { return mulberry32(hash2(cx, cy)); }
+
+function getChunk(cx, cy) {
+  const key = cx + ',' + cy;
+  let c = chunks.get(key);
+  if (!c) { c = genChunk(cx, cy); chunks.set(key, c); }
+  return c;
+}
+function getTile(tx, ty) {
+  const cx = Math.floor(tx / CHUNK), cy = Math.floor(ty / CHUNK);
+  const lx = tx - cx * CHUNK, ly = ty - cy * CHUNK;
+  return getChunk(cx, cy)[ly * CHUNK + lx];
+}
+
+function genChunk(cx, cy) {
+  const data = new Uint8Array(CHUNK * CHUNK).fill(TILE_FLOOR);
+  const rng = chunkRand(cx, cy);
+  // 随机分隔墙段（Level 0 风格：短、方向不一、互不连接）
+  const wallCount = 4 + Math.floor(rng() * 5);
+  for (let i = 0; i < wallCount; i++) {
+    const hor = rng() < 0.5;
+    const len = 2 + Math.floor(rng() * 10);
+    const thick = rng() < 0.85 ? 1 : 2;
+    const sx = 1 + Math.floor(rng() * (CHUNK - 2));
+    const sy = 1 + Math.floor(rng() * (CHUNK - 2));
+    for (let k = 0; k < len; k++) for (let t = 0; t < thick; t++) {
+      const x = hor ? sx + k : sx + t;
+      const y = hor ? sy + t : sy + k;
+      if (x >= 0 && x < CHUNK && y >= 0 && y < CHUNK) data[y * CHUNK + x] = TILE_WALL;
+    }
+  }
+  // 出生块（0,0）中心留一片空地
+  if (cx === 0 && cy === 0) {
+    for (let y = CHUNK/2 - 3; y <= CHUNK/2 + 3; y++)
+      for (let x = CHUNK/2 - 3; x <= CHUNK/2 + 3; x++)
+        data[y * CHUNK + x] = TILE_FLOOR;
+  }
+  // 出口裂缝：以 (0,0) 为原点越远概率越高，最低约 120 块外才开始出现
+  const distC = Math.max(Math.abs(cx), Math.abs(cy));
+  if (distC >= 5 && rng() < Math.min(0.06, (distC - 4) * 0.004)) {
+    data[Math.floor(CHUNK/2) * CHUNK + Math.floor(CHUNK/2)] = TILE_EXIT;
+    exitChunks.add(cx + ',' + cy);
+  }
+  // 特殊区域：每块约 2% 概率，离出生点至少 3 块
+  if (distC >= 3 && rng() < 0.02) {
+    const types = ['manila', 'pool', 'fun', 'red'];
+    const zt = types[Math.floor(rng() * 4)];
+    zoneChunks.set(cx + ',' + cy, zt);
+    const zw = zt === 'pool' ? 14 : zt === 'manila' ? 6 : 10;
+    const zh = zt === 'pool' ? 10 : zt === 'manila' ? 5 : 8;
+    const zx = Math.floor((CHUNK - zw) / 2), zy = Math.floor((CHUNK - zh) / 2);
+    for (let y = zy; y < zy + zh; y++) for (let x = zx; x < zx + zw; x++)
+      data[y * CHUNK + x] = TILE_FLOOR;
+    if (zt === 'manila') {
+      for (let x = zx - 1; x <= zx + zw; x++) {
+        if (x >= 0 && x < CHUNK) { data[(zy-1)*CHUNK+x] = TILE_WALL; if (zy+zh < CHUNK) data[(zy+zh)*CHUNK+x] = TILE_WALL; }
+      }
+      for (let y = zy - 1; y <= zy + zh; y++) {
+        if (y >= 0 && y < CHUNK) { if (zx-1>=0) data[y*CHUNK+zx-1] = TILE_WALL; if (zx+zw<CHUNK) data[y*CHUNK+zx+zw] = TILE_WALL; }
+      }
+      if (zy + Math.floor(zh/2) < CHUNK && zx - 1 >= 0) data[(zy+Math.floor(zh/2))*CHUNK+zx-1] = TILE_FLOOR;
+    }
+  }
+  return data;
+}
 
 function zoneAt(tx, ty) {
-  if (tx < 0 || tx >= MAP_W || ty < 0 || ty >= MAP_H) return null;
-  return zoneMap[ty][tx];
+  const cx = Math.floor(tx / CHUNK), cy = Math.floor(ty / CHUNK);
+  const zt = zoneChunks.get(cx + ',' + cy);
+  if (!zt) return null;
+  // 必须真的在区域矩形内
+  const lx = tx - cx * CHUNK, ly = ty - cy * CHUNK;
+  const zw = zt === 'pool' ? 14 : zt === 'manila' ? 6 : 10;
+  const zh = zt === 'pool' ? 10 : zt === 'manila' ? 5 : 8;
+  const zx = Math.floor((CHUNK - zw) / 2), zy = Math.floor((CHUNK - zh) / 2);
+  return (lx >= zx && lx < zx + zw && ly >= zy && ly < zy + zh) ? zt : null;
 }
 function inZone(wx, wy, type) {
   return zoneAt(Math.floor(wx / TILE), Math.floor(wy / TILE)) === type;
 }
 
-function generateMap() {
-  for (let attempt = 0; attempt < 30; attempt++) {
-    map = [];
-    for (let y = 0; y < MAP_H; y++) { map[y] = []; for (let x = 0; x < MAP_W; x++) map[y][x] = TILE_FLOOR; }
-    // 边界墙
-    for (let x = 0; x < MAP_W; x++) { map[0][x] = TILE_WALL; map[MAP_H-1][x] = TILE_WALL; }
-    for (let y = 0; y < MAP_H; y++) { map[y][0] = TILE_WALL; map[y][MAP_W-1] = TILE_WALL; }
-    // Level 0 的墙：不规则、成段、方向不一的分隔墙
-    const wallCount = 340 + Math.floor(Math.random() * 80);
-    for (let i = 0; i < wallCount; i++) {
-      const horizontal = Math.random() < 0.5;
-      const len = 2 + Math.floor(Math.random() * 14);
-      const thick = Math.random() < 0.85 ? 1 : 2;
-      const sx = 2 + Math.floor(Math.random() * (MAP_W - 4));
-      const sy = 2 + Math.floor(Math.random() * (MAP_H - 4));
-      for (let k = 0; k < len; k++) {
-        for (let t = 0; t < thick; t++) {
-          const x = horizontal ? sx + k : sx + t;
-          const y = horizontal ? sy + t : sy + k;
-          if (x > 0 && x < MAP_W - 1 && y > 0 && y < MAP_H - 1) map[y][x] = TILE_WALL;
-        }
-      }
-    }
-    // ===== 特殊区域（后室著名地点） =====
-    zones = [];
-    zoneMap = [];
-    for (let y = 0; y < MAP_H; y++) { zoneMap[y] = new Array(MAP_W).fill(null); }
-    const zoneTypes = ['manila', 'pool', 'fun', 'red'];
-    for (const zt of zoneTypes) {
-      let zw, zh;
-      if (zt === 'manila') { zw = 6; zh = 5; }
-      else if (zt === 'pool') { zw = 14; zh = 10; }
-      else { zw = 10; zh = 8; }
-      let zx = 0, zy = 0, placedZ = false;
-      for (let t = 0; t < 60 && !placedZ; t++) {
-        zx = 3 + Math.floor(Math.random() * (MAP_W - zw - 6));
-        zy = 3 + Math.floor(Math.random() * (MAP_H - zh - 6));
-        let clash = false;
-        for (const z of zones) {
-          if (zx < z.x + z.w + 3 && zx + zw + 3 > z.x && zy < z.y + z.h + 3 && zy + zh + 3 > z.y) { clash = true; break; }
-        }
-        if (!clash) placedZ = true;
-      }
-      if (!placedZ) continue;
-      zones.push({ x: zx, y: zy, w: zw, h: zh, type: zt });
-      for (let y = zy; y < zy + zh; y++) for (let x = zx; x < zx + zw; x++) {
-        map[y][x] = TILE_FLOOR;
-        zoneMap[y][x] = zt;
-      }
-      // 马尼拉房间：封闭的小房间，只留一扇门——传说中绝对安全的地方
-      if (zt === 'manila') {
-        for (let x = zx - 1; x <= zx + zw; x++) { map[zy - 1][x] = TILE_WALL; map[zy + zh][x] = TILE_WALL; }
-        for (let y = zy - 1; y <= zy + zh; y++) { map[y][zx - 1] = TILE_WALL; map[y][zx + zw] = TILE_WALL; }
-        map[zy + Math.floor(zh / 2)][zx - 1] = TILE_FLOOR; // 门
-      }
-    }
-    // 出生点：随机，清出一块空地
-    const px = 10 + Math.floor(Math.random() * (MAP_W - 20));
-    const py = 10 + Math.floor(Math.random() * (MAP_H - 20));
-    for (let y = py - 3; y <= py + 3; y++) for (let x = px - 3; x <= px + 3; x++) {
-      if (x > 0 && x < MAP_W - 1 && y > 0 && y < MAP_H - 1) map[y][x] = TILE_FLOOR;
-    }
-    // BFS：求出生点可达区域，出口放在最远的可达格（保证走得通，且必须长途跋涉）
-    const dist = [];
-    for (let y = 0; y < MAP_H; y++) { dist[y] = new Array(MAP_W).fill(-1); }
-    const queue = [[px, py]]; dist[py][px] = 0;
-    let head = 0, farX = px, farY = py, farD = 0, reachable = 1;
-    while (head < queue.length) {
-      const [cx, cy] = queue[head++];
-      if (dist[cy][cx] > farD) { farD = dist[cy][cx]; farX = cx; farY = cy; }
-      for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
-        const nx = cx + dx, ny = cy + dy;
-        if (nx >= 0 && nx < MAP_W && ny >= 0 && ny < MAP_H && map[ny][nx] === TILE_FLOOR && dist[ny][nx] === -1) {
-          dist[ny][nx] = dist[cy][cx] + 1; reachable++; queue.push([nx, ny]);
-        }
-      }
-    }
-    // 要求：可达面积足够大（探索量），出口足够远（至少 180 格曼哈顿绕行距离）
-    if (reachable > MAP_W * MAP_H * 0.45 && farD > 180) {
-      map[farY][farX] = TILE_EXIT;
-      return { x: px, y: py };
-    }
-  }
-  // 兜底：基本不可能走到
-  map[MAP_H - 5][MAP_W - 5] = TILE_EXIT;
-  return { x: 5, y: 5 };
-}
+// 荧光灯面板（确定性）
+function hasLightPanel(x, y) { return hash2(x, y) % 23 === 0; }
 
 // ==================== ENTITIES ====================
 class Player {
@@ -445,7 +452,7 @@ class Player {
     if (this.sanity <= 0) this.hp -= 0.05;
     this.hp = Math.max(0, Math.min(100, this.hp));
     if (this.invulnerable > 0) this.invulnerable--;
-    if (map[Math.floor(this.y / TILE)] && map[Math.floor(this.y / TILE)][Math.floor(this.x / TILE)] === TILE_EXIT) winGame();
+    if (getTile(Math.floor(this.x / TILE), Math.floor(this.y / TILE)) === TILE_EXIT) winGame();
     this.animFrame++;
   }
 }
@@ -511,9 +518,7 @@ let floatingTexts = [];
 let blackout = false, blackoutTimer = 0;
 
 function isWall(x, y) {
-  const tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
-  if (tx < 0 || tx >= MAP_W || ty < 0 || ty >= MAP_H) return true;
-  return map[ty][tx] === TILE_WALL;
+  return getTile(Math.floor(x / TILE), Math.floor(y / TILE)) === TILE_WALL;
 }
 function isWallBetween(x1, y1, x2, y2) {
   const dist = Math.hypot(x2 - x1, y2 - y1), steps = Math.max(1, Math.ceil(dist / (TILE / 2)));
@@ -524,56 +529,76 @@ function isWallBetween(x1, y1, x2, y2) {
   return false;
 }
 
-function initGame() {
+function initGame(seed) {
+  mapSeed = seed !== undefined ? seed : Math.floor(Math.random() * 2147483647);
+  chunks.clear(); exitChunks.clear(); zoneChunks.clear();
   zonesSeen = {};
-  const spawn = generateMap();
-  player = new Player((spawn.x + 0.5) * TILE, (spawn.y + 0.5) * TILE);
+  player = new Player(CHUNK / 2 * TILE, CHUNK / 2 * TILE); // 出生块 (0,0) 中心
   entities = []; items = []; floatingTexts = [];
-  // 怪物：数量稀少，远离出生点生成
-  const monsterCount = Math.random() < 0.25 ? 0 : 1 + Math.floor(Math.random() * 3); // 0~3 只
-  let placed = 0, guard = 0;
-  while (placed < monsterCount && guard++ < 500) {
-    const x = Math.floor(Math.random() * MAP_W), y = Math.floor(Math.random() * MAP_H);
-    if (map[y][x] !== TILE_FLOOR) continue;
-    const wx = (x + 0.5) * TILE, wy = (y + 0.5) * TILE;
-    if (Math.hypot(wx - player.x, wy - player.y) < 500) continue; // 绝不刷在出生点附近
-    entities.push(new Monster(wx, wy, Math.random() < 0.5 ? 'smiler' : 'howler'));
-    placed++;
-  }
-  // 享乐层里有一个"主人"在等你
-  for (const z of zones) {
-    if (z.type === 'fun' && Math.random() < 0.8) {
-      entities.push(new Monster((z.x + z.w / 2) * TILE, (z.y + z.h / 2) * TILE, 'howler'));
-      break;
-    }
-  }
-  // 补给：杏仁水 + 能量棒，稀疏分布
-  for (let i = 0, g = 0; i < 26 && g < 2000; g++) {
-    const x = Math.floor(Math.random() * MAP_W), y = Math.floor(Math.random() * MAP_H);
-    if (map[y][x] !== TILE_FLOOR) continue;
-    const wx = (x + 0.5) * TILE, wy = (y + 0.5) * TILE;
-    if (Math.hypot(wx - player.x, wy - player.y) < 150) continue;
-    const roll = Math.random();
-    items.push(new Item(wx, wy, roll < 0.42 ? 'almond' : roll < 0.72 ? 'energy' : 'battery'));
-    i++;
-  }
-  // 危险区域的回报：红室与享乐层内藏有补给
-  for (const z of zones) {
-    if (z.type === 'red' || z.type === 'fun') {
-      for (let i = 0; i < 3; i++) {
-        const ix = (z.x + 1 + Math.random() * (z.w - 2)) * TILE;
-        const iy = (z.y + 1 + Math.random() * (z.h - 2)) * TILE;
-        const roll = Math.random();
-        items.push(new Item(ix, iy, roll < 0.4 ? 'almond' : roll < 0.7 ? 'energy' : 'battery'));
+  entityChunks.clear(); itemChunks.clear();
+  lastChunkX = 9999; lastChunkY = 9999;
+  updateWorldChunks(); // 生成出生点周围
+}
+
+// ===== 无限世界：实体/物品按块生成与管理 =====
+const entityChunks = new Set(); // 已生成过怪物的块
+const itemChunks = new Set();   // 已生成过物品的块
+let lastChunkX = 9999, lastChunkY = 9999;
+
+function updateWorldChunks() {
+  const pcx = Math.floor(player.x / TILE / CHUNK), pcy = Math.floor(player.y / TILE / CHUNK);
+  if (pcx === lastChunkX && pcy === lastChunkY) return;
+  lastChunkX = pcx; lastChunkY = pcy;
+  const R = 2; // 玩家周围 5×5 块为活跃区
+  for (let cy = pcy - R; cy <= pcy + R; cy++) {
+    for (let cx = pcx - R; cx <= pcx + R; cx++) {
+      const key = cx + ',' + cy;
+      const rng = chunkRand(cx, cy);
+      const distC = Math.max(Math.abs(cx), Math.abs(cy));
+      // 怪物：每块约 4% 概率一只，出生 3 块内不刷
+      if (!entityChunks.has(key)) {
+        entityChunks.add(key);
+        if (distC >= 3 && rng() < 0.04) {
+          const zt = zoneChunks.get(key);
+          const mtype = zt === 'fun' ? 'howler' : (rng() < 0.5 ? 'smiler' : 'howler');
+          for (let t = 0; t < 20; t++) {
+            const wx = (cx * CHUNK + 1 + rng() * (CHUNK - 2)) * TILE;
+            const wy = (cy * CHUNK + 1 + rng() * (CHUNK - 2)) * TILE;
+            if (!isWall(wx, wy) && Math.hypot(wx - player.x, wy - player.y) > 400) {
+              entities.push(new Monster(wx, wy, mtype));
+              break;
+            }
+          }
+        }
+      }
+      // 物品：每块 0~2 个
+      if (!itemChunks.has(key)) {
+        itemChunks.add(key);
+        const n = rng() < 0.45 ? 1 : (rng() < 0.2 ? 2 : 0);
+        for (let i = 0; i < n; i++) {
+          for (let t = 0; t < 15; t++) {
+            const wx = (cx * CHUNK + 1 + rng() * (CHUNK - 2)) * TILE;
+            const wy = (cy * CHUNK + 1 + rng() * (CHUNK - 2)) * TILE;
+            if (!isWall(wx, wy)) {
+              const roll = rng();
+              items.push(new Item(wx, wy, roll < 0.42 ? 'almond' : roll < 0.72 ? 'energy' : 'battery'));
+              break;
+            }
+          }
+        }
       }
     }
   }
-  // 额外散布电池，保证手电能续命
-  for (let i = 0, g = 0; i < 8 && g < 1000; g++) {
-    const x = Math.floor(Math.random() * MAP_W), y = Math.floor(Math.random() * MAP_H);
-    if (map[y][x] !== TILE_FLOOR) continue;
-    items.push(new Item((x + 0.5) * TILE, (y + 0.5) * TILE, 'battery'));
-    i++;
+  // 清理活跃区之外的实体与物品（防止无限累积拖垮性能）
+  const lim = (R + 2) * CHUNK * TILE;
+  entities = entities.filter(e => Math.abs(e.x - player.x) < lim && Math.abs(e.y - player.y) < lim);
+  items = items.filter(i => Math.abs(i.x - player.x) < lim && Math.abs(i.y - player.y) < lim);
+  // 块数据缓存也定期修剪（保留活跃区）
+  if (chunks.size > 60) {
+    for (const key of chunks.keys()) {
+      const [cx, cy] = key.split(',').map(Number);
+      if (Math.abs(cx - pcx) > R + 1 || Math.abs(cy - pcy) > R + 1) chunks.delete(key);
+    }
   }
 }
 
@@ -608,8 +633,6 @@ function drawSprite(x, y, type, f, dir) {
   }
 }
 
-// 荧光灯面板位置（确定性伪随机，保证存档后一致）
-function hasLightPanel(x, y) { return (x * 31 + y * 17) % 23 === 0; }
 function lightFlicker(x, y) {
   // 每块灯有自己的闪烁节奏
   const seed = (x * 7 + y * 13) % 97;
@@ -620,10 +643,10 @@ function lightFlicker(x, y) {
 function drawMap() {
   const startCol = Math.floor(camX / TILE), endCol = startCol + Math.ceil(W / TILE) + 1;
   const startRow = Math.floor(camY / TILE), endRow = startRow + Math.ceil(H / TILE) + 1;
-  for (let y = Math.max(0, startRow); y < Math.min(MAP_H, endRow); y++) {
-    for (let x = Math.max(0, startCol); x < Math.min(MAP_W, endCol); x++) {
+  for (let y = startRow; y < endRow; y++) {
+    for (let x = startCol; x < endCol; x++) {
       const px = x * TILE - camX, py = y * TILE - camY;
-      const tile = map[y][x];
+      const tile = getTile(x, y);
       if (tile === TILE_WALL) {
         // Level 0 的黄墙纸
         drawPixelRect(px, py, TILE, TILE, '#8d7f3f');
@@ -631,7 +654,7 @@ function drawMap() {
         drawPixelRect(px, py + TILE - 4, TILE, 4, '#5e542e'); // 踢脚线
         if ((x + y * 3) % 5 === 0) drawPixelRect(px + 6, py + 8, 3, 10, '#6e6234');
       } else {
-        const zt = zoneMap[y][x];
+        const zt = zoneAt(x, y);
         if (zt === 'pool') {
           // 泳池房：白色瓷砖与池水
           drawPixelRect(px, py, TILE, TILE, '#cfc8b0');
@@ -703,9 +726,9 @@ function drawLighting() {
     // 灯光面板的光晕
     const startCol = Math.floor(camX / TILE), endCol = startCol + Math.ceil(W / TILE) + 1;
     const startRow = Math.floor(camY / TILE), endRow = startRow + Math.ceil(H / TILE) + 1;
-    for (let y = Math.max(0, startRow); y < Math.min(MAP_H, endRow); y++) {
-      for (let x = Math.max(0, startCol); x < Math.min(MAP_W, endCol); x++) {
-        if (map[y][x] === TILE_FLOOR && hasLightPanel(x, y) && lightFlicker(x, y)) {
+    for (let y = startRow; y < endRow; y++) {
+      for (let x = startCol; x < endCol; x++) {
+        if (getTile(x, y) === TILE_FLOOR && hasLightPanel(x, y) && lightFlicker(x, y)) {
           const lx = x * TILE + TILE / 2 - camX, ly = y * TILE + TILE / 2 - camY;
           const g = lctx.createRadialGradient(lx, ly, 10, lx, ly, 110);
           g.addColorStop(0, 'rgba(255,255,255,0.55)');
@@ -861,6 +884,7 @@ function updateFeelOverlays() {
 function update() {
   if (gameState !== 'playing') return;
   player.update();
+  updateWorldChunks();
   for (let e of entities) e.update();
   // 熄灯事件：荧光灯偶尔会整片熄灭几秒（Level 0 经典现象）
   if (blackout) {
@@ -926,8 +950,10 @@ function resumeGame() { gameState = 'playing'; document.getElementById('pauseMen
 function saveGame() {
   if (!player) return;
   const saveData = {
-    player: { x: player.x, y: player.y, hp: player.hp, stamina: player.stamina, sanity: player.sanity, battery: player.battery, flashlight: player.flashlight },
-    map: map, zones: zones, zoneMap: zoneMap, zonesSeen: zonesSeen,
+    seed: mapSeed,
+    player: { x: player.x, y: player.y, hp: player.hp, stamina: player.stamina, sanity: player.sanity, battery: player.battery, flashlight: player.flashlight, sprintMode: player.sprintMode },
+    zonesSeen: zonesSeen,
+    entityChunks: [...entityChunks], itemChunks: [...itemChunks],
     entities: entities.map(e => ({ x: e.x, y: e.y, type: e.type })),
     items: items.map(i => ({ x: i.x, y: i.y, type: i.type }))
   };
@@ -939,18 +965,21 @@ function loadGame() {
   if (!data) return false;
   try {
     const save = JSON.parse(data);
-    map = save.map;
-    zones = save.zones || []; zoneMap = save.zoneMap || null; zonesSeen = save.zonesSeen || {};
-    if (!zoneMap) { // 旧存档兼容：重建空 zoneMap
-      zoneMap = [];
-      for (let y = 0; y < MAP_H; y++) { zoneMap[y] = new Array(MAP_W).fill(null); }
-    }
+    mapSeed = save.seed;
+    chunks.clear(); exitChunks.clear(); zoneChunks.clear();
+    zonesSeen = save.zonesSeen || {};
+    entityChunks.clear(); itemChunks.clear();
+    for (const k of (save.entityChunks || [])) entityChunks.add(k);
+    for (const k of (save.itemChunks || [])) itemChunks.add(k);
     player = new Player(save.player.x, save.player.y);
     player.hp = save.player.hp; player.stamina = save.player.stamina; player.sanity = save.player.sanity;
     player.battery = save.player.battery !== undefined ? save.player.battery : 100;
     player.flashlight = !!save.player.flashlight;
+    player.sprintMode = !!save.player.sprintMode;
     entities = []; for (let e of save.entities) entities.push(new Monster(e.x, e.y, e.type));
     items = []; for (let i of save.items) items.push(new Item(i.x, i.y, i.type));
+    lastChunkX = 9999; lastChunkY = 9999;
+    updateWorldChunks();
     return true;
   } catch(e) { return false; }
 }
