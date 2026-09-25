@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Backrooms Level 0 - 后室</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a08;
+  color: #e0e0d0;
+  font-family: 'Courier New', monospace;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+#gameCanvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+#uiLayer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+#uiLayer > * { pointer-events: auto; }
+#uiLayer #touchControls { pointer-events: none; }
+#vignette, #tiredVignette, #lowHpVignette, #hurtFlash, #crtOverlay { pointer-events: none; }
+
+#titleScreen {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(180deg, #4a452a 0%, #2a2716 60%, #14120a 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 100;
+}
+#titleScreen h1 {
+  font-size: clamp(2rem, 8vw, 5rem); color: #d4c44a;
+  text-shadow: 0 0 20px #d4c44a88; margin-bottom: 0.3rem; letter-spacing: 0.1em;
+}
+#titleScreen h2 { font-size: clamp(0.9rem, 3vw, 1.4rem); color: #999; margin-bottom: 0.3rem; }
+#titleScreen .quote { font-size: clamp(0.7rem, 2.2vw, 0.95rem); color: #777; margin-bottom: 2rem; font-style: italic; }
+.pixel-btn {
+  background: #2a2a1a; border: 3px solid #d4c44a; color: #d4c44a;
+  padding: 12px 32px; font-size: clamp(1rem, 3vw, 1.3rem);
+  font-family: 'Courier New', monospace; cursor: pointer; margin: 8px;
+  transition: all 0.2s; text-transform: uppercase; letter-spacing: 2px;
+}
+.pixel-btn:hover { background: #d4c44a; color: #1a1a0a; box-shadow: 0 0 20px #d4c44a66; }
+.lang-switch { position: absolute; top: 20px; right: 20px; display: flex; gap: 8px; }
+.lang-btn {
+  background: #1a1a1a; border: 2px solid #555; color: #888;
+  padding: 6px 14px; font-family: 'Courier New', monospace; cursor: pointer; font-size: 0.9rem;
+}
+.lang-btn.active { border-color: #d4c44a; color: #d4c44a; }
+
+#touchControls {
+  position: absolute; bottom: 0; left: 0; width: 100%; height: 100%;
+  display: none; z-index: 40; pointer-events: none;
+}
+#joystickZone { position: absolute; bottom: 30px; left: 30px; width: 140px; height: 140px; pointer-events: auto; }
+#joystickBase {
+  position: absolute; width: 100%; height: 100%;
+  border: 3px solid #ffffff33; border-radius: 50%; background: #ffffff11;
+}
+#joystickKnob {
+  position: absolute; width: 50px; height: 50px; background: #ffffff44; border-radius: 50%;
+  top: 50%; left: 50%; transform: translate(-50%, -50%);
+}
+#actionButtons {
+  position: absolute; bottom: 30px; right: 30px;
+  display: flex; flex-direction: column; gap: 15px; pointer-events: auto;
+}
+.action-btn {
+  width: 70px; height: 70px; border-radius: 50%; border: 3px solid #ffffff44;
+  background: #ffffff22; color: #fff; font-size: 0.8rem;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Courier New', monospace; cursor: pointer; touch-action: manipulation;
+}
+.action-btn:active { background: #ffffff44; }
+.action-btn.sprint-on { background: #d4c44a55 !important; border-color: #d4c44a !important; box-shadow: 0 0 15px #d4c44a88; }
+.action-btn, #joystickZone { touch-action: none; -webkit-tap-highlight-color: transparent; }
+
+#messageBox {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  background: #000000ee; border: 3px solid #d4c44a; padding: 20px 30px;
+  text-align: center; display: none; z-index: 200; max-width: 80%;
+}
+#messageBox h3 { color: #d4c44a; margin-bottom: 10px; font-size: 1.3rem; }
+
+#pauseMenu {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: #000000dd; display: none; flex-direction: column;
+  align-items: center; justify-content: center; z-index: 150; gap: 15px;
+}
+#pauseMenu h2 { color: #d4c44a; font-size: 2rem; margin-bottom: 1rem; }
+
+/* 全屏氛围层 */
+#hurtFlash {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 60; background: radial-gradient(ellipse at center, transparent 40%, rgba(180,0,0,0.55) 100%);
+  opacity: 0; transition: opacity 0.15s;
+}
+#lowHpVignette {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 55;
+  box-shadow: inset 0 0 180px 80px rgba(120,0,0,0.9);
+  opacity: 0;
+}
+#tiredVignette {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 54;
+  box-shadow: inset 0 0 160px 70px rgba(0,0,0,0.85);
+  opacity: 0; transition: opacity 0.5s;
+}
+#vignette {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 30; box-shadow: inset 0 0 150px 50px rgba(20,18,5,0.75);
+}
+#crtOverlay {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 35;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, #00000010 2px, #00000010 4px);
+}
+#pauseHint {
+  position: absolute; top: 10px; right: 12px; z-index: 50; display: none;
+  color: #ffffff55; font-size: 1.4rem; cursor: pointer; pointer-events: auto;
+  padding: 4px 10px;
+}
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+
+<div id="uiLayer">
+  <div id="titleScreen">
+    <div class="lang-switch">
+      <button class="lang-btn active" data-lang="zh" onclick="setLang('zh')">中文</button>
+      <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+    </div>
+    <h1 id="gameTitle">BACKROOMS</h1>
+    <h2 id="gameSubtitle">LEVEL 0</h2>
+    <p class="quote" id="gameQuote">潮湿地毯的臭味，单调黄色的疯狂，荧光灯永不停歇的嗡鸣……</p>
+    <button class="pixel-btn" id="btnNewGame" onclick="startGame()">新游戏</button>
+    <button class="pixel-btn" id="btnContinue" onclick="continueGame()" style="display:none">继续游戏</button>
+    <button class="pixel-btn" id="btnHowToPlay" onclick="showHowToPlay()">游戏说明</button>
+  </div>
+
+  <div id="pauseHint" onclick="pauseGame()">| |</div>
+
+  <div id="touchControls">
+    <div id="joystickZone">
+      <div id="joystickBase"></div>
+      <div id="joystickKnob"></div>
+    </div>
+    <div class="action-btn" id="btnSprint" style="position:absolute; bottom:30px; right:30px;">奔跑</div>
+    <div class="action-btn" id="btnInteract" style="position:absolute; bottom:115px; right:45px;">手电</div>
+  </div>
+
+  <div id="messageBox">
+    <h3 id="msgTitle">Title</h3>
+    <p id="msgText">Message text</p>
+    <button class="pixel-btn" id="msgBtn" onclick="closeMessage()" style="margin-top:15px">确定</button>
+  </div>
+
+  <div id="pauseMenu">
+    <h2 id="pauseTitle">暂停</h2>
+    <button class="pixel-btn" id="btnResume" onclick="resumeGame()">继续</button>
+    <button class="pixel-btn" id="btnSave" onclick="saveGame()">保存进度</button>
+    <button class="pixel-btn" id="btnQuit" onclick="quitToMenu()">返回主菜单</button>
+  </div>
+</div>
+
+<div id="vignette"></div>
+<div id="tiredVignette"></div>
+<div id="lowHpVignette"></div>
+<div id="hurtFlash"></div>
+<div id="crtOverlay"></div>
+
+<script>
+// ==================== LANGUAGE ====================
+const i18n = {
+  zh: {
+    quote: "潮湿地毯的臭味，单调黄色的疯狂，荧光灯永不停歇的嗡鸣……",
+    newGame: "新游戏", continue: "继续游戏", howToPlay: "游戏说明",
+    pause: "暂停", resume: "继续", save: "保存进度", quit: "返回主菜单",
+    sprint: "奔跑", interact: "手电", confirm: "确定",
+    gameOver: "你消失了", gameOverText: "没有人听到你的声音。黄色的房间又归于寂静，只剩荧光灯的嗡鸣……",
+    winTitle: "你切出了现实", winText: "墙壁在你面前裂开一道缝。你跌了进去——这不是出口，这是 Level 1。",
+    howToPlayTitle: "生存须知",
+    howToPlayText: "电脑：WASD/方向键 移动 | Shift 切换奔跑 | F 手电 | Esc 暂停\n手机：左侧摇杆移动，右侧按钮切换奔跑/手电\n\n你卡在了一个错误的地方。这里没有地图，没有数字告诉你还能撑多久——只有你的感觉。\n\n· 画面边缘发黑、呼吸沉重 = 太累了，停下来歇歇\n· 画面泛红、心跳加速 = 你快不行了\n· 灯光闪烁、看到不该存在的东西 = 你的理智在流失\n· 手电光变暗、闪烁 = 电量快没了，找电池\n\n杏仁水能安定心神，能量棒恢复力气，电池给手电续命。\n它们不喜欢光，也不喜欢安静。\n找到那条裂缝，离开这里。",
+    saved: "进度已保存", noSave: "没有存档",
+    feelBetter: "感觉好些了…", feelStronger: "恢复了一些力气…", feelCharged: "手电又亮了起来…",
+    batteryDead: "手电熄灭了……",
+    somethingNear: "有什么东西在附近……", tired: "你喘不上气了……",
+    discovered: "你发现了……",
+    zones: { manila: "马尼拉房间", pool: "泳池房", fun: "享乐层 =)", red: "红室" },
+    items: { almond: "🥛", energy: "🍫", battery: "🔋" }
+  },
+  en: {
+    quote: "The stink of moist carpet, the madness of mono-yellow, the endless hum of fluorescent lights...",
+    newGame: "New Game", continue: "Continue", howToPlay: "How to Play",
+    pause: "Paused", resume: "Resume", save: "Save Game", quit: "Quit to Menu",
+    sprint: "Sprint", interact: "Light", confirm: "OK",
+    gameOver: "You Vanished", gameOverText: "No one heard you. The yellow rooms fall silent again, save for the humming lights...",
+    winTitle: "You Noclipped Out", winText: "A crack splits the wall. You fall through — this is no exit. This is Level 1.",
+    howToPlayTitle: "Survival Notes",
+    howToPlayText: "PC: WASD/Arrows move | Shift toggle sprint | F flashlight | Esc pause\nMobile: left joystick to move, right buttons toggle sprint/light\n\nYou're stuck somewhere wrong. No map, no numbers telling you how long you can last — only how you feel.\n\n· Dark closing in, heavy breathing = exhausted, stop and rest\n· Red edges, racing heartbeat = you're dying\n· Flickering lights, seeing things = your sanity is slipping\n· Flashlight dimming and flickering = low battery, find batteries\n\nAlmond Water calms the mind. Energy Bars restore strength. Batteries feed your light.\nThey dislike light. They dislike silence.\nFind the crack. Get out.",
+    saved: "Game Saved", noSave: "No Save Data",
+    feelBetter: "You feel a bit calmer...", feelStronger: "You catch your breath...", feelCharged: "The light hums back to life...",
+    batteryDead: "The flashlight dies...",
+    somethingNear: "Something is nearby...", tired: "You're gasping for air...",
+    discovered: "You found...",
+    zones: { manila: "The Manila Room", pool: "The Poolrooms", fun: "Level Fun =)", red: "The Red Rooms" },
+    items: { almond: "🥛", energy: "🍫", battery: "🔋" }
+  }
+};
+let lang = 'zh';
+function setLang(l) {
+  lang = l;
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === l));
+  const t = i18n[lang];
+  document.getElementById('gameQuote').textContent = t.quote;
+  document.getElementById('btnNewGame').textContent = t.newGame;
+  document.getElementById('btnContinue').textContent = t.continue;
+  document.getElementById('btnHowToPlay').textContent = t.howToPlay;
+  document.getElementById('pauseTitle').textContent = t.pause;
+  document.getElementById('btnResume').textContent = t.resume;
+  document.getElementById('btnSave').textContent = t.save;
+  document.getElementById('btnQuit').textContent = t.quit;
+  document.getElementById('btnSprint').textContent = t.sprint;
+  document.getElementById('btnInteract').textContent = t.interact;
+  document.getElementById('msgBtn').textContent = t.confirm;
+  checkSave();
+}
+
+// ==================== ENGINE ====================
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+let W, H, TILE = 32;
+let gameState = 'title';
+let frame = 0;
+const keys = {};
+let joystick = { x: 0, y: 0, active: false };
+let camX = 0, camY = 0;
+
+// ==================== AUDIO (荧光灯嗡鸣 / 心跳 / 呼吸) ====================
+let audioCtx = null, humNode = null, humGain = null;
+function initAudio() {
+  if (audioCtx) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // 荧光灯嗡鸣：50Hz 基波 + 泛音，模拟 Level 0 的电流声
+    humGain = audioCtx.createGain(); humGain.gain.value = 0.035;
+    const o1 = audioCtx.createOscillator(); o1.type = 'sawtooth'; o1.frequency.value = 50;
+    const o2 = audioCtx.createOscillator(); o2.type = 'sine'; o2.frequency.value = 100;
+    const o3 = audioCtx.createOscillator(); o3.type = 'sine'; o3.frequency.value = 120;
+    const g2 = audioCtx.createGain(); g2.gain.value = 0.4;
+    const g3 = audioCtx.createGain(); g3.gain.value = 0.2;
+    const filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 400;
+    o1.connect(filter); o2.connect(g2); g2.connect(filter); o3.connect(g3); g3.connect(filter);
+    filter.connect(humGain); humGain.connect(audioCtx.destination);
+    o1.start(); o2.start(); o3.start();
+    humNode = { o1, o2, o3 };
+  } catch(e) {}
+}
+function playThump(vol, rate) {
+  // 心跳：低频双跳
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime;
+  for (let i = 0; i < 2; i++) {
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(55, t + i * 0.22);
+    o.frequency.exponentialRampToValueAtTime(30, t + i * 0.22 + 0.15);
+    g.gain.setValueAtTime(vol, t + i * 0.22);
+    g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.22 + 0.2);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(t + i * 0.22); o.stop(t + i * 0.22 + 0.25);
+  }
+}
+function playBreath(vol) {
+  // 喘息：滤波噪声
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime;
+  const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.8, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  const src = audioCtx.createBufferSource(); src.buffer = buf;
+  const f = audioCtx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 800; f.Q.value = 0.8;
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(0.001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.3);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+  src.connect(f); f.connect(g); g.connect(audioCtx.destination);
+  src.start(t);
+}
+
+// ==================== MAP (Level 0: 开阔、非线性、随意分割的黄房间) ====================
+const MAP_W = 150, MAP_H = 110;
+const TILE_FLOOR = 0, TILE_WALL = 1, TILE_EXIT = 3;
+let map = [], zones = [], zoneMap = [], zonesSeen = {};
+
+function zoneAt(tx, ty) {
+  if (tx < 0 || tx >= MAP_W || ty < 0 || ty >= MAP_H) return null;
+  return zoneMap[ty][tx];
+}
+function inZone(wx, wy, type) {
+  return zoneAt(Math.floor(wx / TILE), Math.floor(wy / TILE)) === type;
+}
+
+function generateMap() {
+  for (let attempt = 0; attempt < 30; attempt++) {
+    map = [];
+    for (let y = 0; y < MAP_H; y++) { map[y] = []; for (let x = 0; x < MAP_W; x++) map[y][x] = TILE_FLOOR; }
+    // 边界墙
+    for (let x = 0; x < MAP_W; x++) { map[0][x] = TILE_WALL; map[MAP_H-1][x] = TILE_WALL; }
+    for (let y = 0; y < MAP_H; y++) { map[y][0] = TILE_WALL; map[y][MAP_W-1] = TILE_WALL; }
+    // Level 0 的墙：不规则、成段、方向不一的分隔墙
+    const wallCount = 340 + Math.floor(Math.random() * 80);
+    for (let i = 0; i < wallCount; i++) {
+      const horizontal = Math.random() < 0.5;
+      const len = 2 + Math.floor(Math.random() * 14);
+      const thick = Math.random() < 0.85 ? 1 : 2;
+      const sx = 2 + Math.floor(Math.random() * (MAP_W - 4));
+      const sy = 2 + Math.floor(Math.random() * (MAP_H - 4));
+      for (let k = 0; k < len; k++) {
+        for (let t = 0; t < thick; t++) {
+          const x = horizontal ? sx + k : sx + t;
+          const y = horizontal ? sy + t : sy + k;
+          if (x > 0 && x < MAP_W - 1 && y > 0 && y < MAP_H - 1) map[y][x] = TILE_WALL;
+        }
+      }
+    }
+    // ===== 特殊区域（后室著名地点） =====
+    zones = [];
+    zoneMap = [];
+    for (let y = 0; y < MAP_H; y++) { zoneMap[y] = new Array(MAP_W).fill(null); }
+    const zoneTypes = ['manila', 'pool', 'fun', 'red'];
+    for (const zt of zoneTypes) {
+      let zw, zh;
+      if (zt === 'manila') { zw = 6; zh = 5; }
+      else if (zt === 'pool') { zw = 14; zh = 10; }
+      else { zw = 10; zh = 8; }
+      let zx = 0, zy = 0, placedZ = false;
+      for (let t = 0; t < 60 && !placedZ; t++) {
+        zx = 3 + Math.floor(Math.random() * (MAP_W - zw - 6));
+        zy = 3 + Math.floor(Math.random() * (MAP_H - zh - 6));
+        let clash = false;
+        for (const z of zones) {
+          if (zx < z.x + z.w + 3 && zx + zw + 3 > z.x && zy < z.y + z.h + 3 && zy + zh + 3 > z.y) { clash = true; break; }
+        }
+        if (!clash) placedZ = true;
+      }
+      if (!placedZ) continue;
+      zones.push({ x: zx, y: zy, w: zw, h: zh, type: zt });
+      for (let y = zy; y < zy + zh; y++) for (let x = zx; x < zx + zw; x++) {
+        map[y][x] = TILE_FLOOR;
+        zoneMap[y][x] = zt;
+      }
+      // 马尼拉房间：封闭的小房间，只留一扇门——传说中绝对安全的地方
+      if (zt === 'manila') {
+        for (let x = zx - 1; x <= zx + zw; x++) { map[zy - 1][x] = TILE_WALL; map[zy + zh][x] = TILE_WALL; }
+        for (let y = zy - 1; y <= zy + zh; y++) { map[y][zx - 1] = TILE_WALL; map[y][zx + zw] = TILE_WALL; }
+        map[zy + Math.floor(zh / 2)][zx - 1] = TILE_FLOOR; // 门
+      }
+    }
+    // 出生点：随机，清出一块空地
+    const px = 10 + Math.floor(Math.random() * (MAP_W - 20));
+    const py = 10 + Math.floor(Math.random() * (MAP_H - 20));
+    for (let y = py - 3; y <= py + 3; y++) for (let x = px - 3; x <= px + 3; x++) {
+      if (x > 0 && x < MAP_W - 1 && y > 0 && y < MAP_H - 1) map[y][x] = TILE_FLOOR;
+    }
+    // BFS：求出生点可达区域，出口放在最远的可达格（保证走得通，且必须长途跋涉）
+    const dist = [];
+    for (let y = 0; y < MAP_H; y++) { dist[y] = new Array(MAP_W).fill(-1); }
+    const queue = [[px, py]]; dist[py][px] = 0;
+    let head = 0, farX = px, farY = py, farD = 0, reachable = 1;
+    while (head < queue.length) {
+      const [cx, cy] = queue[head++];
+      if (dist[cy][cx] > farD) { farD = dist[cy][cx]; farX = cx; farY = cy; }
+      for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+        const nx = cx + dx, ny = cy + dy;
+        if (nx >= 0 && nx < MAP_W && ny >= 0 && ny < MAP_H && map[ny][nx] === TILE_FLOOR && dist[ny][nx] === -1) {
+          dist[ny][nx] = dist[cy][cx] + 1; reachable++; queue.push([nx, ny]);
+        }
+      }
+    }
+    // 要求：可达面积足够大（探索量），出口足够远（至少 180 格曼哈顿绕行距离）
+    if (reachable > MAP_W * MAP_H * 0.45 && farD > 180) {
+      map[farY][farX] = TILE_EXIT;
+      return { x: px, y: py };
+    }
+  }
+  // 兜底：基本不可能走到
+  map[MAP_H - 5][MAP_W - 5] = TILE_EXIT;
+  return { x: 5, y: 5 };
+}
+
+// ==================== ENTITIES ====================
+class Player {
+  constructor(x, y) {
+    this.x = x; this.y = y;
+    this.faceAngle = 0; // 手电朝向（弧度）
+    this.hp = 100; this.stamina = 100; this.sanity = 100;
+    this.battery = 100;
+    this.speed = 2; this.sprintSpeed = 3.2;
+    this.flashlight = false; this.sprintMode = false; this.dir = 1; this.animFrame = 0;
+    this.invulnerable = 0; this.moving = false; this.batteryWarned = false;
+  }
+  update() {
+    let dx = 0, dy = 0;
+    const wantSprint = this.sprintMode;
+    const speed = wantSprint && this.stamina > 1 ? this.sprintSpeed : this.speed;
+    if (keys['KeyW'] || keys['ArrowUp'] || joystick.y < -0.3) dy = -1;
+    if (keys['KeyS'] || keys['ArrowDown'] || joystick.y > 0.3) dy = 1;
+    if (keys['KeyA'] || keys['ArrowLeft'] || joystick.x < -0.3) dx = -1;
+    if (keys['KeyD'] || keys['ArrowRight'] || joystick.x > 0.3) dx = 1;
+    if (dx !== 0 && dy !== 0) { dx *= 0.707; dy *= 0.707; }
+    this.moving = dx !== 0 || dy !== 0;
+    if (this.moving) this.faceAngle = Math.atan2(dy, dx);
+    const nx = this.x + dx * speed, ny = this.y + dy * speed;
+    if (!isWall(nx, this.y)) this.x = nx;
+    if (!isWall(this.x, ny)) this.y = ny;
+    if (dx !== 0) this.dir = dx > 0 ? 1 : -1;
+    if (wantSprint && this.moving && this.stamina > 1) this.stamina = Math.max(0, this.stamina - 0.35);
+    else this.stamina = Math.min(100, this.stamina + (this.moving ? 0.12 : 0.35));
+    // 手电耗电
+    if (this.flashlight) {
+      this.battery = Math.max(0, this.battery - 0.022);
+      if (this.battery <= 0) {
+        this.flashlight = false;
+        addFloat(this.x, this.y - 40, i18n[lang].batteryDead, "#986");
+      }
+    }
+    // ===== 特殊区域效果与发现提示 =====
+    const z = zoneAt(Math.floor(this.x / TILE), Math.floor(this.y / TILE));
+    if (z && !zonesSeen[z]) {
+      zonesSeen[z] = true;
+      addFloat(this.x, this.y - 40, i18n[lang].discovered, '#d4c44a');
+      addFloat(this.x, this.y - 25, i18n[lang].zones[z], '#ffe9a0');
+    }
+    if (z === 'pool') this.sanity = Math.min(100, this.sanity + 0.06);
+    else if (z === 'red') this.sanity -= 0.05;
+    else if (z === 'manila') this.sanity = Math.min(100, this.sanity + 0.03);
+    // 理智：附近有无实体、灯光熄灭事件都会侵蚀
+    let threat = false;
+    for (let e of entities) {
+      if (Math.hypot(e.x - this.x, e.y - this.y) < 180) { threat = true; break; }
+    }
+    this.sanity -= threat ? 0.06 : (blackout ? 0.05 : 0.012);
+    this.sanity = Math.max(0, Math.min(100, this.sanity));
+    if (this.sanity <= 0) this.hp -= 0.05;
+    this.hp = Math.max(0, Math.min(100, this.hp));
+    if (this.invulnerable > 0) this.invulnerable--;
+    if (map[Math.floor(this.y / TILE)] && map[Math.floor(this.y / TILE)][Math.floor(this.x / TILE)] === TILE_EXIT) winGame();
+    this.animFrame++;
+  }
+}
+
+class Monster {
+  constructor(x, y, type) {
+    this.x = x; this.y = y; this.type = type;
+    this.vx = 0; this.vy = 0; this.dir = 1; this.animFrame = Math.floor(Math.random() * 100);
+    this.state = 'wander'; this.wanderTarget = null;
+    this.speed = type === 'smiler' ? 1.9 : 2.6;
+    this.detectionRange = type === 'smiler' ? 220 : 320;
+    this.attackCooldown = 0;
+  }
+  pickTarget() {
+    // 在玩家附近一定范围内游荡，而不是瞬移到玩家面前
+    for (let tries = 0; tries < 20; tries++) {
+      const ang = Math.random() * Math.PI * 2;
+      const d = 200 + Math.random() * 400;
+      const tx = this.x + Math.cos(ang) * d, ty = this.y + Math.sin(ang) * d;
+      if (!isWall(tx, ty)) { this.wanderTarget = { x: tx, y: ty }; return; }
+    }
+    this.wanderTarget = { x: this.x, y: this.y };
+  }
+  update() {
+    const dist = Math.hypot(player.x - this.x, player.y - this.y);
+    let canSee = dist < this.detectionRange && !isWallBetween(this.x, this.y, player.x, player.y);
+    // 笑脸怪会被光吸引：开着手电更容易被发现
+    if (this.type === 'smiler' && player.flashlight && dist < this.detectionRange * 1.4) canSee = !isWallBetween(this.x, this.y, player.x, player.y);
+    // 奔跑的噪音会吸引嚎叫者
+    if (this.type === 'howler' && player.sprintMode && player.moving && dist < this.detectionRange * 1.2) canSee = true;
+    if (canSee && !inZone(player.x, player.y, 'manila')) this.state = 'chase';
+    else if (this.state === 'chase' && inZone(player.x, player.y, 'manila')) this.state = 'wander';
+    else if (this.state === 'chase' && dist > this.detectionRange * 1.5) this.state = 'wander';
+    if (this.state === 'chase') {
+      const angle = Math.atan2(player.y - this.y, player.x - this.x);
+      this.vx = Math.cos(angle) * this.speed; this.vy = Math.sin(angle) * this.speed;
+      if (dist < 22 && this.attackCooldown <= 0 && player.invulnerable <= 0) {
+        player.hp -= 18; player.invulnerable = 70; this.attackCooldown = 100;
+        hurtFlash(); shake = 12;
+      }
+    } else {
+      if (!this.wanderTarget) this.pickTarget();
+      const dtx = this.wanderTarget.x - this.x, dty = this.wanderTarget.y - this.y;
+      const d = Math.hypot(dtx, dty);
+      if (d < 12) { this.vx = 0; this.vy = 0; if (Math.random() < 0.005) this.pickTarget(); }
+      else { this.vx = (dtx / d) * this.speed * 0.4; this.vy = (dty / d) * this.speed * 0.4; }
+    }
+    const nx = this.x + this.vx, ny = this.y + this.vy;
+    if (!isWall(nx, this.y)) this.x = nx; else this.wanderTarget = null;
+    if (!isWall(this.x, ny)) this.y = ny; else this.wanderTarget = null;
+    if (this.vx !== 0) this.dir = this.vx > 0 ? 1 : -1;
+    if (this.attackCooldown > 0) this.attackCooldown--;
+    this.animFrame++;
+  }
+}
+
+class Item {
+  constructor(x, y, type) { this.x = x; this.y = y; this.type = type; this.bob = Math.random() * Math.PI * 2; }
+}
+
+let player, entities = [], items = [], shake = 0;
+let floatingTexts = [];
+let blackout = false, blackoutTimer = 0;
+
+function isWall(x, y) {
+  const tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
+  if (tx < 0 || tx >= MAP_W || ty < 0 || ty >= MAP_H) return true;
+  return map[ty][tx] === TILE_WALL;
+}
+function isWallBetween(x1, y1, x2, y2) {
+  const dist = Math.hypot(x2 - x1, y2 - y1), steps = Math.max(1, Math.ceil(dist / (TILE / 2)));
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    if (isWall(x1 + (x2 - x1) * t, y1 + (y2 - y1) * t)) return true;
+  }
+  return false;
+}
+
+function initGame() {
+  zonesSeen = {};
+  const spawn = generateMap();
+  player = new Player((spawn.x + 0.5) * TILE, (spawn.y + 0.5) * TILE);
+  entities = []; items = []; floatingTexts = [];
+  // 怪物：数量稀少，远离出生点生成
+  const monsterCount = Math.random() < 0.25 ? 0 : 1 + Math.floor(Math.random() * 3); // 0~3 只
+  let placed = 0, guard = 0;
+  while (placed < monsterCount && guard++ < 500) {
+    const x = Math.floor(Math.random() * MAP_W), y = Math.floor(Math.random() * MAP_H);
+    if (map[y][x] !== TILE_FLOOR) continue;
+    const wx = (x + 0.5) * TILE, wy = (y + 0.5) * TILE;
+    if (Math.hypot(wx - player.x, wy - player.y) < 500) continue; // 绝不刷在出生点附近
+    entities.push(new Monster(wx, wy, Math.random() < 0.5 ? 'smiler' : 'howler'));
+    placed++;
+  }
+  // 享乐层里有一个"主人"在等你
+  for (const z of zones) {
+    if (z.type === 'fun' && Math.random() < 0.8) {
+      entities.push(new Monster((z.x + z.w / 2) * TILE, (z.y + z.h / 2) * TILE, 'howler'));
+      break;
+    }
+  }
+  // 补给：杏仁水 + 能量棒，稀疏分布
+  for (let i = 0, g = 0; i < 26 && g < 2000; g++) {
+    const x = Math.floor(Math.random() * MAP_W), y = Math.floor(Math.random() * MAP_H);
+    if (map[y][x] !== TILE_FLOOR) continue;
+    const wx = (x + 0.5) * TILE, wy = (y + 0.5) * TILE;
+    if (Math.hypot(wx - player.x, wy - player.y) < 150) continue;
+    const roll = Math.random();
+    items.push(new Item(wx, wy, roll < 0.42 ? 'almond' : roll < 0.72 ? 'energy' : 'battery'));
+    i++;
+  }
+  // 危险区域的回报：红室与享乐层内藏有补给
+  for (const z of zones) {
+    if (z.type === 'red' || z.type === 'fun') {
+      for (let i = 0; i < 3; i++) {
+        const ix = (z.x + 1 + Math.random() * (z.w - 2)) * TILE;
+        const iy = (z.y + 1 + Math.random() * (z.h - 2)) * TILE;
+        const roll = Math.random();
+        items.push(new Item(ix, iy, roll < 0.4 ? 'almond' : roll < 0.7 ? 'energy' : 'battery'));
+      }
+    }
+  }
+  // 额外散布电池，保证手电能续命
+  for (let i = 0, g = 0; i < 8 && g < 1000; g++) {
+    const x = Math.floor(Math.random() * MAP_W), y = Math.floor(Math.random() * MAP_H);
+    if (map[y][x] !== TILE_FLOOR) continue;
+    items.push(new Item((x + 0.5) * TILE, (y + 0.5) * TILE, 'battery'));
+    i++;
+  }
+}
+
+// ==================== RENDERING ====================
+function drawPixelRect(x, y, w, h, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(Math.floor(x), Math.floor(y), Math.floor(w), Math.floor(h));
+}
+
+function drawSprite(x, y, type, f, dir) {
+  const px = Math.floor(x - camX), py = Math.floor(y - camY);
+  if (type === 'player') {
+    drawPixelRect(px - 6, py - 12, 12, 12, '#4a6a8a');
+    drawPixelRect(px - 4, py - 20, 8, 8, '#e8c49a');
+    drawPixelRect(px + (dir > 0 ? 1 : -3), py - 17, 2, 2, '#000');
+    const legOff = Math.sin(f * 0.2) * 3;
+    drawPixelRect(px - 5, py, 4, 6 + legOff, '#2e4a66');
+    drawPixelRect(px + 1, py, 4, 6 - legOff, '#2e4a66');
+  } else if (type === 'smiler') {
+    drawPixelRect(px - 8, py - 20, 16, 24, '#151512');
+    const glow = 0.5 + Math.sin(f * 0.05) * 0.5;
+    ctx.fillStyle = `rgba(255,255,240,${0.4 + glow * 0.6})`;
+    ctx.fillRect(px - 6, py - 10, 12, 2);
+    ctx.fillRect(px - 5, py - 8, 2, 2); ctx.fillRect(px + 3, py - 8, 2, 2);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(px - 5, py - 15, 3, 3); ctx.fillRect(px + 2, py - 15, 3, 3);
+  } else if (type === 'howler') {
+    drawPixelRect(px - 10, py - 14, 20, 14, '#3a2020');
+    drawPixelRect(px - 6, py - 22, 12, 10, '#4a2a2a');
+    ctx.fillStyle = '#f44';
+    ctx.fillRect(px - 4, py - 18, 3, 3); ctx.fillRect(px + 1, py - 18, 3, 3);
+  }
+}
+
+// 荧光灯面板位置（确定性伪随机，保证存档后一致）
+function hasLightPanel(x, y) { return (x * 31 + y * 17) % 23 === 0; }
+function lightFlicker(x, y) {
+  // 每块灯有自己的闪烁节奏
+  const seed = (x * 7 + y * 13) % 97;
+  const v = Math.sin(frame * 0.11 + seed) * Math.sin(frame * 0.037 + seed * 2);
+  return v > -0.85; // 大多数时间亮着
+}
+
+function drawMap() {
+  const startCol = Math.floor(camX / TILE), endCol = startCol + Math.ceil(W / TILE) + 1;
+  const startRow = Math.floor(camY / TILE), endRow = startRow + Math.ceil(H / TILE) + 1;
+  for (let y = Math.max(0, startRow); y < Math.min(MAP_H, endRow); y++) {
+    for (let x = Math.max(0, startCol); x < Math.min(MAP_W, endCol); x++) {
+      const px = x * TILE - camX, py = y * TILE - camY;
+      const tile = map[y][x];
+      if (tile === TILE_WALL) {
+        // Level 0 的黄墙纸
+        drawPixelRect(px, py, TILE, TILE, '#8d7f3f');
+        drawPixelRect(px + 1, py + 1, TILE - 2, TILE - 2, '#7d7040');
+        drawPixelRect(px, py + TILE - 4, TILE, 4, '#5e542e'); // 踢脚线
+        if ((x + y * 3) % 5 === 0) drawPixelRect(px + 6, py + 8, 3, 10, '#6e6234');
+      } else {
+        const zt = zoneMap[y][x];
+        if (zt === 'pool') {
+          // 泳池房：白色瓷砖与池水
+          drawPixelRect(px, py, TILE, TILE, '#cfc8b0');
+          if ((x + y) % 2 === 0) drawPixelRect(px + 2, py + 2, TILE - 4, TILE - 4, '#c2bba2');
+          if ((x * 5 + y * 3) % 7 === 0) {
+            drawPixelRect(px + 4, py + 4, TILE - 8, TILE - 8, '#5a8a8a');
+            drawPixelRect(px + 8, py + 8, TILE - 16, TILE - 16, '#6a9a9a');
+          }
+        } else if (zt === 'fun') {
+          // 享乐层：欢快的彩毯与"气球"
+          drawPixelRect(px, py, TILE, TILE, '#8a5a6a');
+          if ((x * 3 + y * 7) % 9 === 0) drawPixelRect(px + 6, py + 6, 8, 8, '#c47a8a');
+          if ((x * 11 + y * 13) % 31 === 0) {
+            drawPixelRect(px + 12, py + 6, 8, 8, '#d4c44a');
+            drawPixelRect(px + 15, py + 14, 2, 10, '#888');
+          }
+        } else if (zt === 'red') {
+          // 红室：令人不安的红色地毯与墙面反光
+          drawPixelRect(px, py, TILE, TILE, '#7a3a2a');
+          if ((x * 7 + y * 3) % 11 === 0) drawPixelRect(px + 5, py + 6, 10, 7, '#6a2f22');
+          if ((x + y) % 3 === 0) drawPixelRect(px, py + TILE - 2, TILE, 2, '#5e2a1e');
+        } else if (zt === 'manila') {
+          // 马尼拉房间：温暖的米色，一张"桌子"
+          drawPixelRect(px, py, TILE, TILE, '#c9b689');
+          if ((x + y) % 2 === 0) drawPixelRect(px + 2, py + 2, TILE - 4, TILE - 4, '#bda97e');
+        } else {
+          // 潮湿地毯：暗黄色，带污渍
+          drawPixelRect(px, py, TILE, TILE, '#b3a254');
+          if ((x * 3 + y * 7) % 11 === 0) drawPixelRect(px + 5, py + 6, 10, 7, '#9c8c46');
+          if ((x * 13 + y * 5) % 29 === 0) drawPixelRect(px + 12, py + 16, 12, 9, '#8a7b3d');
+          if ((x + y) % 2 === 0) drawPixelRect(px, py + TILE - 2, TILE, 2, '#a1904a');
+        }
+        // 天花板的灯（画在地面上表示光照区域）
+        if (hasLightPanel(x, y) && !blackout && lightFlicker(x, y)) {
+          ctx.fillStyle = 'rgba(255,250,200,0.10)';
+          ctx.fillRect(px - TILE, py - TILE, TILE * 3, TILE * 3);
+          ctx.fillStyle = 'rgba(255,252,215,0.28)';
+          ctx.fillRect(px + 4, py + 13, TILE - 8, 6);
+        }
+      }
+      if (tile === TILE_EXIT) {
+        // 裂缝：现实中撕开的一道缝
+        drawPixelRect(px + 8, py, 16, TILE, '#050505');
+        ctx.fillStyle = `rgba(180,220,255,${0.25 + Math.sin(frame * 0.08) * 0.15})`;
+        ctx.fillRect(px + 12, py + 2, 8, TILE - 4);
+        drawPixelRect(px + 6, py, 3, TILE, '#3a3420');
+        drawPixelRect(px + 23, py, 3, TILE, '#3a3420');
+      }
+    }
+  }
+}
+
+function drawLighting() {
+  // Level 0 不是全黑的——是压抑的、昏黄的亮
+  const lightCanvas = document.createElement('canvas');
+  lightCanvas.width = W; lightCanvas.height = H;
+  const lctx = lightCanvas.getContext('2d');
+  const px = player.x - camX, py = player.y - camY;
+  if (blackout) {
+    // 熄灯事件：几乎全黑，只剩手电
+    lctx.fillStyle = 'rgba(0,0,0,0.96)';
+    lctx.fillRect(0, 0, W, H);
+  } else {
+    // 常态：昏黄的环境光，远处渐暗；理智越低世界越暗
+    const darkness = 0.45 + (1 - player.sanity / 100) * 0.3;
+    lctx.fillStyle = `rgba(10,8,0,${darkness})`;
+    lctx.fillRect(0, 0, W, H);
+    lctx.globalCompositeOperation = 'destination-out';
+    // 灯光面板的光晕
+    const startCol = Math.floor(camX / TILE), endCol = startCol + Math.ceil(W / TILE) + 1;
+    const startRow = Math.floor(camY / TILE), endRow = startRow + Math.ceil(H / TILE) + 1;
+    for (let y = Math.max(0, startRow); y < Math.min(MAP_H, endRow); y++) {
+      for (let x = Math.max(0, startCol); x < Math.min(MAP_W, endCol); x++) {
+        if (map[y][x] === TILE_FLOOR && hasLightPanel(x, y) && lightFlicker(x, y)) {
+          const lx = x * TILE + TILE / 2 - camX, ly = y * TILE + TILE / 2 - camY;
+          const g = lctx.createRadialGradient(lx, ly, 10, lx, ly, 110);
+          g.addColorStop(0, 'rgba(255,255,255,0.55)');
+          g.addColorStop(1, 'rgba(255,255,255,0)');
+          lctx.fillStyle = g;
+          lctx.beginPath(); lctx.arc(lx, ly, 110, 0, Math.PI * 2); lctx.fill();
+        }
+      }
+    }
+  }
+  lctx.globalCompositeOperation = 'destination-out';
+  if (!blackout) {
+    // 玩家周围的微弱自视（平时才有；黑灯时手电是唯一光源）
+    const amb = lctx.createRadialGradient(px, py, 5, px, py, 90);
+    amb.addColorStop(0, 'rgba(255,255,255,0.6)');
+    amb.addColorStop(1, 'rgba(255,255,255,0)');
+    lctx.fillStyle = amb;
+    lctx.beginPath(); lctx.arc(px, py, 90, 0, Math.PI * 2); lctx.fill();
+  } else {
+    // 黑灯：只剩脚下半步可见
+    const amb = lctx.createRadialGradient(px, py, 2, px, py, 28);
+    amb.addColorStop(0, 'rgba(255,255,255,0.25)');
+    amb.addColorStop(1, 'rgba(255,255,255,0)');
+    lctx.fillStyle = amb;
+    lctx.beginPath(); lctx.arc(px, py, 28, 0, Math.PI * 2); lctx.fill();
+  }
+  // 手电：沿朝向逐层递进的柔光锥，边缘自然消散
+  if (player.flashlight && player.battery > 0) {
+    // 电量不足：光束变暗变短，并不规律闪烁
+    const lowBat = player.battery < 30;
+    let range = lowBat ? 90 + (player.battery / 30) * 80 : 200;
+    if (lowBat && Math.random() < 0.08) range *= Math.random() * 0.6;
+    const brightness = lowBat ? 0.55 + (player.battery / 30) * 0.45 : 1;
+    const angle = player.faceAngle;
+    // 平时宽、黑灯窄
+    const spreadRatio = blackout ? 0.32 : 0.5; // 光斑宽度 = 前进距离 × 该系数
+    const steps = 7;
+    for (let i = 1; i <= steps; i++) {
+      const t = i / steps;
+      const cx = px + Math.cos(angle) * range * t;
+      const cy = py + Math.sin(angle) * range * t;
+      const r = range * t * spreadRatio + 12;
+      const a = brightness * (1 - t * 0.85) * (blackout ? 0.5 : 0.28);
+      const g = lctx.createRadialGradient(cx, cy, r * 0.2, cx, cy, r);
+      g.addColorStop(0, `rgba(255,255,255,${a})`);
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      lctx.fillStyle = g;
+      lctx.beginPath(); lctx.arc(cx, cy, r, 0, Math.PI * 2); lctx.fill();
+    }
+    // 近身一小圈亮光，模拟手电握在手里的感觉
+    const near = lctx.createRadialGradient(px, py, 3, px, py, 40);
+    near.addColorStop(0, `rgba(255,255,240,${0.45 * brightness})`);
+    near.addColorStop(1, 'rgba(255,255,255,0)');
+    lctx.fillStyle = near;
+    lctx.beginPath(); lctx.arc(px, py, 40, 0, Math.PI * 2); lctx.fill();
+  }
+  ctx.drawImage(lightCanvas, 0, 0);
+}
+
+function drawItems() {
+  for (let item of items) {
+    const px = item.x - camX, py = item.y - camY + Math.sin(frame * 0.05 + item.bob) * 3;
+    if (px < -20 || px > W + 20 || py < -20 || py > H + 20) continue;
+    ctx.font = '18px monospace'; ctx.textAlign = 'center';
+    ctx.shadowColor = '#ffe'; ctx.shadowBlur = 8;
+    ctx.fillText(i18n[lang].items[item.type] || '?', px, py);
+    ctx.shadowBlur = 0;
+  }
+}
+
+// 低理智幻觉：不该存在的东西
+function drawHallucinations() {
+  if (player.sanity > 45) return;
+  const intensity = (45 - player.sanity) / 45;
+  if (Math.random() < 0.008 * intensity * 10) {
+    hallucination = { x: Math.random() * W, y: Math.random() * H, life: 8 + Math.random() * 15, kind: Math.random() < 0.5 ? 'smile' : 'eye' };
+  }
+  if (hallucination) {
+    hallucination.life--;
+    const h = hallucination;
+    ctx.globalAlpha = Math.min(1, h.life / 10) * 0.7;
+    if (h.kind === 'smile') {
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(h.x - 10, h.y, 20, 3);
+      ctx.fillRect(h.x - 8, h.y + 3, 3, 3); ctx.fillRect(h.x + 5, h.y + 3, 3, 3);
+    } else {
+      ctx.fillStyle = '#f00';
+      ctx.fillRect(h.x, h.y, 5, 5);
+    }
+    ctx.globalAlpha = 1;
+    if (h.life <= 0) hallucination = null;
+  }
+}
+let hallucination = null;
+
+function drawFloatingTexts() {
+  for (let ft of floatingTexts) {
+    const px = ft.x - camX, py = ft.y - camY;
+    ctx.fillStyle = ft.color; ctx.font = 'italic 13px monospace'; ctx.textAlign = 'center';
+    ctx.globalAlpha = Math.min(1, ft.life / 60);
+    ctx.fillText(ft.text, px, py); ctx.globalAlpha = 1;
+  }
+}
+
+function render() {
+  let sx = 0, sy = 0;
+  if (shake > 0) {
+    sx = (Math.random() - 0.5) * shake; sy = (Math.random() - 0.5) * shake;
+    shake *= 0.9; if (shake < 0.5) shake = 0;
+  }
+  // 低理智：世界轻微漂移扭曲
+  if (player.sanity < 40) {
+    sx += Math.sin(frame * 0.03) * (40 - player.sanity) * 0.08;
+    sy += Math.cos(frame * 0.021) * (40 - player.sanity) * 0.06;
+  }
+  ctx.save(); ctx.translate(sx, sy);
+  ctx.fillStyle = '#0a0905'; ctx.fillRect(-20, -20, W + 40, H + 40);
+  camX = Math.floor(player.x - W / 2); camY = Math.floor(player.y - H / 2);
+  drawMap(); drawItems();
+  for (let e of entities) drawSprite(e.x, e.y, e.type, e.animFrame, e.dir);
+  if (player.invulnerable % 10 < 6) drawSprite(player.x, player.y, 'player', player.animFrame, player.dir);
+  drawFloatingTexts();
+  drawLighting();
+  drawHallucinations();
+  ctx.restore();
+}
+
+// ==================== FEEL-BASED FEEDBACK（无数字，只有感受） ====================
+function hurtFlash() {
+  const el = document.getElementById('hurtFlash');
+  el.style.opacity = '1';
+  setTimeout(() => el.style.opacity = '0', 200);
+}
+function updateFeelOverlays() {
+  // 生命垂危：红色收缩的视野 + 心跳
+  const lowHp = document.getElementById('lowHpVignette');
+  const hpRatio = player.hp / 100;
+  if (hpRatio < 0.5) {
+    const pulse = 0.5 + Math.sin(frame * 0.15) * 0.3;
+    lowHp.style.opacity = String(((0.5 - hpRatio) * 2) * pulse);
+    if (frame % Math.floor(40 + hpRatio * 60) === 0) playThump(0.25 * (1 - hpRatio), 1);
+  } else lowHp.style.opacity = '0';
+  // 精疲力尽：视野发黑收缩 + 喘息
+  const tired = document.getElementById('tiredVignette');
+  const stRatio = player.stamina / 100;
+  if (stRatio < 0.35) {
+    tired.style.opacity = String((0.35 - stRatio) * 2.2);
+    if (stRatio < 0.2 && frame % 55 === 0) playBreath(0.12);
+  } else tired.style.opacity = '0';
+}
+
+// ==================== UPDATE ====================
+function update() {
+  if (gameState !== 'playing') return;
+  player.update();
+  for (let e of entities) e.update();
+  // 熄灯事件：荧光灯偶尔会整片熄灭几秒（Level 0 经典现象）
+  if (blackout) {
+    blackoutTimer--;
+    if (blackoutTimer <= 0) blackout = false;
+  } else if (Math.random() < 0.0004) {
+    blackout = true; blackoutTimer = 900 + Math.random() * 2700; // 15秒 ~ 1分钟
+    if (Math.random() < 0.5) addFloat(player.x, player.y - 40, "……", "#888");
+  }
+  // 物品自动拾取
+  for (let i = items.length - 1; i >= 0; i--) {
+    const item = items[i];
+    if (Math.hypot(item.x - player.x, item.y - player.y) < 22) {
+      const t = i18n[lang];
+      if (item.type === 'almond') { player.sanity = Math.min(100, player.sanity + 35); addFloat(player.x, player.y - 30, t.feelBetter, '#9ab'); }
+      else if (item.type === 'energy') { player.stamina = Math.min(100, player.stamina + 60); addFloat(player.x, player.y - 30, t.feelStronger, '#ad8'); }
+      else if (item.type === 'battery') { player.battery = Math.min(100, player.battery + 45); addFloat(player.x, player.y - 30, t.feelCharged, '#fd6'); }
+      items.splice(i, 1);
+    }
+  }
+  for (let i = floatingTexts.length - 1; i >= 0; i--) {
+    floatingTexts[i].y -= 0.4; floatingTexts[i].life--;
+    if (floatingTexts[i].life <= 0) floatingTexts.splice(i, 1);
+  }
+  // 疾跑模式开启时按钮常亮
+  document.getElementById('btnSprint').classList.toggle('sprint-on', player.sprintMode);
+  document.getElementById('btnInteract').classList.toggle('sprint-on', player.flashlight);
+  if (player.hp <= 0) gameOver();
+  updateFeelOverlays();
+}
+function addFloat(x, y, text, color) { floatingTexts.push({ x, y, text, color, life: 140 }); }
+
+// ==================== UI ====================
+function showGameUI() {
+  document.getElementById('titleScreen').style.display = 'none';
+  document.getElementById('pauseHint').style.display = 'block';
+  if ('ontouchstart' in window) document.getElementById('touchControls').style.display = 'block';
+}
+function startGame() { initAudio(); initGame(); gameState = 'playing'; showGameUI(); }
+function continueGame() {
+  initAudio();
+  if (loadGame()) { gameState = 'playing'; showGameUI(); }
+  else showMessage(i18n[lang].noSave, "");
+}
+function showHowToPlay() { showMessage(i18n[lang].howToPlayTitle, i18n[lang].howToPlayText); }
+
+let msgOnClose = null;
+function showMessage(title, text, onClose) {
+  document.getElementById('msgTitle').textContent = title;
+  document.getElementById('msgText').textContent = text;
+  document.getElementById('msgText').style.whiteSpace = 'pre-line';
+  document.getElementById('messageBox').style.display = 'block';
+  msgOnClose = onClose || null;
+}
+function closeMessage() {
+  document.getElementById('messageBox').style.display = 'none';
+  if (msgOnClose) { const cb = msgOnClose; msgOnClose = null; cb(); }
+}
+function pauseGame() {
+  if (gameState === 'playing') { gameState = 'paused'; document.getElementById('pauseMenu').style.display = 'flex'; }
+}
+function resumeGame() { gameState = 'playing'; document.getElementById('pauseMenu').style.display = 'none'; }
+function saveGame() {
+  if (!player) return;
+  const saveData = {
+    player: { x: player.x, y: player.y, hp: player.hp, stamina: player.stamina, sanity: player.sanity, battery: player.battery, flashlight: player.flashlight },
+    map: map, zones: zones, zoneMap: zoneMap, zonesSeen: zonesSeen,
+    entities: entities.map(e => ({ x: e.x, y: e.y, type: e.type })),
+    items: items.map(i => ({ x: i.x, y: i.y, type: i.type }))
+  };
+  try { localStorage.setItem('backrooms_save', JSON.stringify(saveData)); showMessage(i18n[lang].saved, ""); }
+  catch(e) { showMessage(i18n[lang].saved, ""); }
+}
+function loadGame() {
+  const data = localStorage.getItem('backrooms_save');
+  if (!data) return false;
+  try {
+    const save = JSON.parse(data);
+    map = save.map;
+    zones = save.zones || []; zoneMap = save.zoneMap || null; zonesSeen = save.zonesSeen || {};
+    if (!zoneMap) { // 旧存档兼容：重建空 zoneMap
+      zoneMap = [];
+      for (let y = 0; y < MAP_H; y++) { zoneMap[y] = new Array(MAP_W).fill(null); }
+    }
+    player = new Player(save.player.x, save.player.y);
+    player.hp = save.player.hp; player.stamina = save.player.stamina; player.sanity = save.player.sanity;
+    player.battery = save.player.battery !== undefined ? save.player.battery : 100;
+    player.flashlight = !!save.player.flashlight;
+    entities = []; for (let e of save.entities) entities.push(new Monster(e.x, e.y, e.type));
+    items = []; for (let i of save.items) items.push(new Item(i.x, i.y, i.type));
+    return true;
+  } catch(e) { return false; }
+}
+function checkSave() {
+  document.getElementById('btnContinue').style.display = localStorage.getItem('backrooms_save') !== null ? 'block' : 'none';
+}
+function quitToMenu() {
+  gameState = 'title';
+  document.getElementById('pauseMenu').style.display = 'none';
+  document.getElementById('titleScreen').style.display = 'flex';
+  document.getElementById('pauseHint').style.display = 'none';
+  document.getElementById('touchControls').style.display = 'none';
+  document.getElementById('lowHpVignette').style.opacity = '0';
+  document.getElementById('tiredVignette').style.opacity = '0';
+  checkSave();
+}
+function gameOver() {
+  if (gameState !== 'playing') return;
+  gameState = 'gameover';
+  showMessage(i18n[lang].gameOver, i18n[lang].gameOverText, () => { localStorage.removeItem('backrooms_save'); quitToMenu(); });
+}
+function winGame() {
+  if (gameState !== 'playing') return;
+  gameState = 'win';
+  showMessage(i18n[lang].winTitle, i18n[lang].winText, () => { localStorage.removeItem('backrooms_save'); quitToMenu(); });
+}
+
+// ==================== INPUT ====================
+window.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (e.code === 'Escape') { if (gameState === 'playing') pauseGame(); else if (gameState === 'paused') resumeGame(); }
+  if (!player || gameState !== 'playing') return;
+  if ((e.code === 'ShiftLeft' || e.code === 'ShiftRight') && !e.repeat) {
+    player.sprintMode = !player.sprintMode;
+    document.getElementById('btnSprint').classList.toggle('sprint-on', player.sprintMode);
+  }
+  if (e.code === 'KeyF') {
+    player.flashlight = !player.flashlight;
+    document.getElementById('btnInteract').classList.toggle('sprint-on', player.flashlight);
+  }
+});
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+// ===== 触控：全局 Pointer Events + 坐标命中，兼容一切内嵌浏览器 =====
+let joystickPointerId = null;
+const joystickZone = document.getElementById('joystickZone');
+const joystickKnob = document.getElementById('joystickKnob');
+const btnSprintEl = document.getElementById('btnSprint');
+const btnInteractEl = document.getElementById('btnInteract');
+
+function hitRect(x, y, el) {
+  const r = el.getBoundingClientRect();
+  // 命中范围比视觉按钮稍大，容错
+  const pad = 12;
+  return x >= r.left - pad && x <= r.right + pad && y >= r.top - pad && y <= r.bottom + pad;
+}
+
+function handlePress(x, y, pid) {
+  if (gameState !== 'playing' || !player) return false;
+  if (hitRect(x, y, btnSprintEl)) {
+    player.sprintMode = !player.sprintMode;
+    btnSprintEl.classList.toggle('sprint-on', player.sprintMode);
+    return true;
+  }
+  if (hitRect(x, y, btnInteractEl)) {
+    player.flashlight = !player.flashlight;
+    btnInteractEl.classList.toggle('sprint-on', player.flashlight);
+    return true;
+  }
+  if (hitRect(x, y, joystickZone) && joystickPointerId === null) {
+    joystickPointerId = pid;
+    const rect = joystickZone.getBoundingClientRect();
+    touchStartPos = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    updateJoystick(x, y);
+    return true;
+  }
+  return false;
+}
+function handleMove(x, y, pid) {
+  if (pid === joystickPointerId) { updateJoystick(x, y); return true; }
+  return false;
+}
+function handleRelease(pid) {
+  if (pid === joystickPointerId) {
+    joystickPointerId = null;
+    joystick = { x: 0, y: 0, active: false };
+    joystickKnob.style.transform = 'translate(-50%, -50%)';
+  }
+}
+
+let touchStartPos = { x: 0, y: 0 };
+function updateJoystick(x, y) {
+  const dx = x - touchStartPos.x, dy = y - touchStartPos.y;
+  const dist = Math.hypot(dx, dy), maxDist = 45, scale = dist > maxDist ? maxDist / dist : 1;
+  joystickKnob.style.transform = `translate(calc(-50% + ${dx * scale}px), calc(-50% + ${dy * scale}px))`;
+  joystick = { x: (dx * scale) / maxDist, y: (dy * scale) / maxDist, active: true };
+}
+
+// 优先 Pointer Events（现代浏览器统一鼠标/触摸/手写笔）
+if (window.PointerEvent) {
+  window.addEventListener('pointerdown', e => { if (handlePress(e.clientX, e.clientY, e.pointerId)) e.preventDefault(); }, { passive: false, capture: true });
+  window.addEventListener('pointermove', e => { if (handleMove(e.clientX, e.clientY, e.pointerId)) e.preventDefault(); }, { passive: false, capture: true });
+  window.addEventListener('pointerup', e => handleRelease(e.pointerId), { capture: true });
+  window.addEventListener('pointercancel', e => handleRelease(e.pointerId), { capture: true });
+} else {
+  // 老浏览器回退：touch 事件挂在 window 上，用 changedTouches 跟踪
+  window.addEventListener('touchstart', e => {
+    for (const t of e.changedTouches) if (handlePress(t.clientX, t.clientY, t.identifier)) e.preventDefault();
+  }, { passive: false, capture: true });
+  window.addEventListener('touchmove', e => {
+    for (const t of e.changedTouches) if (handleMove(t.clientX, t.clientY, t.identifier)) e.preventDefault();
+  }, { passive: false, capture: true });
+  const endT = e => { for (const t of e.changedTouches) handleRelease(t.identifier); };
+  window.addEventListener('touchend', endT, { capture: true });
+  window.addEventListener('touchcancel', endT, { capture: true });
+  // 鼠标兜底（桌面调试）
+  window.addEventListener('mousedown', e => handlePress(e.clientX, e.clientY, 'mouse'));
+}
+
+// ==================== LOOP ====================
+function resize() {
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = W; canvas.height = H;
+  ctx.imageSmoothingEnabled = false;
+}
+window.addEventListener('resize', resize);
+resize();
+
+function loop() {
+  frame++;
+  if (player && gameState !== 'title') { update(); render(); }
+  requestAnimationFrame(loop);
+}
+
+checkSave();
+setLang('zh');
+loop();
+</script>
+</body>
+</html>
