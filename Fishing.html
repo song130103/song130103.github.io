@@ -1,0 +1,788 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#264653">
+<title>渔歌物语 · Fishing Tale</title>
+<link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:#264653;font-family:'ZCOOL KuaiLe','PingFang SC','Microsoft YaHei',sans-serif;color:#264653;user-select:none;-webkit-user-select:none;touch-action:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+.hidden{display:none!important}
+
+/* ============ 主页 ============ */
+#home{position:fixed;inset:0;background:#f5f0e1;display:flex;flex-direction:column;z-index:10;overflow-y:auto}
+.topbar{background:#264653;color:#f5f0e1;padding:8px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.topbar h1{font-size:20px}
+.topbar .sp{flex:1}
+.pill{border-radius:999px;padding:3px 10px;font-weight:bold;font-size:13px}
+.coin{background:#e9c46a;color:#264653}
+.pearl{background:#a884f3;color:#fff}
+.btnline{border:1px solid rgba(245,240,225,.5);border-radius:999px;padding:3px 10px;color:#f5f0e1;font-size:13px}
+#home .center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:14px}
+#home .title{font-size:52px;letter-spacing:4px}
+#home .sub{opacity:.7}
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;width:100%;max-width:640px}
+.modecard{padding:18px;border-radius:16px;border:4px solid rgba(38,70,83,.25);background:rgba(255,255,255,.6);text-align:left;transition:.15s}
+.modecard.on{border-color:#f4a261;background:rgba(244,162,97,.15);box-shadow:0 6px 18px rgba(38,70,83,.25);transform:scale(1.02)}
+.modecard .ic{font-size:30px}
+.modecard .nm{font-size:20px;font-weight:bold;margin:4px 0}
+.modecard .ds{font-size:13px;opacity:.7}
+#startBtn{padding:14px 56px;border-radius:999px;background:#f4a261;border:4px solid #264653;font-size:24px;font-weight:900;box-shadow:0 6px 0 #264653;transition:.1s}
+#startBtn:active{transform:translateY(4px);box-shadow:none}
+.hint{font-size:11px;opacity:.5}
+
+/* ============ 游戏 ============ */
+#game{position:fixed;inset:0;overflow:hidden}
+#cv{position:absolute;inset:0;width:100%;height:100%}
+.hud{position:absolute;z-index:5;pointer-events:none}
+.hud>*{pointer-events:auto}
+#hudTop{top:0;left:0;right:0;padding:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.hudchip{background:rgba(38,70,83,.8);color:#f5f0e1;border:1px solid rgba(245,240,225,.3);border-radius:999px;padding:3px 10px;font-size:12px;backdrop-filter:blur(4px)}
+.hudchip.on{background:#f4a261;color:#264653;border-color:#f4a261;font-weight:bold}
+#hudBottom{bottom:6px;left:6px;display:flex;gap:6px;flex-wrap:wrap;max-width:70%}
+.gearchip{border-radius:999px;padding:2px 10px;font-size:11px;font-weight:bold}
+#phaseTip{top:38px;left:50%;transform:translateX(-50%);background:rgba(38,70,83,.8);color:#f5f0e1;border-radius:999px;padding:4px 14px;font-size:14px;font-weight:bold;white-space:nowrap;pointer-events:none}
+#phaseTip .blink{color:#e9c46a;animation:blink .4s infinite alternate}
+@keyframes blink{to{opacity:.3}}
+
+/* 路亚战斗按钮 */
+#lureBtns{position:absolute;bottom:10px;left:0;right:0;z-index:6;display:flex;justify-content:center;align-items:flex-end;gap:14px;pointer-events:none}
+#lureBtns>*{pointer-events:auto}
+.gbtn{width:72px;height:72px;border-radius:50%;border:4px solid rgba(245,240,225,.4);background:rgba(38,70,83,.85);color:#f5f0e1;font-size:28px;font-weight:900;touch-action:none}
+.gbtn.on{background:#f4a261;border-color:#264653;color:#264653}
+#reelBtn{height:72px;padding:0 26px;border-radius:999px;border:4px solid #264653;background:#6abe30;color:#fff;font-size:19px;font-weight:900;touch-action:none}
+#reelBtn.on{background:#4d9be6;transform:scale(.95)}
+
+/* ============ 菜单 ============ */
+#menu{position:fixed;inset:0;background:#f5f0e1;z-index:20;display:flex;flex-direction:column}
+#menu .body{flex:1;overflow-y:auto;padding:12px;max-width:760px;margin:0 auto;width:100%}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+.tab{padding:8px;border-radius:10px;border:2px solid rgba(38,70,83,.25);background:rgba(255,255,255,.5);font-weight:bold;font-size:14px}
+.tab.on{background:#264653;color:#f5f0e1;border-color:#264653}
+.secT{font-weight:bold;margin:12px 0 8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.card{padding:8px;border-radius:10px;border:2px solid rgba(38,70,83,.25);background:rgba(255,255,255,.6);text-align:left;font-size:13px}
+.card.on{border-color:#f4a261;background:rgba(244,162,97,.15)}
+.card.lock{border-style:dashed;opacity:.45}
+.card .nm{font-weight:bold}
+.card .sm{font-size:10px;opacity:.6}
+.tier{display:inline-block;font-size:10px;font-weight:bold;padding:1px 6px;border-radius:4px;margin-right:4px}
+.bswitch{display:flex;gap:6px;margin-bottom:10px}
+.bswitch button{padding:6px 14px;border-radius:999px;border:2px solid rgba(38,70,83,.3);font-weight:bold;font-size:13px}
+.bswitch button.on{background:#264653;color:#f5f0e1;border-color:#264653}
+.qcard{padding:10px;border-radius:10px;border:2px solid rgba(38,70,83,.25);background:rgba(255,255,255,.6);margin-bottom:8px}
+.qcard.done{border-color:#6abe30;background:rgba(106,190,48,.1)}
+.qcard.claimed{opacity:.6;border-color:rgba(38,70,83,.15)}
+.qbar{height:6px;border-radius:3px;background:rgba(38,70,83,.15);margin-top:6px;overflow:hidden}
+.qbar i{display:block;height:100%;background:#f4a261}
+.claimbtn{padding:4px 14px;border-radius:999px;background:#6abe30;color:#fff;font-weight:bold;font-size:12px;animation:blink .8s infinite alternate}
+.rowbet{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+
+/* ============ 弹窗 ============ */
+.modal{position:fixed;inset:0;background:rgba(38,70,83,.6);z-index:30;display:flex;align-items:center;justify-content:center;padding:16px}
+.mbox{background:#f5f0e1;border:4px solid #264653;border-radius:18px;padding:22px;max-width:340px;width:100%;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+.mbox h2{font-size:22px;margin-bottom:4px}
+.mbtn{padding:10px;border-radius:999px;font-weight:bold;flex:1;border:2px solid #264653}
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:50;background:#264653;color:#f5f0e1;padding:8px 20px;border-radius:999px;font-weight:bold;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+
+/* ============ 竖屏旋转提示 ============ */
+#rotateTip{position:fixed;inset:0;z-index:100;background:#264653;color:#f5f0e1;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:20px}
+#rotateTip .phone{font-size:64px;animation:rot 1.6s ease-in-out infinite}
+@keyframes rot{0%,20%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+@media (orientation:portrait) and (pointer:coarse){
+  #rotateTip{display:flex}
+}
+</style>
+</head>
+<body>
+
+<div id="rotateTip">
+  <div class="phone">📱</div>
+  <div id="rotateText" style="font-size:20px;font-weight:bold">请横屏游玩<br><span style="font-size:13px;opacity:.7">Please rotate to landscape</span></div>
+</div>
+
+<!-- ============ 主页 ============ -->
+<div id="home">
+  <div class="topbar">
+    <h1>🎣 <span data-i18n="gameTitle"></span></h1>
+    <span class="sp"></span>
+    <span class="pill coin">🪙 <span id="homeCoins">0</span></span>
+    <span class="pill pearl">🦪 <span id="homePearls">0</span></span>
+    <button class="btnline" onclick="toggleLang()" id="langBtn1">EN</button>
+    <button class="btnline" onclick="showConfirmNew()" data-i18n="newGame"></button>
+  </div>
+  <div class="center">
+    <div class="title" data-i18n="gameTitle"></div>
+    <div class="sub" data-i18n="subtitle"></div>
+    <div style="font-weight:bold" data-i18n="chooseMode"></div>
+    <div class="modes">
+      <button class="modecard" id="modeLure" onclick="setMode('lure')">
+        <div class="ic">🎣</div><div class="nm" data-i18n="lureBranch"></div><div class="ds" data-i18n="lureDesc"></div>
+      </button>
+      <button class="modecard" id="modeFloat" onclick="setMode('float')">
+        <div class="ic">🎋</div><div class="nm" data-i18n="floatBranch"></div><div class="ds" data-i18n="floatDesc"></div>
+      </button>
+    </div>
+    <button id="startBtn" onclick="startGame()"><span data-i18n="startGame"></span> ➜</button>
+    <div class="hint">💾 <span data-i18n="autoSaved"></span> · <span data-i18n="totalCaught"></span> <span id="homeTotal">0</span></div>
+  </div>
+</div>
+
+<!-- ============ 游戏 ============ -->
+<div id="game" class="hidden">
+  <canvas id="cv"></canvas>
+  <div class="hud" id="hudTop">
+    <button class="hudchip" onclick="goHome()">‹ <span data-i18n="backHome"></span></button>
+    <span class="hudchip on" id="modeChip"></span>
+    <span id="areaChips"></span>
+    <span style="flex:1"></span>
+    <span class="hudchip" style="background:#e9c46a;color:#264653">🪙 <span id="gCoins">0</span></span>
+    <span class="hudchip" style="background:#a884f3">🦪 <span id="gPearls">0</span></span>
+    <button class="hudchip" onclick="toggleLang()" id="langBtn2">EN</button>
+    <button class="hudchip" style="background:#f4a261;color:#264653;font-weight:900" onclick="openMenu()">☰ <span data-i18n="menu"></span></button>
+  </div>
+  <div class="hud" id="phaseTip"></div>
+  <div class="hud" id="hudBottom"></div>
+  <div id="lureBtns" class="hidden">
+    <button class="gbtn" id="steerL">◀</button>
+    <button id="reelBtn">⤵ <span data-i18n="reel"></span></button>
+    <button class="gbtn" id="steerR">▶</button>
+  </div>
+</div>
+
+<!-- ============ 菜单 ============ -->
+<div id="menu" class="hidden">
+  <div class="topbar">
+    <span style="font-weight:bold;font-size:18px">☰ <span data-i18n="menu"></span></span>
+    <span class="sp"></span>
+    <button class="hudchip" style="background:#f4a261;color:#264653;font-weight:bold" onclick="closeMenu()"><span data-i18n="back"></span> ✕</button>
+  </div>
+  <div class="body">
+    <div class="tabs">
+      <button class="tab on" data-tab="gear">🎣 <span data-i18n="gear"></span></button>
+      <button class="tab" data-tab="codex">📖 <span data-i18n="codex"></span></button>
+      <button class="tab" data-tab="quests">📜 <span data-i18n="quests"></span></button>
+      <button class="tab" data-tab="shop">🏪 <span data-i18n="shop"></span></button>
+    </div>
+    <div id="menuContent"></div>
+  </div>
+</div>
+
+<!-- ============ 弹窗 ============ -->
+<div id="modalWrap"></div>
+<div id="toast" class="hidden"></div>
+
+<script>
+'use strict';
+/* ==================== i18n ==================== */
+const DICT = {
+gameTitle:['渔歌物语','Fishing Tale'],subtitle:['星露谷式 2D 钓鱼','A cozy 2D fishing game'],
+gear:['装备','Gear'],codex:['图鉴','Codex'],quests:['任务','Quests'],shop:['商店','Shop'],
+rod:['鱼竿','Rod'],line:['鱼线','Line'],bait:['鱼饵','Bait'],lureBranch:['路亚','Lure'],floatBranch:['台钓','Float'],
+owned:['已拥有','Owned'],equipped:['已装备','Equipped'],locked:['未解锁','Locked'],
+cast:['抛竿','Cast'],casting:['蓄力抛竿…','Charging…'],waiting:['等待鱼儿上钩…','Waiting for a bite…'],
+bite:['咬钩了！','Bite!'],hook:['收竿！','Hook!'],progress:['进度','Progress'],
+caught:['钓到了！','Caught!'],escaped:['鱼跑了…','It escaped…'],lineBreak:['鱼线断了！','Line broke!'],
+newRecord:['新纪录！','New record!'],weight:['重量','Weight'],sell:['出售','Sell'],keep:['收入鱼篓','Keep'],
+bag:['鱼篓','Bag'],bagEmpty:['鱼篓是空的','Your bag is empty'],sellAll:['一键出售全部鱼获','Sell all fish'],
+reward:['奖励','Reward'],claim:['领取','Claim'],claimed:['已领取','Claimed'],
+save:['存档','Save'],autoSaved:['已自动保存','Auto-saved'],saved:['已保存','Saved'],
+newGame:['新游戏','New Game'],confirmNew:['确定要覆盖当前存档重新开始吗？','Overwrite current save and start over?'],
+confirm:['确定','Confirm'],cancel:['取消','Cancel'],back:['返回','Back'],
+caughtCount:['已捕获','Caught'],totalSpecies:['图鉴进度','Codex progress'],
+unlockByQuest:['通过任务解锁','Unlock via quests'],buy:['购买','Buy'],notEnough:['货币不足','Not enough currency'],
+baitLeft:['剩余','left'],outOfBait:['鱼饵用完了！去商店购买或做任务获得','Out of bait! Buy in shop or earn from quests'],
+rarityWhite:['白色','Common'],rarityGreen:['绿色','Uncommon'],rarityBlue:['蓝色','Rare'],
+rarityPurple:['紫色','Epic'],rarityOrange:['橙色','Legendary'],rarityRed:['红色','Mythic'],
+unknown:['???','???'],maxWeight:['最大纪录','Best'],firstCatch:['首次捕获','First catch'],
+perfectCatch:['完美收杆！售价加成','Perfect catch! Price bonus'],
+distanceHint:['按住蓄力，松开抛竿；抛得越远，遇到大鱼的机会越高','Hold to charge, release to cast — longer casts reach bigger fish'],
+questHint:['完成任务链可获得更高品质的装备','Complete quest chains to earn higher tier gear'],
+pearlChance:['有几率获得珍珠','Chance to drop pearls'],sellFor:['售价','Sells for'],
+totalCaught:['累计钓获','Total caught'],playTime:['游玩时长','Play time'],minutes:['分钟','min'],
+startGame:['开始钓鱼','Start Fishing'],chooseMode:['选择钓鱼方式','Choose your style'],
+lureDesc:['主动进攻型：拉杆遛鱼 + 拉线收线，目标为凶猛掠食鱼','Active style: steer & reel — targets fierce predators'],
+floatDesc:['静心守钓型：盯浮漂、控区间，目标为温顺底栖鱼','Patient style: watch the bobber — targets gentle bottom fish'],
+menu:['菜单','Menu'],backHome:['主页','Home'],steer:['拉杆','Steer'],reel:['拉线','Reel'],
+tension:['张力','Tension'],fishDistance:['距离','Distance'],
+lureFightHint:['逆着鱼的方向拉杆耗体力，按住「拉线」收近；张力爆红会断线！','Steer against the fish, hold Reel to pull in — max tension breaks the line!'],
+floatFightHint:['按住/触摸抬升，松开下降，让鱼保持在绿色区间内','Hold to raise, release to drop. Keep the fish in the green zone'],
+stamina:['体力','Stamina'],areaUnlockHint:['图鉴进度 ≥','Codex ≥'],
+};
+let LANG='zh';
+const T=k=>DICT[k][LANG==='zh'?0:1];
+
+/* ==================== 数据 ==================== */
+const TIER_COLORS=['#e8e2d0','#6abe30','#4d9be6','#a884f3','#f47c2c','#d63c3c'];
+const TIER_TXT=['#264653','#fff','#fff','#fff','#fff','#fff'];
+const TIER_KEYS=['rarityWhite','rarityGreen','rarityBlue','rarityPurple','rarityOrange','rarityRed'];
+
+const rodG=(br,ti,zh,en)=>({id:`rod_${br}_${ti}`,branch:br,tier:ti,zh,en,power:0.55+ti*0.3,strength:0,luck:0,biteRate:0,price:0,pearlPrice:0});
+const lineG=(br,ti,zh,en)=>({id:`line_${br}_${ti}`,branch:br,tier:ti,zh,en,power:0,strength:0.16+ti*0.045,luck:0,biteRate:0,price:0,pearlPrice:0});
+const baitG=(br,ti,zh,en,price,pearlPrice=0)=>({id:`bait_${br}_${ti}`,branch:br,tier:ti,zh,en,power:0,strength:0,luck:ti*0.06,biteRate:1+ti*0.18,price,pearlPrice});
+
+const RODS=[rodG('lure',0,'竹节路亚竿','Bamboo Lure Rod'),rodG('lure',1,'碳素路亚竿','Carbon Lure Rod'),rodG('lure',2,'疾风路亚竿','Gale Lure Rod'),rodG('lure',3,'幻影路亚竿','Phantom Lure Rod'),rodG('lure',4,'龙王路亚竿','Dragon King Rod'),rodG('lure',5,'海神路亚竿','Poseidon Rod'),
+rodG('float',0,'老式竹竿','Old Bamboo Pole'),rodG('float',1,'玻璃钢台钓竿','Fiberglass Pole'),rodG('float',2,'浪尖台钓竿','Wavecrest Pole'),rodG('float',3,'玄铁台钓竿','Darksteel Pole'),rodG('float',4,'金鳞台钓竿','Goldscale Pole'),rodG('float',5,'乾坤台钓竿','Cosmos Pole')];
+const LINES=[lineG('lure',0,'棉丝路亚线','Cotton Lure Line'),lineG('lure',1,'尼龙路亚线','Nylon Lure Line'),lineG('lure',2,'PE编织线','PE Braid'),lineG('lure',3,'碳氟前导线','Fluorocarbon Leader'),lineG('lure',4,'银鳞飞线','Silverscale Line'),lineG('lure',5,'龙筋神线','Dragon Sinew Line'),
+lineG('float',0,'麻线','Hemp Line'),lineG('float',1,'尼龙台钓线','Nylon Float Line'),lineG('float',2,'竞技台钓线','Match Float Line'),lineG('float',3,'纳米复合线','Nano Composite Line'),lineG('float',4,'水晶隐线','Crystal Stealth Line'),lineG('float',5,'天蚕丝线','Celestial Silk Line')];
+const BAITS=[baitG('lure',0,'铁片亮片','Tin Spoon',20),baitG('lure',1,'摇摆米诺','Minnow Wobbler',60),baitG('lure',2,'水面波扒','Topwater Popper',150),baitG('lure',3,'幻影软虫','Phantom Soft Worm',400,3),baitG('lure',4,'深潜铁板','Deep Jig',1000,8),baitG('lure',5,'龙吟雷蛙','Dragoncroak Frog',0,20),
+baitG('float',0,'蚯蚓','Earthworm',15),baitG('float',1,'香面团','Dough Ball',50),baitG('float',2,'红虫','Bloodworm',120),baitG('float',3,'黄金玉米粒','Golden Corn',350,3),baitG('float',4,'秘制商品饵','Secret Formula',900,8),baitG('float',5,'月露神饵','Moondew Elixir Bait',0,20)];
+const ALL_GEAR=[...RODS,...LINES,...BAITS];
+const gearById=id=>ALL_GEAR.find(g=>g.id===id);
+const gname=(id)=>{const g=gearById(id);return LANG==='zh'?g.zh:g.en};
+
+const F=(id,zh,en,area,branch,needTier,difficulty,minKg,maxKg,price,pearlChance,baseRate,hue)=>({id,zh,en,area,branch,needTier,difficulty,minKg,maxKg,price,pearlChance,baseRate,hue});
+const FISH=[
+F('pond_topmouth','白条鱼','Topmouth Culter',0,'lure',0,0.5,0.05,0.3,30,0,20,200),
+F('pond_betta','斗鱼','Betta',0,'lure',0,0.7,0.05,0.15,60,0.02,12,350),
+F('pond_snakehead','黑鱼','Snakehead',0,'lure',1,1.1,0.5,2.5,55,0.03,8,130),
+F('pond_amos','麦穗鱼','Topmouth Gudgeon',0,'both',0,0.4,0.02,0.1,25,0,22,210),
+F('pond_bitterling','鳑鲏','Bitterling',0,'both',0,0.5,0.02,0.08,35,0,18,300),
+F('pond_crucian','鲫鱼','Crucian Carp',0,'float',0,0.5,0.1,0.8,40,0,22,45),
+F('pond_carp','鲤鱼','Common Carp',0,'float',0,0.8,0.5,4,45,0.02,15,35),
+F('pond_grass','草鱼','Grass Carp',0,'float',1,1.0,1,6,50,0.02,10,90),
+F('pond_silver','鲢鱼','Silver Carp',0,'float',1,0.9,1,5,42,0,10,200),
+F('pond_loach','泥鳅','Loach',0,'float',0,0.6,0.05,0.3,38,0,14,60),
+F('river_opsari','马口鱼','Thicklip Gudgeon',1,'lure',0,0.6,0.05,0.3,45,0,18,190),
+F('river_minnow','溪哥','Creek Chub',1,'lure',0,0.5,0.03,0.2,40,0,20,170),
+F('river_mandarin','鳜鱼','Mandarin Fish',1,'lure',2,1.4,0.5,3,110,0.06,6,20),
+F('river_culter','翘嘴鲌','Predatory Carp',1,'lure',1,1.2,0.5,4,80,0.04,8,200),
+F('river_bass','淡水鲈鱼','Freshwater Bass',1,'lure',1,1.0,0.3,2,85,0.04,10,120),
+F('river_black','青鱼','Black Carp',1,'float',2,1.3,2,12,90,0.05,6,220),
+F('river_catfish','鲶鱼','Catfish',1,'float',1,1.0,0.5,5,60,0.02,10,25),
+F('river_yellow','黄颡鱼','Yellow Catfish',1,'float',0,0.7,0.1,0.8,55,0,14,45),
+F('river_bream','鳊鱼','Bream',1,'float',0,0.6,0.2,1.5,50,0,15,55),
+F('river_eel','河鳗','River Eel',1,'both',2,1.5,0.3,2,140,0.08,5,85),
+F('shore_seabass','海鲈鱼','Sea Bass',2,'lure',1,1.1,0.5,4,100,0.04,12,200),
+F('shore_blacksea','黑鲷','Black Porgy',2,'both',1,1.0,0.3,3,110,0.05,11,30),
+F('shore_rockfish','石九公','Marbled Rockfish',2,'lure',1,0.9,0.2,1.5,90,0.03,12,15),
+F('shore_flounder','比目鱼','Flounder',2,'float',1,0.8,0.3,2.5,95,0.03,12,60),
+F('shore_croaker','黄花鱼','Yellow Croaker',2,'float',2,1.0,0.3,1.5,130,0.06,9,50),
+F('shore_cutlass','带鱼','Cutlassfish',2,'lure',2,1.4,0.5,3,120,0.05,8,190),
+F('shore_mackerel','鲅鱼','Spanish Mackerel',2,'lure',2,1.5,1,6,115,0.05,7,205),
+F('shore_octopus','章鱼','Octopus',2,'float',2,1.3,0.5,4,125,0.06,7,280),
+F('shore_puffer','河豚','Pufferfish',2,'both',2,1.2,0.3,2,150,0.08,6,40),
+F('shore_redbream','真鲷','Red Seabream',2,'float',3,1.6,1,5,200,0.1,5,5),
+F('shore_sardine','沙丁鱼','Sardine',2,'float',0,0.4,0.05,0.2,30,0,20,210),
+F('deep_tuna','金枪鱼','Tuna',3,'lure',3,1.8,10,60,220,0.1,7,210),
+F('deep_sailfish','旗鱼','Sailfish',3,'lure',4,2.0,15,80,320,0.14,5,200),
+F('deep_marlin','马林鱼','Marlin',3,'lure',4,2.1,20,120,350,0.15,4,230),
+F('deep_grouper','石斑鱼','Grouper',3,'both',3,1.6,3,25,240,0.1,6,25),
+F('deep_shark','锤头鲨','Hammerhead Shark',3,'lure',5,2.2,30,200,500,0.2,2,160),
+F('deep_lantern','灯笼鱼','Lanternfish',3,'both',3,1.2,0.1,0.5,260,0.12,8,55),
+F('deep_oarfish','皇带鱼','Oarfish',3,'lure',5,2.2,10,50,600,0.22,2,180),
+F('deep_sunfish','翻车鱼','Ocean Sunfish',3,'float',4,1.7,20,100,300,0.12,4,60),
+F('deep_giant','龙趸','Giant Grouper',3,'float',4,1.9,15,90,380,0.15,4,30),
+F('deep_redsnap','红鳍笛鲷','Crimson Snapper',3,'float',3,1.4,2,10,260,0.1,6,0),
+F('deep_moonfish','月光鱼','Opah Moonfish',3,'both',5,2.0,15,70,550,0.2,2,300)];
+const fname=f=>LANG==='zh'?f.zh:f.en;
+
+const AREAS=[
+{id:0,zh:'碧水池塘',en:'Jade Pond',dzh:'村口的小池塘，新手的起点',den:'A village pond, where it all begins',need:0,skyTop:'#a8dadc',skyBot:'#f5f0e1',waterTop:'#5fa8a0',waterBot:'#264653'},
+{id:1,zh:'青溪河流',en:'Azure Creek',dzh:'山涧溪流，藏着溪流精灵',den:'A mountain creek full of spirits',need:6,skyTop:'#9dc8d8',skyBot:'#e8dcc4',waterTop:'#4d9bb0',waterBot:'#1d3a46'},
+{id:2,zh:'浅湾近海',en:'Shallow Bay',dzh:'咸咸的海风，鱼种骤然丰富',den:'Salty breeze, richer waters',need:14,skyTop:'#f4a261',skyBot:'#f5f0e1',waterTop:'#3a7ca5',waterBot:'#16324f'},
+{id:3,zh:'深蓝远海',en:'Deep Blue',dzh:'传说巨兽栖息的远海',den:'Offshore waters where legends dwell',need:24,skyTop:'#264653',skyBot:'#6b8f9e',waterTop:'#1d4e6b',waterBot:'#0a1e2e'}];
+
+const QUESTS=[
+{id:'q1',zh:'第一尾鱼',en:'First Catch',req:{kind:'catchArea',area:0,count:1},rewards:[{kind:'coins',count:50},{kind:'bait',gearId:'bait_float_0',count:5}]},
+{id:'q2',zh:'池塘常客',en:'Pond Regular',req:{kind:'catchArea',area:0,count:5},rewards:[{kind:'gear',gearId:'rod_float_1'},{kind:'gear',gearId:'rod_lure_1'}]},
+{id:'q3',zh:'小有收获',en:'Small Harvest',req:{kind:'species',count:4},rewards:[{kind:'gear',gearId:'line_float_1'},{kind:'gear',gearId:'line_lure_1'},{kind:'coins',count:100}]},
+{id:'qf1',zh:'台钓·鲫鱼三连',en:'Float: Crucian ×3',req:{kind:'catchFish',fishId:'pond_crucian',count:3},rewards:[{kind:'bait',gearId:'bait_float_1',count:8}]},
+{id:'qf2',zh:'台钓·大物初体验',en:'Float: First Big One',req:{kind:'catchTier',tier:1,count:3},rewards:[{kind:'gear',gearId:'rod_float_2'},{kind:'gear',gearId:'line_float_2'}]},
+{id:'qf3',zh:'台钓·溪流猎手',en:'Float: Creek Hunter',req:{kind:'catchArea',area:1,count:6},rewards:[{kind:'bait',gearId:'bait_float_2',count:6},{kind:'pearls',count:2}]},
+{id:'qf4',zh:'台钓·紫气东来',en:'Float: Rising Epic',req:{kind:'catchTier',tier:2,count:5},rewards:[{kind:'gear',gearId:'rod_float_3'},{kind:'gear',gearId:'line_float_3'}]},
+{id:'qf5',zh:'台钓·海湾征服者',en:'Float: Bay Conqueror',req:{kind:'catchArea',area:2,count:8},rewards:[{kind:'gear',gearId:'rod_float_4'},{kind:'gear',gearId:'line_float_4'},{kind:'pearls',count:5}]},
+{id:'qf6',zh:'台钓·深海之约',en:'Float: Deep Sea Pact',req:{kind:'catchArea',area:3,count:6},rewards:[{kind:'gear',gearId:'rod_float_5'},{kind:'gear',gearId:'line_float_5'},{kind:'pearls',count:10}]},
+{id:'ql1',zh:'路亚·白条入门',en:'Lure: Culter ×3',req:{kind:'catchFish',fishId:'pond_topmouth',count:3},rewards:[{kind:'bait',gearId:'bait_lure_1',count:8}]},
+{id:'ql2',zh:'路亚·凶猛掠食者',en:'Lure: Fierce Predator',req:{kind:'catchTier',tier:1,count:3},rewards:[{kind:'gear',gearId:'rod_lure_2'},{kind:'gear',gearId:'line_lure_2'}]},
+{id:'ql3',zh:'路亚·溪流快枪手',en:'Lure: Creek Gunslinger',req:{kind:'catchArea',area:1,count:6},rewards:[{kind:'bait',gearId:'bait_lure_2',count:6},{kind:'pearls',count:2}]},
+{id:'ql4',zh:'路亚·幻影一击',en:'Lure: Phantom Strike',req:{kind:'catchTier',tier:2,count:5},rewards:[{kind:'gear',gearId:'rod_lure_3'},{kind:'gear',gearId:'line_lure_3'}]},
+{id:'ql5',zh:'路亚·海狼传说',en:'Lure: Sea Wolf Legend',req:{kind:'catchArea',area:2,count:8},rewards:[{kind:'gear',gearId:'rod_lure_4'},{kind:'gear',gearId:'line_lure_4'},{kind:'pearls',count:5}]},
+{id:'ql6',zh:'路亚·远海斗神',en:'Lure: Ocean Champion',req:{kind:'catchArea',area:3,count:6},rewards:[{kind:'gear',gearId:'rod_lure_5'},{kind:'gear',gearId:'line_lure_5'},{kind:'pearls',count:10}]},
+{id:'qg1',zh:'图鉴收藏家',en:'Codex Collector',req:{kind:'species',count:15},rewards:[{kind:'pearls',count:8},{kind:'coins',count:500}]},
+{id:'qg2',zh:'渔夫富翁',en:'Rich Angler',req:{kind:'earnCoins',count:3000},rewards:[{kind:'pearls',count:12}]},
+{id:'qg3',zh:'钓鱼大师',en:'Master Angler',req:{kind:'species',count:30},rewards:[{kind:'pearls',count:20},{kind:'bait',gearId:'bait_lure_5',count:3},{kind:'bait',gearId:'bait_float_5',count:3}]}];
+
+/* ==================== 存档 ==================== */
+const SAVE_KEY='fishing-tale-save-v1';
+function defaultSave(){return{version:1,lang:'zh',coins:100,pearls:0,
+rods:['rod_lure_0','rod_float_0'],lines:['line_lure_0','line_float_0'],
+baits:{bait_lure_0:10,bait_float_0:10},
+equipped:{lure:{rod:'rod_lure_0',line:'line_lure_0',bait:'bait_lure_0'},float:{rod:'rod_float_0',line:'line_float_0',bait:'bait_float_0'}},
+codex:{},bag:[],quests:{},totalCaught:0,earnedCoins:0,playMinutes:0};}
+let S=(()=>{try{const r=localStorage.getItem(SAVE_KEY);if(!r)return defaultSave();const d=JSON.parse(r);if(d.version!==1)return defaultSave();return Object.assign(defaultSave(),d);}catch(e){return defaultSave();}})();
+LANG=S.lang||'zh';
+function persist(){try{S.lang=LANG;localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}}
+const speciesCount=()=>Object.keys(S.codex).length;
+const unlockedAreas=()=>{const n=speciesCount();return AREAS.filter(a=>n>=a.need).map(a=>a.id);};
+function questProgress(req){
+  switch(req.kind){
+    case 'catchFish':return{cur:S.codex[req.fishId]?.count||0,max:req.count};
+    case 'catchTier':return{cur:FISH.filter(f=>f.needTier===req.tier).reduce((s,f)=>s+(S.codex[f.id]?.count||0),0),max:req.count};
+    case 'catchArea':return{cur:FISH.filter(f=>f.area===req.area).reduce((s,f)=>s+(S.codex[f.id]?.count||0),0),max:req.count};
+    case 'species':return{cur:speciesCount(),max:req.count};
+    case 'earnCoins':return{cur:Math.floor(S.earnedCoins),max:req.count};}}
+const questDone=q=>{const p=questProgress(q.req);return p.cur>=p.max;};
+function fishPool(areaId,branch,rodTier){
+  let pool=FISH.filter(f=>f.area===areaId&&(f.branch==='both'||f.branch===branch)&&f.needTier<=rodTier);
+  if(!pool.length){const all=FISH.filter(f=>f.area===areaId&&(f.branch==='both'||f.branch===branch));const m=Math.min(...all.map(f=>f.needTier));pool=all.filter(f=>f.needTier===m);}
+  return pool;}
+function rollFish(areaId,branch,rodTier,luck,dist){
+  const pool=fishPool(areaId,branch,rodTier);
+  const w=pool.map(f=>f.baseRate*(1+(luck+dist)*f.difficulty));
+  let r=Math.random()*w.reduce((a,b)=>a+b,0);
+  for(let i=0;i<pool.length;i++){r-=w[i];if(r<=0)return pool[i];}
+  return pool[pool.length-1];}
+
+/* ==================== 全局状态 ==================== */
+let mode='lure', areaId=0, menuTab='gear', gearBranch='lure', codexArea=0, shopBranch='lure';
+const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+const LW=900, LH=560, waterY=LH*0.42;
+let scale=1, ox=0, oy=0;
+
+function fit(){const dpr=Math.min(2,window.devicePixelRatio||1);
+  cv.width=Math.round(innerWidth*dpr);cv.height=Math.round(innerHeight*dpr);
+  scale=Math.max(cv.width/LW,cv.height/LH);
+  ox=(cv.width-LW*scale)/2;oy=(cv.height-LH*scale)/2;}
+addEventListener('resize',fit);fit();
+
+/* 游戏阶段状态 */
+let phase='idle';
+let holding=false, castPower=0, castDir=1;
+let waitTime=0, biteTimer=0, bobX=0, bobY=0;
+let targetFish=null, distBonus=0, finished=false;
+/* 台钓 */
+let fishY=0.5, fishVy=0, zoneY=0.7, progress=0.35, outTime=0, perfect=true;
+/* 路亚 */
+let stamina=1, distance=1, tension=0, fishDir=1, dirTimer=0, steer=0, reeling=false;
+
+const eq=()=>S.equipped[mode];
+const rod=()=>gearById(eq().rod), line=()=>gearById(eq().line), bait=()=>gearById(eq().bait);
+const baitLeft=()=>S.baits[eq().bait]||0;
+const area=()=>AREAS[areaId];
+
+/* ==================== 工具 ==================== */
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.remove('hidden');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.add('hidden'),2200);}
+function tierBadgeHTML(ti){return`<span class="tier" style="background:${TIER_COLORS[ti]};color:${TIER_TXT[ti]}">${T(TIER_KEYS[ti])}</span>`;}
+function applyI18n(){document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=T(el.dataset.i18n);});
+  document.getElementById('langBtn1').textContent=LANG==='zh'?'EN':'中文';
+  document.getElementById('langBtn2').textContent=LANG==='zh'?'EN':'中文';
+  refreshHUD();renderHome();}
+function toggleLang(){LANG=LANG==='zh'?'en':'zh';persist();applyI18n();if(!document.getElementById('menu').classList.contains('hidden'))renderMenu();}
+function refreshHUD(){
+  document.getElementById('homeCoins').textContent=S.coins;
+  document.getElementById('homePearls').textContent=S.pearls;
+  document.getElementById('homeTotal').textContent=S.totalCaught;
+  document.getElementById('gCoins').textContent=S.coins;
+  document.getElementById('gPearls').textContent=S.pearls;
+  document.getElementById('modeChip').textContent=mode==='lure'?`🎣 ${T('lureBranch')}`:`🎋 ${T('floatBranch')}`;
+  const ua=unlockedAreas();
+  document.getElementById('areaChips').innerHTML=AREAS.map(a=>{
+    const un=ua.includes(a.id);
+    return`<button class="hudchip ${a.id===areaId?'on':''}" ${un?'':'disabled style="opacity:.5"'} onclick="setArea(${a.id})" title="${un?(LANG==='zh'?a.dzh:a.den):T('areaUnlockHint')+' '+a.need}">${un?(LANG==='zh'?a.zh:a.en):'🔒'}</button>`;}).join('');
+  const e=eq();
+  document.getElementById('hudBottom').innerHTML=[[T('rod'),e.rod],[T('line'),e.line],[T('bait'),e.bait]].map(([lb,id])=>{
+    const g=gearById(id);
+    return`<span class="gearchip" style="background:${TIER_COLORS[g.tier]}cc;color:${TIER_TXT[g.tier]}">${lb}·${gname(id)}${id.startsWith('bait')?` ×${baitLeft()}`:''}</span>`;}).join('')+
+    `<span class="gearchip" style="background:rgba(38,70,83,.7);color:#f5f0e1">💾 ${T('autoSaved')} · ${T('totalCaught')} ${S.totalCaught}</span>`;
+}
+function renderHome(){
+  document.getElementById('modeLure').classList.toggle('on',mode==='lure');
+  document.getElementById('modeFloat').classList.toggle('on',mode==='float');
+}
+function setMode(m){mode=m;renderHome();}
+function setArea(id){if(!unlockedAreas().includes(id))return;areaId=id;resetToIdle();refreshHUD();}
+function startGame(){
+  document.getElementById('home').classList.add('hidden');
+  document.getElementById('game').classList.remove('hidden');
+  if(!unlockedAreas().includes(areaId))areaId=0;
+  resetToIdle();refreshHUD();fit();
+}
+function goHome(){persist();document.getElementById('game').classList.add('hidden');document.getElementById('home').classList.remove('hidden');refreshHUD();}
+
+/* ==================== 弹窗 ==================== */
+function showModal(html){document.getElementById('modalWrap').innerHTML=`<div class="modal">${html}</div>`;}
+function closeModal(){document.getElementById('modalWrap').innerHTML='';}
+function showConfirmNew(){
+  showModal(`<div class="mbox"><div style="font-weight:bold;margin-bottom:16px">${T('confirmNew')}</div>
+  <div style="display:flex;gap:8px;justify-content:center">
+  <button class="mbtn" style="background:#d63c3c;color:#fff" onclick="doNewGame()">${T('confirm')}</button>
+  <button class="mbtn" onclick="closeModal()">${T('cancel')}</button></div></div>`);
+}
+function doNewGame(){S=defaultSave();S.lang=LANG;persist();mode='lure';areaId=0;closeModal();goHome();resetToIdle();toast(T('saved'));}
+
+function showCatchModal(r){
+  const value=Math.round(r.fish.price*r.kg*(r.perfect?1.25:1));
+  showModal(`<div class="mbox">
+  <h2>${T('caught')}</h2>
+  ${r.perfect?`<div style="color:#f4a261;font-weight:bold;font-size:13px">✨ ${T('perfectCatch')}</div>`:''}
+  <svg viewBox="0 0 120 60" style="width:160px;margin:6px auto;display:block">
+    <ellipse cx="56" cy="30" rx="40" ry="18" fill="hsl(${r.fish.hue} 60% 55%)"/>
+    <path d="M16 30 L0 16 L0 44 Z" fill="hsl(${r.fish.hue} 60% 45%)"/>
+    <circle cx="76" cy="24" r="4" fill="#fff"/><circle cx="77" cy="24" r="2" fill="#264653"/>
+  </svg>
+  <div style="font-weight:bold;font-size:18px">${fname(r.fish)}</div>
+  <div style="margin-top:4px">${tierBadgeHTML(r.fish.needTier)}</div>
+  <div style="font-size:14px;margin-top:6px">${T('weight')}: <b>${r.kg} kg</b>
+    ${r.newBest?`<span style="color:#d63c3c;font-weight:bold"> ${T('newRecord')}</span>`:''}
+    ${r.newSpecies?`<span style="color:#6abe30;font-weight:bold"> ${T('firstCatch')}!</span>`:''}</div>
+  ${r.pearl?`<div style="color:#a884f3;font-weight:bold;margin-top:4px">+1 🦪</div>`:''}
+  <div style="display:flex;gap:8px;margin-top:14px">
+    <button class="mbtn" style="background:#e9c46a" onclick="sellCatch(${value})">${T('sell')} 🪙${value}</button>
+    <button class="mbtn" style="background:#6abe30;color:#fff" onclick="keepCatch()">${T('keep')}</button>
+  </div></div>`);
+}
+let lastCatch=null;
+function sellCatch(v){S.coins+=v;S.earnedCoins+=v;persist();toast(`+${v} 🪙`);afterResult();}
+function keepCatch(){S.bag.push({fishId:lastCatch.fish.id,kg:lastCatch.kg});persist();afterResult();}
+function afterResult(){closeModal();resetToIdle();refreshHUD();}
+function showEscapeModal(broke){
+  showModal(`<div class="mbox"><h2>${broke?T('lineBreak'):T('escaped')}</h2>
+  <button class="mbtn" style="background:#264653;color:#f5f0e1;margin-top:12px" onclick="afterResult()">${T('confirm')}</button></div>`);
+}
+
+/* ==================== 阶段切换 ==================== */
+function resetToIdle(){phase='idle';targetFish=null;finished=false;steer=0;reeling=false;updatePhaseUI();}
+function updatePhaseUI(){
+  const tip=document.getElementById('phaseTip');
+  const lb=document.getElementById('lureBtns');
+  if(phase==='idle')tip.innerHTML=`${T('cast')} · ${T('distanceHint')}`;
+  else if(phase==='waiting')tip.textContent=T('waiting');
+  else if(phase==='bite')tip.innerHTML=`<span class="blink">${T('bite')}</span>`;
+  else if(phase==='fight')tip.textContent=mode==='lure'?T('lureFightHint'):T('floatFightHint');
+  else tip.innerHTML='';
+  lb.classList.toggle('hidden',!(phase==='fight'&&mode==='lure'));
+}
+function startCharge(){
+  if(phase!=='idle')return;
+  if(baitLeft()<=0){menuTab='shop';openMenu();toast(T('outOfBait'));return;}
+  castPower=0;castDir=1;phase='charging';updatePhaseUI();
+}
+function releaseCast(){
+  if(phase!=='charging')return;
+  const bid=eq().bait;S.baits[bid]=(S.baits[bid]||0)-1;persist();
+  finished=false;
+  distBonus=castPower*0.35;
+  bobX=320+castPower*480;bobY=waterY+14;
+  targetFish=rollFish(areaId,mode,rod().tier,bait().luck,distBonus);
+  waitTime=(2+Math.random()*4.5)/bait().biteRate;
+  biteTimer=0;phase='waiting';updatePhaseUI();refreshHUD();
+}
+function beginFight(){
+  perfect=true;
+  if(mode==='float'){fishY=0.5;zoneY=0.7;progress=0.35;outTime=0;}
+  else{stamina=1;distance=1;tension=0;fishDir=Math.random()<0.5?-1:1;dirTimer=0;}
+  phase='fight';updatePhaseUI();
+}
+function finishFight(win,broke=false){
+  if(finished)return;finished=true;
+  phase='done';updatePhaseUI();
+  if(win&&targetFish){
+    const f=targetFish;
+    const kg=+(f.minKg+Math.random()*(f.maxKg-f.minKg)).toFixed(2);
+    const prev=S.codex[f.id];
+    const pearl=Math.random()<f.pearlChance+(perfect?0.05:0);
+    if(pearl)S.pearls++;
+    S.totalCaught++;
+    S.codex[f.id]={count:(prev?.count||0)+1,best:Math.max(prev?.best||0,kg)};
+    persist();
+    lastCatch={fish:f,kg,perfect,newSpecies:!prev,newBest:!!prev&&kg>prev.best,pearl};
+    refreshHUD();
+    setTimeout(()=>showCatchModal(lastCatch),350);
+  }else{
+    setTimeout(()=>showEscapeModal(broke),350);
+  }
+}
+
+/* ==================== 输入 ==================== */
+cv.addEventListener('pointerdown',e=>{e.preventDefault();holding=true;
+  if(phase==='idle')startCharge();
+  else if(phase==='bite')beginFight();});
+addEventListener('pointerup',()=>{holding=false;if(phase==='charging')releaseCast();});
+function bindHold(el,on,off){
+  el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();on();el.classList.add('on');});
+  const end=e=>{off();el.classList.remove('on');};
+  el.addEventListener('pointerup',end);el.addEventListener('pointerleave',end);el.addEventListener('pointercancel',end);}
+bindHold(document.getElementById('steerL'),()=>steer=-1,()=>{if(steer===-1)steer=0;});
+bindHold(document.getElementById('steerR'),()=>steer=1,()=>{if(steer===1)steer=0;});
+bindHold(document.getElementById('reelBtn'),()=>reeling=true,()=>reeling=false);
+document.addEventListener('contextmenu',e=>e.preventDefault());
+
+/* ==================== 菜单 ==================== */
+function openMenu(){document.getElementById('menu').classList.remove('hidden');renderMenu();}
+function closeMenu(){document.getElementById('menu').classList.add('hidden');refreshHUD();}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{menuTab=b.dataset.tab;renderMenu();}));
+function equipGear(id,kind){
+  S.equipped[gearBranch]={...S.equipped[gearBranch],[kind]:id};persist();
+  toast(`${T('equipped')}: ${gname(id)}`);renderMenu();}
+function gearSection(title,items,kind,owned,counts){
+  return`<div class="secT">${title}</div><div class="grid">`+items.map(g=>{
+    const has=owned(g.id),active=S.equipped[gearBranch][kind]===g.id;
+    return`<button class="card ${active?'on':''} ${has?'':'lock'}" ${has?`onclick="equipGear('${g.id}','${kind}')"`:''}>
+      <div>${tierBadgeHTML(g.tier)}${active?`<span style="font-size:10px;color:#f4a261;font-weight:bold">${T('equipped')}</span>`:''}</div>
+      <div class="nm">${has?gname(g.id):T('locked')}</div>
+      ${counts&&has?`<div class="sm">× ${counts[g.id]||0}</div>`:''}
+      ${!has?`<div class="sm">${T('unlockByQuest')}</div>`:''}</button>`;}).join('')+'</div>';}
+function renderMenu(){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===menuTab));
+  const c=document.getElementById('menuContent');
+  if(menuTab==='gear'){
+    c.innerHTML=`<div class="bswitch">
+      <button class="${gearBranch==='lure'?'on':''}" onclick="gearBranch='lure';renderMenu()">🎣 ${T('lureBranch')}</button>
+      <button class="${gearBranch==='float'?'on':''}" onclick="gearBranch='float';renderMenu()">🎋 ${T('floatBranch')}</button></div>`+
+      gearSection(T('rod'),RODS.filter(r=>r.branch===gearBranch),'rod',id=>S.rods.includes(id))+
+      gearSection(T('line'),LINES.filter(r=>r.branch===gearBranch),'line',id=>S.lines.includes(id))+
+      gearSection(T('bait'),BAITS.filter(r=>r.branch===gearBranch),'bait',id=>(S.baits[id]||0)>0,S.baits)+
+      `<p class="sm" style="margin-top:8px;opacity:.6">${T('questHint')}</p>`;
+  }else if(menuTab==='codex'){
+    const list=FISH.filter(f=>f.area===codexArea);
+    c.innerHTML=`<div class="rowbet" style="margin-bottom:10px"><div class="bswitch" style="margin:0">`+
+      AREAS.map(a=>`<button class="${codexArea===a.id?'on':''}" onclick="codexArea=${a.id};renderMenu()">${LANG==='zh'?a.zh:a.en}</button>`).join('')+
+      `</div><span style="font-size:12px;font-weight:bold">${T('totalSpecies')}: ${speciesCount()}/${FISH.length}</span></div>
+      <div class="grid">`+list.map(f=>{
+        const cx=S.codex[f.id];
+        return`<div class="card" style="text-align:center">
+        <svg viewBox="0 0 60 30" style="width:100%;height:40px">
+          <ellipse cx="28" cy="15" rx="20" ry="9" fill="${cx?`hsl(${f.hue} 60% 55%)`:'#264653'}" opacity="${cx?1:.35}"/>
+          <path d="M8 15 L0 8 L0 22 Z" fill="${cx?`hsl(${f.hue} 60% 45%)`:'#264653'}" opacity="${cx?1:.35}"/>
+          <circle cx="38" cy="12" r="2" fill="#fff" opacity="${cx?1:.35}"/></svg>
+        <div class="nm" style="font-size:12px">${cx?fname(f):T('unknown')}</div>
+        ${cx?`<div class="sm">${T('caughtCount')} ×${cx.count} · ${T('maxWeight')} ${cx.best}kg</div>`:''}
+        ${cx&&f.pearlChance>0?`<div class="sm" style="color:#a884f3">🦪 ${T('pearlChance')}</div>`:''}</div>`;}).join('')+'</div>';
+  }else if(menuTab==='quests'){
+    c.innerHTML=QUESTS.map(q=>{
+      const p=questProgress(q.req),done=questDone(q),claimed=S.quests[q.id]?.claimed;
+      return`<div class="qcard ${claimed?'claimed':done?'done':''}">
+      <div class="rowbet"><span style="font-weight:bold;font-size:14px">${LANG==='zh'?q.zh:q.en}</span>
+      ${claimed?`<span class="sm">✓ ${T('claimed')}</span>`:done?`<button class="claimbtn" onclick="claimQuest('${q.id}')">${T('claim')}</button>`:`<span class="sm">${Math.min(p.cur,p.max)}/${p.max}</span>`}</div>
+      <div class="qbar"><i style="width:${Math.min(100,p.cur/p.max*100)}%"></i></div>
+      <div class="sm" style="margin-top:5px">${T('reward')}: ${q.rewards.map(r=>
+        r.kind==='coins'?`🪙×${r.count}`:r.kind==='pearls'?`🦪×${r.count}`:
+        r.kind==='gear'?`<b style="color:${TIER_COLORS[gearById(r.gearId).tier]}">${gname(r.gearId)}</b>`:`${gname(r.gearId)}×${r.count}`).join(' · ')}</div></div>`;}).join('');
+  }else{
+    const bagValue=S.bag.reduce((sum,b)=>{const f=FISH.find(x=>x.id===b.fishId);return sum+Math.round(f.price*b.kg);},0);
+    c.innerHTML=`<div class="rowbet" style="margin-bottom:10px">
+      <b>${T('bag')}（${S.bag.length}）</b>
+      <button class="claimbtn" style="background:#e9c46a;color:#264653;animation:none" ${S.bag.length?'':'disabled'} onclick="sellAll()">${T('sellAll')} +${bagValue} 🪙</button></div>
+      ${S.bag.length?`<div class="grid" style="margin-bottom:12px">`+S.bag.map((b,i)=>{
+        const f=FISH.find(x=>x.id===b.fishId);
+        return`<div class="card" style="display:flex;justify-content:space-between"><span>${fname(f)} · ${b.kg}kg</span><b>🪙${Math.round(f.price*b.kg)}</b></div>`;}).join('')+'</div>'
+      :`<p class="sm" style="margin-bottom:12px;opacity:.6">${T('bagEmpty')}</p>`}
+      <div class="bswitch">
+      <button class="${shopBranch==='lure'?'on':''}" onclick="shopBranch='lure';renderMenu()">🎣 ${T('lureBranch')}</button>
+      <button class="${shopBranch==='float'?'on':''}" onclick="shopBranch='float';renderMenu()">🎋 ${T('floatBranch')}</button></div>
+      <div class="grid">`+BAITS.filter(b=>b.branch===shopBranch).map(g=>`
+      <div class="card"><div>${tierBadgeHTML(g.tier)}<b>${gname(g.id)}</b></div>
+      <div class="sm" style="margin:4px 0">${T('owned')} ×${S.baits[g.id]||0}</div>
+      <div style="display:flex;gap:4px">
+      ${g.price>0?`<button class="claimbtn" style="background:#e9c46a;color:#264653;animation:none" onclick="buyBait('${g.id}',false)">🪙${g.price}/5</button>`:''}
+      ${g.pearlPrice>0?`<button class="claimbtn" style="background:#a884f3;animation:none" onclick="buyBait('${g.id}',true)">🦪${g.pearlPrice}/5</button>`:''}
+      ${!g.price&&!g.pearlPrice?`<span class="sm">${T('unlockByQuest')}</span>`:''}</div></div>`).join('')+'</div>';
+  }
+}
+function claimQuest(qid){
+  const q=QUESTS.find(q=>q.id===qid);
+  for(const r of q.rewards){
+    if(r.kind==='coins'){S.coins+=r.count;S.earnedCoins+=r.count;}
+    else if(r.kind==='pearls')S.pearls+=r.count;
+    else if(r.kind==='gear'){
+      if(r.gearId.startsWith('rod')){if(!S.rods.includes(r.gearId))S.rods.push(r.gearId);}
+      else if(r.gearId.startsWith('line')){if(!S.lines.includes(r.gearId))S.lines.push(r.gearId);}
+      else S.baits[r.gearId]=(S.baits[r.gearId]||0)+1;}
+    else if(r.kind==='bait')S.baits[r.gearId]=(S.baits[r.gearId]||0)+r.count;}
+  S.quests[qid]={claimed:true};persist();toast(T('claimed')+' ✓');renderMenu();}
+function buyBait(id,usePearl){
+  const g=gearById(id);const cost=usePearl?g.pearlPrice:g.price;
+  const ok=usePearl?S.pearls>=cost:S.coins>=cost;
+  if(!ok){toast(T('notEnough'));return;}
+  if(usePearl)S.pearls-=cost;else S.coins-=cost;
+  S.baits[id]=(S.baits[id]||0)+5;persist();toast(`+5 ${gname(id)}`);renderMenu();}
+function sellAll(){
+  if(!S.bag.length)return;
+  const v=S.bag.reduce((sum,b)=>{const f=FISH.find(x=>x.id===b.fishId);return sum+Math.round(f.price*b.kg);},0);
+  S.coins+=v;S.earnedCoins+=v;S.bag=[];persist();toast(`+${v} 🪙`);renderMenu();}
+
+/* ==================== 主循环 ==================== */
+let last=performance.now(), time=0;
+function loop(now){
+  const dt=Math.min(0.05,(now-last)/1000);last=now;time+=dt;
+  const inGame=!document.getElementById('game').classList.contains('hidden');
+
+  if(inGame){
+    /* 逻辑 */
+    if(phase==='charging'){castPower+=castDir*dt*1.4;
+      if(castPower>1){castPower=1;castDir=-1;}if(castPower<0){castPower=0;castDir=1;}}
+    else if(phase==='waiting'){biteTimer+=dt;
+      if(biteTimer>=waitTime&&targetFish){biteTimer=0;phase='bite';updatePhaseUI();}}
+    else if(phase==='bite'){biteTimer+=dt;if(biteTimer>0.9)finishFight(false);}
+    else if(phase==='fight'){
+      const f=targetFish;
+      if(mode==='float'){
+        fishVy+=(Math.random()-0.5)*f.difficulty*dt*6;
+        fishVy+=Math.sin(time*(1.5+f.difficulty))*f.difficulty*dt*1.6;
+        fishVy*=0.94;
+        fishY+=fishVy*dt*(0.5+f.difficulty*0.35);
+        fishY=Math.max(0.02,Math.min(0.98,fishY));
+        zoneY+=(holding?-0.9:0.9)*dt;
+        const zh=0.16+line().strength*0.5;
+        zoneY=Math.max(zh/2,Math.min(1-zh/2,zoneY));
+        const inZone=Math.abs(fishY-zoneY)<zh/2+0.03;
+        if(inZone){progress+=dt*rod().power*0.16;outTime=0;}
+        else{progress-=dt*0.10;outTime+=dt;perfect=false;
+          if(outTime>1.2+line().strength*4&&Math.random()<dt*(0.9-line().strength))finishFight(false,true);}
+        if(phase==='fight'){if(progress>=1)finishFight(true);else if(progress<=0)finishFight(false);}
+      }else{
+        dirTimer-=dt;
+        if(dirTimer<=0){fishDir=Math.random()<0.5?-1:1;dirTimer=0.5+Math.random()*(1.6-f.difficulty*0.4);}
+        const counter=steer===-fishDir;
+        if(counter)stamina-=dt*rod().power*0.55;else stamina=Math.min(1,stamina+dt*0.18);
+        if(reeling){distance-=dt*rod().power*0.14*(1+(1-stamina)*0.8);
+          tension+=dt*(0.35+stamina*f.difficulty*0.55+(counter?0:0.25));}
+        else tension-=dt*(0.55+line().strength*0.5);
+        tension=Math.max(0,tension);
+        if(stamina>0.3)distance+=dt*0.045*f.difficulty*stamina;
+        stamina=Math.max(0,stamina);
+        if(tension>1){perfect=false;
+          if(Math.random()<dt*(2.2-line().strength*6))finishFight(false,true);}
+        if(phase==='fight'){if(distance<=0)finishFight(true);else if(distance>1.25){perfect=false;finishFight(false);}}
+      }
+    }
+
+    /* 绘制 */
+    const a=area();
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.fillStyle=a.waterBot;ctx.fillRect(0,0,cv.width,cv.height);
+    ctx.setTransform(scale,0,0,scale,ox,oy);
+    const sky=ctx.createLinearGradient(0,0,0,waterY);
+    sky.addColorStop(0,a.skyTop);sky.addColorStop(1,a.skyBot);
+    ctx.fillStyle=sky;ctx.fillRect(0,0,LW,waterY+2);
+    ctx.fillStyle=areaId===3?'#e9c46a':'#f4a261';
+    ctx.beginPath();ctx.arc(LW*0.78,waterY*0.32,34,0,7);ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.25)';
+    ctx.beginPath();ctx.arc(LW*0.78,waterY*0.32,48,0,7);ctx.fill();
+    ctx.fillStyle='rgba(38,70,83,.18)';
+    ctx.beginPath();ctx.moveTo(0,waterY);
+    for(let x=0;x<=LW;x+=60)ctx.lineTo(x,waterY-30-Math.sin(x*0.013)*26);
+    ctx.lineTo(LW,waterY);ctx.closePath();ctx.fill();
+    const water=ctx.createLinearGradient(0,waterY,0,LH);
+    water.addColorStop(0,a.waterTop);water.addColorStop(1,a.waterBot);
+    ctx.fillStyle=water;ctx.fillRect(0,waterY,LW,LH-waterY);
+    ctx.strokeStyle='rgba(245,240,225,.35)';ctx.lineWidth=2;
+    for(let i=0;i<9;i++){const y=waterY+16+i*(LH-waterY)/10;
+      ctx.beginPath();
+      for(let x=0;x<=LW;x+=14)ctx.lineTo(x,y+Math.sin(x*0.03+time*(1+i*0.15)+i*2)*3.5);
+      ctx.stroke();}
+    if(phase==='waiting'||phase==='bite'){
+      const fx=bobX+Math.sin(time*0.8)*60, fy=bobY+40+Math.sin(time)*8;
+      ctx.fillStyle='rgba(10,30,46,.35)';
+      ctx.beginPath();ctx.ellipse(fx,fy,26,9,0,0,7);ctx.fill();
+      ctx.beginPath();ctx.moveTo(fx-26,fy);ctx.lineTo(fx-40,fy-8);ctx.lineTo(fx-40,fy+8);ctx.closePath();ctx.fill();}
+    if(phase==='fight'&&mode==='lure'&&targetFish){
+      const fx=320+distance*480+fishDir*Math.sin(time*6)*10, fy=bobY+40;
+      ctx.fillStyle=`hsla(${targetFish.hue} 60% 30% / .5)`;
+      ctx.save();ctx.translate(fx,fy);ctx.scale(fishDir,1);
+      ctx.beginPath();ctx.ellipse(0,0,26,9,0,0,7);ctx.fill();
+      ctx.beginPath();ctx.moveTo(-26,0);ctx.lineTo(-40,-8);ctx.lineTo(-40,8);ctx.closePath();ctx.fill();
+      ctx.restore();bobX=fx;}
+    /* 码头 & 钓鱼人 */
+    ctx.fillStyle='#8a5a33';
+    ctx.fillRect(0,waterY-6,210,14);ctx.fillRect(30,waterY+8,12,LH-waterY);ctx.fillRect(160,waterY+8,12,LH-waterY);
+    ctx.fillStyle='#6d4526';ctx.fillRect(0,waterY-6,210,4);
+    const px=130,py=waterY-6;
+    ctx.fillStyle='#264653';ctx.fillRect(px-8,py-26,6,26);ctx.fillRect(px+2,py-26,6,26);
+    ctx.fillStyle=mode==='lure'?'#d63c3c':'#f4a261';ctx.fillRect(px-10,py-52,20,28);
+    ctx.fillStyle='#f1c27d';ctx.fillRect(px-8,py-72,16,18);
+    ctx.fillStyle='#e9c46a';ctx.fillRect(px-13,py-76,26,5);ctx.fillRect(px-7,py-84,14,9);
+    const rodAngle=phase==='fight'?-0.9+(mode==='lure'?steer*0.25:0):-0.55;
+    const rx=px+8,ry=py-46;
+    const tipX=rx+Math.cos(rodAngle)*95,tipY=ry+Math.sin(rodAngle)*95;
+    ctx.strokeStyle='#5a3a1e';ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(rx,ry);ctx.lineTo(tipX,tipY);ctx.stroke();
+    if(phase!=='idle'&&phase!=='charging'&&phase!=='done'){
+      ctx.strokeStyle=tension>0.8&&mode==='lure'&&phase==='fight'?'#d63c3c':'rgba(245,240,225,.7)';
+      ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(tipX,tipY);
+      ctx.quadraticCurveTo((tipX+bobX)/2,Math.min(tipY,bobY)-30,bobX,bobY);ctx.stroke();
+      const bob=Math.sin(time*3)*3+(phase==='bite'?Math.sin(time*22)*6:0);
+      ctx.fillStyle='#d63c3c';ctx.beginPath();ctx.arc(bobX,bobY+bob,7,0,7);ctx.fill();
+      ctx.fillStyle='#f5f0e1';ctx.fillRect(bobX-7,bobY+bob-1.5,14,3);
+      ctx.strokeStyle='rgba(245,240,225,.4)';
+      for(let i=0;i<2;i++){const rr=((time*30+i*20)%40);
+        ctx.beginPath();ctx.ellipse(bobX,bobY+4,rr,rr*0.3,0,0,7);ctx.stroke();}}
+    if(phase==='charging'){
+      const bx=LW/2-150,by=LH-70,bw=300,bh=22;
+      ctx.fillStyle='rgba(38,70,83,.75)';ctx.fillRect(bx-4,by-4,bw+8,bh+8);
+      const g2=ctx.createLinearGradient(bx,0,bx+bw,0);
+      g2.addColorStop(0,'#6abe30');g2.addColorStop(0.6,'#e9c46a');g2.addColorStop(1,'#d63c3c');
+      ctx.fillStyle=g2;ctx.fillRect(bx,by,bw*castPower,bh);}
+    if(phase==='bite'){
+      ctx.fillStyle='#e9c46a';ctx.font='bold 44px sans-serif';ctx.textAlign='center';
+      ctx.fillText('❗',bobX,bobY-40+Math.sin(time*10)*4);}
+    if(phase==='fight'){
+      if(mode==='float'){
+        const barW=90,barH=LH-140,bx=LW/2-barW/2,by=80;
+        ctx.fillStyle='rgba(38,70,83,.82)';ctx.fillRect(bx-8,by-8,barW+16,barH+16);
+        ctx.fillStyle='rgba(245,240,225,.12)';ctx.fillRect(bx,by,barW,barH);
+        const zh=0.16+line().strength*0.5;
+        const zy=by+(zoneY-zh/2)*barH;
+        ctx.fillStyle='rgba(106,190,48,.75)';ctx.fillRect(bx,zy,barW,zh*barH);
+        const fy=by+fishY*barH;
+        ctx.fillStyle=`hsl(${targetFish.hue} 60% 60%)`;
+        ctx.beginPath();ctx.ellipse(bx+barW/2,fy,18,9,0,0,7);ctx.fill();
+        ctx.beginPath();ctx.moveTo(bx+barW/2-16,fy);ctx.lineTo(bx+barW/2-28,fy-8);ctx.lineTo(bx+barW/2-28,fy+8);ctx.closePath();ctx.fill();
+        ctx.fillStyle='rgba(245,240,225,.2)';ctx.fillRect(bx+barW+26,by,14,barH);
+        ctx.fillStyle=progress>0.3?'#e9c46a':'#d63c3c';
+        ctx.fillRect(bx+barW+26,by+barH*(1-progress),14,barH*progress);
+      }else{
+        /* 路亚沉浸 HUD */
+        ctx.textAlign='center';
+        ctx.fillStyle='#f5f0e1';ctx.font='bold 20px sans-serif';
+        ctx.fillText(fname(targetFish),LW/2,64);
+        ctx.font='bold 30px sans-serif';
+        ctx.fillStyle=distance<0.25?'#6abe30':'#f5f0e1';
+        ctx.fillText(`${(distance*60).toFixed(1)} m`,LW/2,98);
+        const bx=24,by=LH-120,bw=180,bh=14;
+        ctx.fillStyle='rgba(38,70,83,.7)';ctx.fillRect(bx-3,by-20,bw+6,bh+44);
+        ctx.fillStyle='#f5f0e1';ctx.font='bold 12px sans-serif';ctx.textAlign='left';
+        ctx.fillText(`🐟 ${T('stamina')}`,bx,by-6);
+        ctx.fillStyle='rgba(245,240,225,.2)';ctx.fillRect(bx,by,bw,bh);
+        ctx.fillStyle='#6abe30';ctx.fillRect(bx,by,bw*stamina,bh);
+        ctx.fillStyle='#f5f0e1';ctx.fillText(`⚡ ${T('tension')}`,bx,by+bh+14);
+        ctx.fillStyle='rgba(245,240,225,.2)';ctx.fillRect(bx,by+bh+18,bw,bh);
+        ctx.fillStyle=tension>0.8?'#ff5252':'#e9c46a';
+        ctx.fillRect(bx,by+bh+18,bw*Math.min(1,tension),bh);
+        if(tension>0.8){ctx.fillStyle='#ff5252';ctx.font='bold 16px sans-serif';ctx.textAlign='center';
+          ctx.fillText('⚠',bx+bw+16,by+bh+30);}
+        ctx.font='bold 26px sans-serif';ctx.textAlign='center';ctx.fillStyle='#f5f0e1';
+        ctx.fillText(fishDir<0?'⬅':'➡',bobX,bobY-20+Math.sin(time*6)*3);
+        if(steer===-fishDir){ctx.strokeStyle='#6abe30';ctx.lineWidth=3;
+          ctx.beginPath();ctx.arc(bobX,bobY+6,22+Math.sin(time*8)*3,0,7);ctx.stroke();}
+      }
+    }
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+/* 游玩时长 & 自动保存 */
+setInterval(()=>{S.playMinutes++;persist();},60000);
+addEventListener('beforeunload',persist);
+
+/* 尝试锁定横屏（支持的手机浏览器生效） */
+document.addEventListener('click',()=>{
+  if(document.documentElement.requestFullscreen&&matchMedia('(pointer:coarse)').matches&&!document.fullscreenElement){
+    document.documentElement.requestFullscreen().then(()=>{
+      if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{});
+    }).catch(()=>{});
+  }
+},{once:true});
+
+/* 初始化 */
+if(unlockedAreas().length&&areaId>=unlockedAreas().length)areaId=0;
+applyI18n();renderHome();
+</script>
+</body>
+</html>
