@@ -48,13 +48,17 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 #phaseTip .blink{color:#e9c46a;animation:blink .4s infinite alternate}
 @keyframes blink{to{opacity:.3}}
 
-/* 路亚战斗按钮 */
-#lureBtns{position:absolute;bottom:10px;left:0;right:0;z-index:6;display:flex;justify-content:center;align-items:flex-end;gap:14px;pointer-events:none}
+/* 红点提示 */
+.redDot{position:absolute;top:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:#d63c3c;border:2px solid #f5f0e1;animation:blink .8s infinite alternate}
+.hasdot{position:relative}
+
+/* 路亚摇杆 + 拉线 */
+#lureBtns{position:absolute;bottom:14px;left:0;right:0;z-index:6;display:flex;justify-content:space-between;align-items:flex-end;padding:0 26px;pointer-events:none}
 #lureBtns>*{pointer-events:auto}
-.gbtn{width:72px;height:72px;border-radius:50%;border:4px solid rgba(245,240,225,.4);background:rgba(38,70,83,.85);color:#f5f0e1;font-size:28px;font-weight:900;touch-action:none}
-.gbtn.on{background:#f4a261;border-color:#264653;color:#264653}
-#reelBtn{height:72px;padding:0 26px;border-radius:999px;border:4px solid #264653;background:#6abe30;color:#fff;font-size:19px;font-weight:900;touch-action:none}
-#reelBtn.on{background:#4d9be6;transform:scale(.95)}
+#joyBase{width:130px;height:130px;border-radius:50%;background:rgba(38,70,83,.55);border:3px solid rgba(245,240,225,.35);position:relative;touch-action:none;backdrop-filter:blur(2px)}
+#joyKnob{width:58px;height:58px;border-radius:50%;background:#f4a261;border:3px solid #264653;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);box-shadow:0 3px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:18px;color:#264653;font-weight:900}
+#reelBtn{height:84px;width:84px;border-radius:50%;border:4px solid #264653;background:#6abe30;color:#fff;font-size:15px;font-weight:900;touch-action:none;line-height:1.2}
+#reelBtn.on{background:#4d9be6;transform:scale(.93)}
 
 /* ============ 菜单 ============ */
 #menu{position:fixed;inset:0;background:#f5f0e1;z-index:20;display:flex;flex-direction:column}
@@ -142,14 +146,13 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     <span class="hudchip" style="background:#e9c46a;color:#264653">🪙 <span id="gCoins">0</span></span>
     <span class="hudchip" style="background:#a884f3">🦪 <span id="gPearls">0</span></span>
     <button class="hudchip" onclick="toggleLang()" id="langBtn2">EN</button>
-    <button class="hudchip" style="background:#f4a261;color:#264653;font-weight:900" onclick="openMenu()">☰ <span data-i18n="menu"></span></button>
+    <button class="hudchip hasdot" id="menuBtn" style="background:#f4a261;color:#264653;font-weight:900" onclick="openMenu()">☰ <span data-i18n="menu"></span></button>
   </div>
   <div class="hud" id="phaseTip"></div>
   <div class="hud" id="hudBottom"></div>
   <div id="lureBtns" class="hidden">
-    <button class="gbtn" id="steerL">◀</button>
-    <button id="reelBtn">⤵ <span data-i18n="reel"></span></button>
-    <button class="gbtn" id="steerR">▶</button>
+    <div id="joyBase"><div id="joyKnob">🎣</div></div>
+    <button id="reelBtn">⤵<br><span data-i18n="reel"></span></button>
   </div>
 </div>
 
@@ -161,11 +164,12 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     <button class="hudchip" style="background:#f4a261;color:#264653;font-weight:bold" onclick="closeMenu()"><span data-i18n="back"></span> ✕</button>
   </div>
   <div class="body">
-    <div class="tabs">
-      <button class="tab on" data-tab="gear">🎣 <span data-i18n="gear"></span></button>
-      <button class="tab" data-tab="codex">📖 <span data-i18n="codex"></span></button>
-      <button class="tab" data-tab="quests">📜 <span data-i18n="quests"></span></button>
-      <button class="tab" data-tab="shop">🏪 <span data-i18n="shop"></span></button>
+    <div class="tabs" style="grid-template-columns:repeat(5,1fr)">
+      <button class="tab on hasdot" data-tab="gear">🎣 <span data-i18n="gear"></span></button>
+      <button class="tab hasdot" data-tab="codex">📖 <span data-i18n="codex"></span></button>
+      <button class="tab hasdot" data-tab="bag">🧺 <span data-i18n="bag"></span></button>
+      <button class="tab hasdot" data-tab="quests">📜 <span data-i18n="quests"></span></button>
+      <button class="tab hasdot" data-tab="shop">🏪 <span data-i18n="shop"></span></button>
     </div>
     <div id="menuContent"></div>
   </div>
@@ -312,7 +316,7 @@ function defaultSave(){return{version:1,lang:'zh',coins:100,pearls:0,
 rods:['rod_lure_0','rod_float_0'],lines:['line_lure_0','line_float_0'],
 baits:{bait_lure_0:10,bait_float_0:10},
 equipped:{lure:{rod:'rod_lure_0',line:'line_lure_0',bait:'bait_lure_0'},float:{rod:'rod_float_0',line:'line_float_0',bait:'bait_float_0'}},
-codex:{},bag:[],quests:{},totalCaught:0,earnedCoins:0,playMinutes:0};}
+codex:{},codexSeen:{},bag:[],quests:{},totalCaught:0,earnedCoins:0,playMinutes:0};}
 let S=(()=>{try{const r=localStorage.getItem(SAVE_KEY);if(!r)return defaultSave();const d=JSON.parse(r);if(d.version!==1)return defaultSave();return Object.assign(defaultSave(),d);}catch(e){return defaultSave();}})();
 LANG=S.lang||'zh';
 function persist(){try{S.lang=LANG;localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}}
@@ -326,6 +330,18 @@ function questProgress(req){
     case 'species':return{cur:speciesCount(),max:req.count};
     case 'earnCoins':return{cur:Math.floor(S.earnedCoins),max:req.count};}}
 const questDone=q=>{const p=questProgress(q.req);return p.cur>=p.max;};
+
+/* 红点提示 */
+function hasClaimable(){return QUESTS.some(q=>questDone(q)&&!(S.quests[q.id]&&S.quests[q.id].claimed));}
+function hasNewCodex(){return Object.keys(S.codex).some(id=>!S.codexSeen[id]);}
+function hasBagFish(){return S.bag.length>0;}
+function setDot(el,show){let d=el.querySelector('.redDot');if(show&&!d){d=document.createElement('span');d.className='redDot';el.appendChild(d);}else if(!show&&d)d.remove();}
+function updateBadges(){
+  const dots={quests:hasClaimable(),codex:hasNewCodex(),bag:hasBagFish(),gear:false,shop:false};
+  document.querySelectorAll('#menu .tab').forEach(b=>setDot(b,!!dots[b.dataset.tab]));
+  const menuBtn=document.getElementById('menuBtn');
+  if(menuBtn)setDot(menuBtn,Object.values(dots).some(v=>v));
+}
 function fishPool(areaId,branch,rodTier){
   let pool=FISH.filter(f=>f.area===areaId&&(f.branch==='both'||f.branch===branch)&&f.needTier<=rodTier);
   if(!pool.length){const all=FISH.filter(f=>f.area===areaId&&(f.branch==='both'||f.branch===branch));const m=Math.min(...all.map(f=>f.needTier));pool=all.filter(f=>f.needTier===m);}
@@ -437,7 +453,7 @@ function showCatchModal(r){
 }
 let lastCatch=null;
 function sellCatch(v){S.coins+=v;S.earnedCoins+=v;persist();toast(`+${v} 🪙`);afterResult();}
-function keepCatch(){S.bag.push({fishId:lastCatch.fish.id,kg:lastCatch.kg});persist();afterResult();}
+function keepCatch(){S.bag.push({fishId:lastCatch.fish.id,kg:lastCatch.kg});persist();updateBadges();afterResult();}
 function afterResult(){closeModal();resetToIdle();refreshHUD();}
 function showEscapeModal(broke){
   showModal(`<div class="mbox"><h2>${broke?T('lineBreak'):T('escaped')}</h2>
@@ -488,7 +504,7 @@ function finishFight(win,broke=false){
     if(pearl)S.pearls++;
     S.totalCaught++;
     S.codex[f.id]={count:(prev?.count||0)+1,best:Math.max(prev?.best||0,kg)};
-    persist();
+    persist();updateBadges();
     lastCatch={fish:f,kg,perfect,newSpecies:!prev,newBest:!!prev&&kg>prev.best,pearl};
     refreshHUD();
     setTimeout(()=>showCatchModal(lastCatch),350);
@@ -506,15 +522,34 @@ function bindHold(el,on,off){
   el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();on();el.classList.add('on');});
   const end=e=>{off();el.classList.remove('on');};
   el.addEventListener('pointerup',end);el.addEventListener('pointerleave',end);el.addEventListener('pointercancel',end);}
-bindHold(document.getElementById('steerL'),()=>steer=-1,()=>{if(steer===-1)steer=0;});
-bindHold(document.getElementById('steerR'),()=>steer=1,()=>{if(steer===1)steer=0;});
 bindHold(document.getElementById('reelBtn'),()=>reeling=true,()=>reeling=false);
+
+/* 虚拟摇杆（路亚拉杆） */
+const joyBase=document.getElementById('joyBase'), joyKnob=document.getElementById('joyKnob');
+let joyId=null;
+function joyMove(e){
+  const r=joyBase.getBoundingClientRect();
+  const cx=r.left+r.width/2, cy=r.top+r.height/2;
+  let dx=e.clientX-cx, dy=e.clientY-cy;
+  const max=r.width/2-14;
+  const len=Math.hypot(dx,dy)||1;
+  if(len>max){dx=dx/len*max;dy=dy/len*max;}
+  joyKnob.style.transform=`translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+  const nx=dx/max;
+  steer=Math.abs(nx)>0.25?(nx>0?1:-1):0;
+}
+joyBase.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();joyId=e.pointerId;joyBase.setPointerCapture(joyId);joyMove(e);});
+joyBase.addEventListener('pointermove',e=>{if(e.pointerId===joyId)joyMove(e);});
+const joyEnd=e=>{if(e.pointerId===joyId){joyId=null;steer=0;joyKnob.style.transform='translate(-50%,-50%)';}};
+joyBase.addEventListener('pointerup',joyEnd);joyBase.addEventListener('pointercancel',joyEnd);
 document.addEventListener('contextmenu',e=>e.preventDefault());
 
 /* ==================== 菜单 ==================== */
 function openMenu(){document.getElementById('menu').classList.remove('hidden');renderMenu();}
-function closeMenu(){document.getElementById('menu').classList.add('hidden');refreshHUD();}
-document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{menuTab=b.dataset.tab;renderMenu();}));
+function closeMenu(){document.getElementById('menu').classList.add('hidden');refreshHUD();updateBadges();}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{menuTab=b.dataset.tab;
+  if(menuTab==='codex'){S.codexSeen=Object.assign({},S.codex);persist();}
+  renderMenu();}));
 function equipGear(id,kind){
   S.equipped[gearBranch]={...S.equipped[gearBranch],[kind]:id};persist();
   toast(`${T('equipped')}: ${gname(id)}`);renderMenu();}
@@ -528,7 +563,20 @@ function gearSection(title,items,kind,owned,counts){
       ${!has?`<div class="sm">${T('unlockByQuest')}</div>`:''}</button>`;}).join('')+'</div>';}
 function renderMenu(){
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===menuTab));
+  updateBadges();
   const c=document.getElementById('menuContent');
+  if(menuTab==='bag'){
+    const bagValue=S.bag.reduce((sum,b)=>{const f=FISH.find(x=>x.id===b.fishId);return sum+Math.round(f.price*b.kg);},0);
+    c.innerHTML=`<div class="rowbet" style="margin-bottom:10px">
+      <b>🧺 ${T('bag')}（${S.bag.length}）</b>
+      <button class="claimbtn" style="background:#e9c46a;color:#264653;animation:none" ${S.bag.length?'':'disabled'} onclick="sellAll()">${T('sellAll')} +${bagValue} 🪙</button></div>
+      ${S.bag.length?`<div class="grid">`+S.bag.map((b,i)=>{
+        const f=FISH.find(x=>x.id===b.fishId);
+        return`<div class="card" style="display:flex;justify-content:space-between;align-items:center">
+          <span>${tierBadgeHTML(f.needTier)}${fname(f)} · ${b.kg}kg</span><b>🪙${Math.round(f.price*b.kg)}</b></div>`;}).join('')+'</div>'
+      :`<p class="sm" style="opacity:.6">${T('bagEmpty')}</p>`}`;
+    return;
+  }
   if(menuTab==='gear'){
     c.innerHTML=`<div class="bswitch">
       <button class="${gearBranch==='lure'?'on':''}" onclick="gearBranch='lure';renderMenu()">🎣 ${T('lureBranch')}</button>
@@ -563,15 +611,7 @@ function renderMenu(){
         r.kind==='coins'?`🪙×${r.count}`:r.kind==='pearls'?`🦪×${r.count}`:
         r.kind==='gear'?`<b style="color:${TIER_COLORS[gearById(r.gearId).tier]}">${gname(r.gearId)}</b>`:`${gname(r.gearId)}×${r.count}`).join(' · ')}</div></div>`;}).join('');
   }else{
-    const bagValue=S.bag.reduce((sum,b)=>{const f=FISH.find(x=>x.id===b.fishId);return sum+Math.round(f.price*b.kg);},0);
-    c.innerHTML=`<div class="rowbet" style="margin-bottom:10px">
-      <b>${T('bag')}（${S.bag.length}）</b>
-      <button class="claimbtn" style="background:#e9c46a;color:#264653;animation:none" ${S.bag.length?'':'disabled'} onclick="sellAll()">${T('sellAll')} +${bagValue} 🪙</button></div>
-      ${S.bag.length?`<div class="grid" style="margin-bottom:12px">`+S.bag.map((b,i)=>{
-        const f=FISH.find(x=>x.id===b.fishId);
-        return`<div class="card" style="display:flex;justify-content:space-between"><span>${fname(f)} · ${b.kg}kg</span><b>🪙${Math.round(f.price*b.kg)}</b></div>`;}).join('')+'</div>'
-      :`<p class="sm" style="margin-bottom:12px;opacity:.6">${T('bagEmpty')}</p>`}
-      <div class="bswitch">
+    c.innerHTML=`<div class="bswitch">
       <button class="${shopBranch==='lure'?'on':''}" onclick="shopBranch='lure';renderMenu()">🎣 ${T('lureBranch')}</button>
       <button class="${shopBranch==='float'?'on':''}" onclick="shopBranch='float';renderMenu()">🎋 ${T('floatBranch')}</button></div>
       <div class="grid">`+BAITS.filter(b=>b.branch===shopBranch).map(g=>`
@@ -593,7 +633,7 @@ function claimQuest(qid){
       else if(r.gearId.startsWith('line')){if(!S.lines.includes(r.gearId))S.lines.push(r.gearId);}
       else S.baits[r.gearId]=(S.baits[r.gearId]||0)+1;}
     else if(r.kind==='bait')S.baits[r.gearId]=(S.baits[r.gearId]||0)+r.count;}
-  S.quests[qid]={claimed:true};persist();toast(T('claimed')+' ✓');renderMenu();}
+  S.quests[qid]={claimed:true};persist();updateBadges();toast(T('claimed')+' ✓');renderMenu();}
 function buyBait(id,usePearl){
   const g=gearById(id);const cost=usePearl?g.pearlPrice:g.price;
   const ok=usePearl?S.pearls>=cost:S.coins>=cost;
@@ -603,7 +643,7 @@ function buyBait(id,usePearl){
 function sellAll(){
   if(!S.bag.length)return;
   const v=S.bag.reduce((sum,b)=>{const f=FISH.find(x=>x.id===b.fishId);return sum+Math.round(f.price*b.kg);},0);
-  S.coins+=v;S.earnedCoins+=v;S.bag=[];persist();toast(`+${v} 🪙`);renderMenu();}
+  S.coins+=v;S.earnedCoins+=v;S.bag=[];persist();updateBadges();toast(`+${v} 🪙`);renderMenu();}
 
 /* ==================== 主循环 ==================== */
 let last=performance.now(), time=0;
@@ -617,7 +657,7 @@ function loop(now){
       if(castPower>1){castPower=1;castDir=-1;}if(castPower<0){castPower=0;castDir=1;}}
     else if(phase==='waiting'){biteTimer+=dt;
       if(biteTimer>=waitTime&&targetFish){biteTimer=0;phase='bite';updatePhaseUI();}}
-    else if(phase==='bite'){biteTimer+=dt;if(biteTimer>0.9)finishFight(false);}
+    else if(phase==='bite'){biteTimer+=dt;if(biteTimer>1.8)finishFight(false);}
     else if(phase==='fight'){
       const f=targetFish;
       if(mode==='float'){
@@ -782,7 +822,8 @@ document.addEventListener('click',()=>{
 
 /* 初始化 */
 if(unlockedAreas().length&&areaId>=unlockedAreas().length)areaId=0;
-applyI18n();renderHome();
+S.codexSeen=S.codexSeen||{};
+applyI18n();renderHome();updateBadges();
 </script>
 </body>
 </html>
