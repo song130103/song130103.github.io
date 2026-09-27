@@ -222,6 +222,10 @@ tension:['张力','Tension'],fishDistance:['距离','Distance'],
 lureFightHint:['逆着鱼的方向拉杆耗体力，按住「拉线」收近；张力爆红会断线！','Steer against the fish, hold Reel to pull in — max tension breaks the line!'],
 floatFightHint:['按住/触摸抬升，松开下降，让鱼保持在绿色区间内','Hold to raise, release to drop. Keep the fish in the green zone'],
 stamina:['体力','Stamina'],areaUnlockHint:['图鉴进度 ≥','Codex ≥'],
+daily:['每日任务','Daily Quests'],mainline:['主线任务','Main Quests'],
+refreshIn:['每日任务每天自动刷新','Daily quests refresh automatically every day'],
+dawn:['清晨','Dawn'],day:['白天','Day'],dusk:['黄昏','Dusk'],night:['夜晚','Night'],
+timeHint:['不同时段出没的鱼不同','Different fish appear at different times'],
 };
 let LANG='zh';
 const T=k=>DICT[k][LANG==='zh'?0:1];
@@ -245,7 +249,7 @@ const ALL_GEAR=[...RODS,...LINES,...BAITS];
 const gearById=id=>ALL_GEAR.find(g=>g.id===id);
 const gname=(id)=>{const g=gearById(id);return LANG==='zh'?g.zh:g.en};
 
-const F=(id,zh,en,area,branch,needTier,difficulty,minKg,maxKg,price,pearlChance,baseRate,hue)=>({id,zh,en,area,branch,needTier,difficulty,minKg,maxKg,price,pearlChance,baseRate,hue});
+const F=(id,zh,en,area,branch,needTier,difficulty,minKg,maxKg,price,pearlChance,baseRate,hue,time)=>({id,zh,en,area,branch,needTier,difficulty,minKg,maxKg,price,pearlChance,baseRate,hue,time:time||null});
 const FISH=[
 F('pond_topmouth','白条鱼','Topmouth Culter',0,'lure',0,0.5,0.05,0.3,30,0,20,200),
 F('pond_betta','斗鱼','Betta',0,'lure',0,0.7,0.05,0.15,60,0.02,12,350),
@@ -253,42 +257,52 @@ F('pond_snakehead','黑鱼','Snakehead',0,'lure',1,1.1,0.5,2.5,55,0.03,8,130),
 F('pond_amos','麦穗鱼','Topmouth Gudgeon',0,'both',0,0.4,0.02,0.1,25,0,22,210),
 F('pond_bitterling','鳑鲏','Bitterling',0,'both',0,0.5,0.02,0.08,35,0,18,300),
 F('pond_crucian','鲫鱼','Crucian Carp',0,'float',0,0.5,0.1,0.8,40,0,22,45),
-F('pond_carp','鲤鱼','Common Carp',0,'float',0,0.8,0.5,4,45,0.02,15,35),
-F('pond_grass','草鱼','Grass Carp',0,'float',1,1.0,1,6,50,0.02,10,90),
-F('pond_silver','鲢鱼','Silver Carp',0,'float',1,0.9,1,5,42,0,10,200),
+F('pond_carp','鲤鱼','Common Carp',0,'float',0,0.8,0.5,4,28,0.02,15,35),
+F('pond_grass','草鱼','Grass Carp',0,'float',1,1.0,1,6,18,0.02,10,90),
+F('pond_silver','鲢鱼','Silver Carp',0,'float',1,0.9,1,5,20,0,10,200),
 F('pond_loach','泥鳅','Loach',0,'float',0,0.6,0.05,0.3,38,0,14,60),
 F('river_opsari','马口鱼','Thicklip Gudgeon',1,'lure',0,0.6,0.05,0.3,45,0,18,190),
 F('river_minnow','溪哥','Creek Chub',1,'lure',0,0.5,0.03,0.2,40,0,20,170),
-F('river_mandarin','鳜鱼','Mandarin Fish',1,'lure',2,1.4,0.5,3,110,0.06,6,20),
-F('river_culter','翘嘴鲌','Predatory Carp',1,'lure',1,1.2,0.5,4,80,0.04,8,200),
+F('river_mandarin','鳜鱼','Mandarin Fish',1,'lure',2,1.4,0.5,3,85,0.06,6,20),
+F('river_culter','翘嘴鲌','Predatory Carp',1,'lure',1,1.2,0.5,4,55,0.04,8,200),
 F('river_bass','淡水鲈鱼','Freshwater Bass',1,'lure',1,1.0,0.3,2,85,0.04,10,120),
-F('river_black','青鱼','Black Carp',1,'float',2,1.3,2,12,90,0.05,6,220),
+F('river_black','青鱼','Black Carp',1,'float',2,1.3,2,12,35,0.05,6,220),
 F('river_catfish','鲶鱼','Catfish',1,'float',1,1.0,0.5,5,60,0.02,10,25),
 F('river_yellow','黄颡鱼','Yellow Catfish',1,'float',0,0.7,0.1,0.8,55,0,14,45),
 F('river_bream','鳊鱼','Bream',1,'float',0,0.6,0.2,1.5,50,0,15,55),
 F('river_eel','河鳗','River Eel',1,'both',2,1.5,0.3,2,140,0.08,5,85),
-F('shore_seabass','海鲈鱼','Sea Bass',2,'lure',1,1.1,0.5,4,100,0.04,12,200),
-F('shore_blacksea','黑鲷','Black Porgy',2,'both',1,1.0,0.3,3,110,0.05,11,30),
+F('shore_seabass','海鲈鱼','Sea Bass',2,'lure',1,1.1,0.5,4,70,0.04,12,200),
+F('shore_blacksea','黑鲷','Black Porgy',2,'both',1,1.0,0.3,3,80,0.05,11,30),
 F('shore_rockfish','石九公','Marbled Rockfish',2,'lure',1,0.9,0.2,1.5,90,0.03,12,15),
 F('shore_flounder','比目鱼','Flounder',2,'float',1,0.8,0.3,2.5,95,0.03,12,60),
 F('shore_croaker','黄花鱼','Yellow Croaker',2,'float',2,1.0,0.3,1.5,130,0.06,9,50),
 F('shore_cutlass','带鱼','Cutlassfish',2,'lure',2,1.4,0.5,3,120,0.05,8,190),
-F('shore_mackerel','鲅鱼','Spanish Mackerel',2,'lure',2,1.5,1,6,115,0.05,7,205),
-F('shore_octopus','章鱼','Octopus',2,'float',2,1.3,0.5,4,125,0.06,7,280),
+F('shore_mackerel','鲅鱼','Spanish Mackerel',2,'lure',2,1.5,1,6,70,0.05,7,205),
+F('shore_octopus','章鱼','Octopus',2,'float',2,1.3,0.5,4,90,0.06,7,280),
 F('shore_puffer','河豚','Pufferfish',2,'both',2,1.2,0.3,2,150,0.08,6,40),
-F('shore_redbream','真鲷','Red Seabream',2,'float',3,1.6,1,5,200,0.1,5,5),
+F('shore_redbream','真鲷','Red Seabream',2,'float',3,1.6,1,5,130,0.1,5,5),
 F('shore_sardine','沙丁鱼','Sardine',2,'float',0,0.4,0.05,0.2,30,0,20,210),
-F('deep_tuna','金枪鱼','Tuna',3,'lure',3,1.8,10,60,220,0.1,7,210),
-F('deep_sailfish','旗鱼','Sailfish',3,'lure',4,2.0,15,80,320,0.14,5,200),
-F('deep_marlin','马林鱼','Marlin',3,'lure',4,2.1,20,120,350,0.15,4,230),
-F('deep_grouper','石斑鱼','Grouper',3,'both',3,1.6,3,25,240,0.1,6,25),
-F('deep_shark','锤头鲨','Hammerhead Shark',3,'lure',5,2.2,30,200,500,0.2,2,160),
+F('deep_tuna','金枪鱼','Tuna',3,'lure',3,1.8,10,60,55,0.1,7,210),
+F('deep_sailfish','旗鱼','Sailfish',3,'lure',4,2.0,15,80,60,0.14,5,200),
+F('deep_marlin','马林鱼','Marlin',3,'lure',4,2.1,20,120,55,0.15,4,230),
+F('deep_grouper','石斑鱼','Grouper',3,'both',3,1.6,3,25,60,0.1,6,25),
+F('deep_shark','锤头鲨','Hammerhead Shark',3,'lure',5,2.2,30,200,28,0.2,2,160),
 F('deep_lantern','灯笼鱼','Lanternfish',3,'both',3,1.2,0.1,0.5,260,0.12,8,55),
-F('deep_oarfish','皇带鱼','Oarfish',3,'lure',5,2.2,10,50,600,0.22,2,180),
-F('deep_sunfish','翻车鱼','Ocean Sunfish',3,'float',4,1.7,20,100,300,0.12,4,60),
-F('deep_giant','龙趸','Giant Grouper',3,'float',4,1.9,15,90,380,0.15,4,30),
-F('deep_redsnap','红鳍笛鲷','Crimson Snapper',3,'float',3,1.4,2,10,260,0.1,6,0),
-F('deep_moonfish','月光鱼','Opah Moonfish',3,'both',5,2.0,15,70,550,0.2,2,300)];
+F('deep_oarfish','皇带鱼','Oarfish',3,'lure',5,2.2,10,50,95,0.22,2,180),
+F('deep_sunfish','翻车鱼','Ocean Sunfish',3,'float',4,1.7,20,100,45,0.12,4,60),
+F('deep_giant','龙趸','Giant Grouper',3,'float',4,1.9,15,90,70,0.15,4,30),
+F('deep_redsnap','红鳍笛鲷','Crimson Snapper',3,'float',3,1.4,2,10,90,0.1,6,0),
+F('deep_moonfish','月光鱼','Opah Moonfish',3,'both',5,2.0,15,70,85,0.2,2,300),
+/* —— 新增：时段鱼类 —— */
+F('pond_frog','虎纹蛙','Tiger Frog',0,'lure',0,0.6,0.1,0.5,45,0.02,14,110,'night'),
+F('pond_goldfish','龙睛金鱼','Dragon-eye Goldfish',0,'float',1,0.9,0.1,0.6,120,0.08,5,25,'dawn'),
+F('river_sakura','樱花鳟','Sakura Trout',1,'both',1,0.9,0.2,1.2,95,0.05,9,330,'dawn'),
+F('river_fire','火尾鱼','Firetail',1,'lure',1,1.0,0.2,1,105,0.05,8,15,'dusk'),
+F('shore_glowsquid','荧光鱿','Firefly Squid',2,'float',2,1.1,0.2,1,180,0.1,7,260,'night'),
+F('shore_ribbon','银带鱼','Ribbonfish',2,'lure',2,1.3,0.5,2.5,150,0.06,8,220,'dusk'),
+F('deep_angler','深海鮟鱇','Anglerfish',3,'both',4,1.8,2,15,320,0.15,5,280,'night'),
+F('deep_ghost','幽灵鲨','Ghost Shark',3,'lure',5,2.1,10,60,420,0.2,3,190,'night'),
+F('deep_dawn','晨曦鲷','Dawn Bream',3,'float',3,1.3,1,6,300,0.1,7,40,'dawn')];
 const fname=f=>LANG==='zh'?f.zh:f.en;
 
 const AREAS=[
@@ -316,6 +330,43 @@ const QUESTS=[
 {id:'qg1',zh:'图鉴收藏家',en:'Codex Collector',req:{kind:'species',count:15},rewards:[{kind:'pearls',count:8},{kind:'coins',count:500}]},
 {id:'qg2',zh:'渔夫富翁',en:'Rich Angler',req:{kind:'earnCoins',count:3000},rewards:[{kind:'pearls',count:12}]},
 {id:'qg3',zh:'钓鱼大师',en:'Master Angler',req:{kind:'species',count:30},rewards:[{kind:'pearls',count:20},{kind:'bait',gearId:'bait_lure_5',count:3},{kind:'bait',gearId:'bait_float_5',count:3}]}];
+QUESTS.forEach(q=>{q.branch=q.id.startsWith('qf')?'float':q.id.startsWith('ql')?'lure':'both';});
+
+/* ==================== 每日任务 ==================== */
+function seededRand(seed){let s=seed;return()=>{s=(s*1103515245+12345)&0x7fffffff;return s/0x7fffffff;};}
+function genDailies(dateStr){
+  const seed=[...dateStr].reduce((a,c)=>a*31+c.charCodeAt(0),7);
+  const rnd=seededRand(seed);
+  const out=[];const used=new Set();
+  /* 从已解锁海域的鱼里抽「钓X条某鱼」任务 */
+  const ua=unlockedAreas();
+  const pool=FISH.filter(f=>ua.includes(f.area));
+  for(let i=0;i<6&&pool.length;i++){
+    const f=pool[Math.floor(rnd()*pool.length)];
+    const key='fish_'+f.id;if(used.has(key)){i--;continue;}used.add(key);
+    const cnt=2+Math.floor(rnd()*4);
+    out.push({id:'d_f_'+f.id,zh:`每日·钓${cnt}条${f.zh}`,en:`Daily: ${f.en} ×${cnt}`,
+      req:{kind:'catchFish',fishId:f.id,count:cnt},
+      rewards:[{kind:'coins',count:30+cnt*15+Math.floor(rnd()*40)}],daily:true,branch:f.branch});
+  }
+  /* 通用任务 */
+  const gens=[
+    ()=>({id:'d_species',zh:`每日·图鉴+${2+Math.floor(rnd()*2)}`,en:`Daily: +${2} species`,req:{kind:'species',count:speciesCount()+2},rewards:[{kind:'pearls',count:1+Math.floor(rnd()*2)}],daily:true,branch:'both'}),
+    ()=>({id:'d_coins',zh:'每日·赚取500金币',en:'Daily: Earn 500 coins',req:{kind:'earnCoins',count:S.earnedCoins+500},rewards:[{kind:'pearls',count:2}],daily:true,branch:'both'}),
+    ()=>{const a=ua[Math.floor(rnd()*ua.length)];const an=AREAS[a];return{id:'d_area'+a,zh:`每日·在${an.zh}钓5条`,en:`Daily: 5 fish in ${an.en}`,req:{kind:'catchArea',area:a,count:5},rewards:[{kind:'coins',count:80+Math.floor(rnd()*60)}],daily:true,branch:'both'};},
+    ()=>{const br=rnd()<0.5?'lure':'float';const bn=br==='lure'?(LANG==='zh'?'路亚':'Lure'):(LANG==='zh'?'台钓':'Float');return{id:'d_br_'+br,zh:`每日·用${br==='lure'?'路亚':'台钓'}钓4条`,en:`Daily: 4 fish with ${bn}`,req:{kind:'catchBranch',branch:br,count:4},rewards:[{kind:'bait',gearId:br==='lure'?'bait_lure_1':'bait_float_1',count:4}],daily:true,branch:br};},
+  ];
+  for(let i=0;i<4;i++){const g=gens[Math.floor(rnd()*gens.length)]();if(used.has(g.id)){i--;continue;}used.add(g.id);out.push(g);}
+  return out;
+}
+function todayStr(){const d=new Date();return`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;}
+function getDailies(){
+  const t=todayStr();
+  if(!S.daily||S.daily.date!==t){S.daily={date:t,quests:genDailies(t)};persist();}
+  return S.daily.quests;
+}
+function allQuests(){return[...QUESTS,...getDailies()];}
+const findQuest=qid=>allQuests().find(q=>q.id===qid);
 
 /* ==================== 存档 ==================== */
 const SAVE_KEY='fishing-tale-save-v1';
@@ -323,7 +374,7 @@ function defaultSave(){return{version:1,lang:'zh',coins:100,pearls:0,
 rods:['rod_lure_0','rod_float_0'],lines:['line_lure_0','line_float_0'],
 baits:{bait_lure_0:10,bait_float_0:10},
 equipped:{lure:{rod:'rod_lure_0',line:'line_lure_0',bait:'bait_lure_0'},float:{rod:'rod_float_0',line:'line_float_0',bait:'bait_float_0'}},
-codex:{},codexSeen:{},bag:[],quests:{},totalCaught:0,earnedCoins:0,playMinutes:0};}
+codex:{},codexSeen:{},bag:[],quests:{},totalCaught:0,earnedCoins:0,playMinutes:0,daily:null,branchCaught:{lure:0,float:0}};}
 let S=(()=>{try{const r=localStorage.getItem(SAVE_KEY);if(!r)return defaultSave();const d=JSON.parse(r);if(d.version!==1)return defaultSave();return Object.assign(defaultSave(),d);}catch(e){return defaultSave();}})();
 LANG=S.lang||'zh';
 function persist(){try{S.lang=LANG;localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}}
@@ -335,11 +386,12 @@ function questProgress(req){
     case 'catchTier':return{cur:FISH.filter(f=>f.needTier===req.tier).reduce((s,f)=>s+(S.codex[f.id]?.count||0),0),max:req.count};
     case 'catchArea':return{cur:FISH.filter(f=>f.area===req.area).reduce((s,f)=>s+(S.codex[f.id]?.count||0),0),max:req.count};
     case 'species':return{cur:speciesCount(),max:req.count};
-    case 'earnCoins':return{cur:Math.floor(S.earnedCoins),max:req.count};}}
+    case 'earnCoins':return{cur:Math.floor(S.earnedCoins),max:req.count};
+    case 'catchBranch':return{cur:(S.branchCaught&&S.branchCaught[req.branch])||0,max:req.count};}}
 const questDone=q=>{const p=questProgress(q.req);return p.cur>=p.max;};
 
 /* 红点提示 */
-function hasClaimable(){return QUESTS.some(q=>questDone(q)&&!(S.quests[q.id]&&S.quests[q.id].claimed));}
+function hasClaimable(){return allQuests().some(q=>questDone(q)&&!(S.quests[q.id]&&S.quests[q.id].claimed));}
 function hasNewCodex(){return Object.keys(S.codex).some(id=>!S.codexSeen[id]);}
 function hasBagFish(){return S.bag.length>0;}
 function setDot(el,show){let d=el.querySelector('.redDot');if(show&&!d){d=document.createElement('span');d.className='redDot';el.appendChild(d);}else if(!show&&d)d.remove();}
@@ -349,13 +401,21 @@ function updateBadges(){
   const menuBtn=document.getElementById('menuBtn');
   if(menuBtn)setDot(menuBtn,Object.values(dots).some(v=>v));
 }
+/* 昼夜时段：6-10 清晨 / 10-17 白天 / 17-21 黄昏 / 21-6 夜晚 */
+function timeOfDay(){const h=new Date().getHours();
+  if(h>=6&&h<10)return'dawn';if(h>=10&&h<17)return'day';if(h>=17&&h<21)return'dusk';return'night';}
 function fishPool(areaId,branch,rodTier){
-  let pool=FISH.filter(f=>f.area===areaId&&(f.branch==='both'||f.branch===branch)&&f.needTier<=rodTier);
+  const tod=timeOfDay();
+  let pool=FISH.filter(f=>f.area===areaId&&(f.branch==='both'||f.branch===branch)&&f.needTier<=rodTier
+    &&(!f.time||f.time===tod));
   if(!pool.length){const all=FISH.filter(f=>f.area===areaId&&(f.branch==='both'||f.branch===branch));const m=Math.min(...all.map(f=>f.needTier));pool=all.filter(f=>f.needTier===m);}
   return pool;}
 function rollFish(areaId,branch,rodTier,luck,dist){
   const pool=fishPool(areaId,branch,rodTier);
-  const w=pool.map(f=>f.baseRate*(1+(luck+dist)*f.difficulty));
+  /* 抛得越远，高 needTier 鱼权重越高；贴岸(dist≈0)时高级鱼权重×0.3，低级鱼不变 */
+  const w=pool.map(f=>{
+    const tierFactor=f.needTier===0?1:(0.3+dist*1.4);
+    return f.baseRate*(1+(luck+dist)*f.difficulty)*tierFactor;});
   let r=Math.random()*w.reduce((a,b)=>a+b,0);
   for(let i=0;i<pool.length;i++){r-=w[i];if(r<=0)return pool[i];}
   return pool[pool.length-1];}
@@ -405,6 +465,13 @@ function refreshHUD(){
   document.getElementById('gCoins').textContent=S.coins;
   document.getElementById('gPearls').textContent=S.pearls;
   document.getElementById('modeChip').textContent=mode==='lure'?`🎣 ${T('lureBranch')}`:`🎋 ${T('floatBranch')}`;
+  const tod=timeOfDay();
+  const todIcon={dawn:'🌅',day:'☀️',dusk:'🌇',night:'🌙'}[tod];
+  let tc=document.getElementById('timeChip');
+  if(!tc){tc=document.createElement('span');tc.id='timeChip';tc.className='hudchip';
+    tc.title=T('timeHint');
+    document.getElementById('modeChip').after(tc);}
+  tc.textContent=`${todIcon} ${T(tod)}`;
   const ua=unlockedAreas();
   document.getElementById('areaChips').innerHTML=AREAS.map(a=>{
     const un=ua.includes(a.id);
@@ -483,6 +550,8 @@ function updatePhaseUI(){
   lb.classList.toggle('hidden',!(phase==='fight'&&mode==='lure'));
   /* 战斗时隐藏左下装备条，避免遮挡 */
   document.getElementById('hudBottom').classList.toggle('hidden',phase==='fight'&&mode==='lure');
+  /* 抛竿后（非 idle）隐藏海域切换，防止钓鱼中途换海域 */
+  document.getElementById('areaChips').classList.toggle('hidden',phase!=='idle');
 }
 function startCharge(){
   if(phase!=='idle')return;
@@ -512,7 +581,7 @@ function releaseCast(){
 function beginFight(){
   perfect=true;
   if(mode==='float'){fishY=0.5;zoneY=0.7;progress=0.35;outTime=0;}
-  else{stamina=1;distance=1;tension=0;fishDir=Math.random()<0.5?-1:1;dirTimer=0;}
+  else{stamina=1;distance=castPower;tension=0;fishDir=Math.random()<0.5?-1:1;dirTimer=0;}
   phase='fight';updatePhaseUI();
 }
 function finishFight(win,broke=false){
@@ -525,6 +594,8 @@ function finishFight(win,broke=false){
     const pearl=Math.random()<f.pearlChance+(perfect?0.05:0);
     if(pearl)S.pearls++;
     S.totalCaught++;
+    S.branchCaught=S.branchCaught||{lure:0,float:0};
+    S.branchCaught[mode]++;
     S.codex[f.id]={count:(prev?.count||0)+1,best:Math.max(prev?.best||0,kg)};
     persist();updateBadges();
     /* 售价保底：非最低级饵 2 币/条，最低级饵 1 币/条，路亚模式保底 6 币 */
@@ -625,10 +696,13 @@ function renderMenu(){
           <path d="M8 15 L0 8 L0 22 Z" fill="${cx?`hsl(${f.hue} 60% 45%)`:'#264653'}" opacity="${cx?1:.35}"/>
           <circle cx="38" cy="12" r="2" fill="#fff" opacity="${cx?1:.35}"/></svg>
         <div class="nm" style="font-size:12px">${cx?fname(f):T('unknown')}</div>
+        ${f.time?`<div class="sm" style="color:#4d9be6">${{dawn:'🌅',day:'☀️',dusk:'🌇',night:'🌙'}[f.time]} ${T(f.time)}</div>`:''}
         ${cx?`<div class="sm">${T('caughtCount')} ×${cx.count} · ${T('maxWeight')} ${cx.best}kg</div>`:''}
         ${cx&&f.pearlChance>0?`<div class="sm" style="color:#a884f3">🦪 ${T('pearlChance')}</div>`:''}</div>`;}).join('')+'</div>';
   }else if(menuTab==='quests'){
-    c.innerHTML=QUESTS.map(q=>{
+    const mains=QUESTS.filter(q=>q.branch===mode||q.branch==='both');
+    const dailies=getDailies().filter(q=>q.branch===mode||q.branch==='both');
+    const renderQ=q=>{
       const p=questProgress(q.req),done=questDone(q),claimed=S.quests[q.id]?.claimed;
       return`<div class="qcard ${claimed?'claimed':done?'done':''}">
       <div class="rowbet"><span style="font-weight:bold;font-size:14px">${LANG==='zh'?q.zh:q.en}</span>
@@ -636,7 +710,12 @@ function renderMenu(){
       <div class="qbar"><i style="width:${Math.min(100,p.cur/p.max*100)}%"></i></div>
       <div class="sm" style="margin-top:5px">${T('reward')}: ${q.rewards.map(r=>
         r.kind==='coins'?`🪙×${r.count}`:r.kind==='pearls'?`🦪×${r.count}`:
-        r.kind==='gear'?`<b style="color:${TIER_COLORS[gearById(r.gearId).tier]}">${gname(r.gearId)}</b>`:`${gname(r.gearId)}×${r.count}`).join(' · ')}</div></div>`;}).join('');
+        r.kind==='gear'?`<b style="color:${TIER_COLORS[gearById(r.gearId).tier]}">${gname(r.gearId)}</b>`:`${gname(r.gearId)}×${r.count}`).join(' · ')}</div></div>`;};
+    c.innerHTML=`<div class="bswitch"><button class="on">${mode==='lure'?'🎣 '+T('lureBranch'):'🎋 '+T('floatBranch')}</button></div>
+      <div class="secT">📅 ${T('daily')} <span class="sm" style="opacity:.6;font-weight:normal">（${T('refreshIn')}）</span></div>
+      ${dailies.map(renderQ).join('')}
+      <div class="secT">📜 ${T('mainline')}</div>
+      ${mains.map(renderQ).join('')}`;
   }else{
     c.innerHTML=`<div class="bswitch">
       <button class="${shopBranch==='lure'?'on':''}" onclick="shopBranch='lure';renderMenu()">🎣 ${T('lureBranch')}</button>
@@ -652,7 +731,7 @@ function renderMenu(){
   }
 }
 function claimQuest(qid){
-  const q=QUESTS.find(q=>q.id===qid);
+  const q=findQuest(qid);
   for(const r of q.rewards){
     if(r.kind==='coins'){S.coins+=r.count;S.earnedCoins+=r.count;}
     else if(r.kind==='pearls')S.pearls+=r.count;
@@ -716,7 +795,7 @@ function loop(now){
         /* 张力超过 1.3 才有断线风险，红线警示从 0.95 开始 */
         if(tension>1.3){perfect=false;
           if(Math.random()<dt*(1.4-line().strength*4))finishFight(false,true);}
-        if(phase==='fight'){if(distance<=0)finishFight(true);else if(distance>1.25){perfect=false;finishFight(false);}}
+        if(phase==='fight'){if(distance<=0)finishFight(true);else if(distance>castPower+0.5){perfect=false;finishFight(false);}}
       }
     }
 
@@ -725,10 +804,12 @@ function loop(now){
     ctx.setTransform(1,0,0,1,0,0);
     ctx.fillStyle=a.waterBot;ctx.fillRect(0,0,cv.width,cv.height);
     ctx.setTransform(scale,0,0,scale,ox,oy);
+    const tod=timeOfDay();
+    const tint={dawn:[0.15,'#f4a261'],day:[0,null],dusk:[0.2,'#e76f51'],night:[0.45,'#0a1628']}[tod];
     const sky=ctx.createLinearGradient(0,0,0,waterY);
     sky.addColorStop(0,a.skyTop);sky.addColorStop(1,a.skyBot);
     ctx.fillStyle=sky;ctx.fillRect(0,0,LW,waterY+2);
-    ctx.fillStyle=areaId===3?'#e9c46a':'#f4a261';
+    ctx.fillStyle=tod==='night'?'#f5f0e1':areaId===3?'#e9c46a':'#f4a261';
     ctx.beginPath();ctx.arc(LW*0.78,waterY*0.32,34,0,7);ctx.fill();
     ctx.fillStyle='rgba(255,255,255,.25)';
     ctx.beginPath();ctx.arc(LW*0.78,waterY*0.32,48,0,7);ctx.fill();
@@ -787,6 +868,8 @@ function loop(now){
       const g2=ctx.createLinearGradient(bx,0,bx+bw,0);
       g2.addColorStop(0,'#6abe30');g2.addColorStop(0.6,'#e9c46a');g2.addColorStop(1,'#d63c3c');
       ctx.fillStyle=g2;ctx.fillRect(bx,by,bw*castPower,bh);}
+    /* 昼夜色调叠加 */
+    if(tint[1]){ctx.fillStyle=tint[1];ctx.globalAlpha=tint[0];ctx.fillRect(0,0,LW,LH);ctx.globalAlpha=1;}
     if(phase==='bite'){
       ctx.fillStyle='#e9c46a';ctx.font='bold 44px sans-serif';ctx.textAlign='center';
       ctx.fillText('❗',bobX,bobY-40+Math.sin(time*10)*4);}
