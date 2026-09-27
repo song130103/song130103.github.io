@@ -115,6 +115,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     <span class="sp"></span>
     <span class="pill coin">🪙 <span id="homeCoins">0</span></span>
     <span class="pill pearl">🦪 <span id="homePearls">0</span></span>
+    <span class="pill" style="background:#6abe30">⭐ Lv.<span id="homeLevel">1</span></span>
     <button class="btnline" onclick="toggleLang()" id="langBtn1">EN</button>
     <button class="btnline" onclick="showConfirmNew()" data-i18n="newGame"></button>
   </div>
@@ -221,7 +222,11 @@ steerLeft:['◀ 左拉杆','◀ Steer Left'],steerRight:['右拉杆 ▶','Steer 
 tension:['张力','Tension'],fishDistance:['距离','Distance'],
 lureFightHint:['逆着鱼的方向拉杆耗体力，按住「拉线」收近；张力爆红会断线！','Steer against the fish, hold Reel to pull in — max tension breaks the line!'],
 floatFightHint:['按住/触摸抬升，松开下降，让鱼保持在绿色区间内','Hold to raise, release to drop. Keep the fish in the green zone'],
-stamina:['体力','Stamina'],areaUnlockHint:['图鉴进度 ≥','Codex ≥'],
+stamina:['体力','Stamina'],areaUnlockHint:['等级 ≥','Lv. ≥'],
+level:['等级','Level'],breakthrough:['突破','Breakthrough'],breakNow:['进行突破','Break through'],
+breakHint:['消耗鱼篓中的特定鱼类作为祭品，突破等级上限','Offer specific fish from your bag to raise the level cap'],
+breakOk:['突破成功！','Breakthrough success!'],lvCapHint:['已达当前等级上限，需要突破才能继续升级','Level cap reached — breakthrough required to keep leveling'],
+levelUp:['升级！','Level up!'],
 daily:['每日任务','Daily Quests'],mainline:['主线任务','Main Quests'],
 refreshIn:['每日任务每天自动刷新','Daily quests refresh automatically every day'],
 dawn:['清晨','Dawn'],day:['白天','Day'],dusk:['黄昏','Dusk'],night:['夜晚','Night'],
@@ -306,10 +311,10 @@ F('deep_dawn','晨曦鲷','Dawn Bream',3,'float',3,1.3,1,6,300,0.1,7,40,'dawn')]
 const fname=f=>LANG==='zh'?f.zh:f.en;
 
 const AREAS=[
-{id:0,zh:'碧水池塘',en:'Jade Pond',dzh:'村口的小池塘，新手的起点',den:'A village pond, where it all begins',need:0,skyTop:'#a8dadc',skyBot:'#f5f0e1',waterTop:'#5fa8a0',waterBot:'#264653'},
-{id:1,zh:'青溪河流',en:'Azure Creek',dzh:'山涧溪流，藏着溪流精灵',den:'A mountain creek full of spirits',need:6,skyTop:'#9dc8d8',skyBot:'#e8dcc4',waterTop:'#4d9bb0',waterBot:'#1d3a46'},
-{id:2,zh:'浅湾近海',en:'Shallow Bay',dzh:'咸咸的海风，鱼种骤然丰富',den:'Salty breeze, richer waters',need:14,skyTop:'#f4a261',skyBot:'#f5f0e1',waterTop:'#3a7ca5',waterBot:'#16324f'},
-{id:3,zh:'深蓝远海',en:'Deep Blue',dzh:'传说巨兽栖息的远海',den:'Offshore waters where legends dwell',need:24,skyTop:'#264653',skyBot:'#6b8f9e',waterTop:'#1d4e6b',waterBot:'#0a1e2e'}];
+{id:0,zh:'碧水池塘',en:'Jade Pond',dzh:'村口的小池塘，新手的起点',den:'A village pond, where it all begins',need:1,skyTop:'#a8dadc',skyBot:'#f5f0e1',waterTop:'#5fa8a0',waterBot:'#264653'},
+{id:1,zh:'青溪河流',en:'Azure Creek',dzh:'山涧溪流，藏着溪流精灵',den:'A mountain creek full of spirits',need:20,skyTop:'#9dc8d8',skyBot:'#e8dcc4',waterTop:'#4d9bb0',waterBot:'#1d3a46'},
+{id:2,zh:'浅湾近海',en:'Shallow Bay',dzh:'咸咸的海风，鱼种骤然丰富',den:'Salty breeze, richer waters',need:60,skyTop:'#f4a261',skyBot:'#f5f0e1',waterTop:'#3a7ca5',waterBot:'#16324f'},
+{id:3,zh:'深蓝远海',en:'Deep Blue',dzh:'传说巨兽栖息的远海',den:'Offshore waters where legends dwell',need:120,skyTop:'#264653',skyBot:'#6b8f9e',waterTop:'#1d4e6b',waterBot:'#0a1e2e'}];
 
 const QUESTS=[
 {id:'q1',zh:'第一尾鱼',en:'First Catch',req:{kind:'catchArea',area:0,count:1},rewards:[{kind:'coins',count:50},{kind:'bait',gearId:'bait_float_0',count:5}]},
@@ -374,12 +379,83 @@ function defaultSave(){return{version:1,lang:'zh',coins:100,pearls:0,
 rods:['rod_lure_0','rod_float_0'],lines:['line_lure_0','line_float_0'],
 baits:{bait_lure_0:10,bait_float_0:10},
 equipped:{lure:{rod:'rod_lure_0',line:'line_lure_0',bait:'bait_lure_0'},float:{rod:'rod_float_0',line:'line_float_0',bait:'bait_float_0'}},
-codex:{},codexSeen:{},bag:[],quests:{},totalCaught:0,earnedCoins:0,playMinutes:0,daily:null,branchCaught:{lure:0,float:0}};}
+codex:{},codexSeen:{},bag:[],quests:{},totalCaught:0,earnedCoins:0,playMinutes:0,daily:null,branchCaught:{lure:0,float:0},level:1,xp:0,bk:0};}
 let S=(()=>{try{const r=localStorage.getItem(SAVE_KEY);if(!r)return defaultSave();const d=JSON.parse(r);if(d.version!==1)return defaultSave();return Object.assign(defaultSave(),d);}catch(e){return defaultSave();}})();
+/* 旧存档迁移：按历史钓获估算等级 */
+if(S.level==null){S.level=Math.min(120,1+S.totalCaught);S.bk=Math.min(23,Math.floor(S.level/10));S.xp=0;}
 LANG=S.lang||'zh';
 function persist(){try{S.lang=LANG;localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}}
 const speciesCount=()=>Object.keys(S.codex).length;
-const unlockedAreas=()=>{const n=speciesCount();return AREAS.filter(a=>n>=a.need).map(a=>a.id);};
+const unlockedAreas=()=>AREAS.filter(a=>S.level>=a.need).map(a=>a.id);
+
+/* ==================== 钓鱼等级 & 突破 ==================== */
+const MAX_LV=240;
+const lvCap=()=>Math.min(MAX_LV,(S.bk+1)*10); /* 当前等级上限：每突破一次 +10 */
+const xpNeed=L=>20+12*L; /* L 级升到 L+1 所需经验 */
+function addXp(n){
+  if(S.level>=MAX_LV)return;
+  if(S.level>=lvCap()){updateBadges();return;} /* 到顶，需先突破 */
+  S.xp+=n;
+  while(S.level<lvCap()&&S.xp>=xpNeed(S.level)){
+    S.xp-=xpNeed(S.level);S.level++;
+    const rw=10+S.level*2;S.coins+=rw;S.earnedCoins+=rw;
+    toast(`🎉 ${T('levelUp')} Lv.${S.level} +${rw} 🪙`);
+  }
+  if(S.level>=lvCap()){S.xp=0;if(S.level<MAX_LV)toast(T('lvCapHint'));} /* 到达上限，经验封存待突破 */
+  persist();updateBadges();
+}
+/* 突破材料：每 10 级一档，随进度从池塘小鱼过渡到深海巨物 */
+const BREAKS=[
+ {req:{pond_crucian:2,pond_topmouth:2}},                              /* Lv10 */
+ {req:{pond_carp:2,pond_betta:2}},                                    /* Lv20 */
+ {req:{pond_frog:1,pond_goldfish:1,pond_loach:3}},                    /* Lv30 */
+ {req:{river_minnow:3,river_yellow:3}},                               /* Lv40 */
+ {req:{river_bass:2,river_catfish:2,river_bream:2}},                  /* Lv50 */
+ {req:{river_mandarin:1,river_black:1,river_eel:1}},                  /* Lv60 */
+ {req:{river_sakura:2,river_culter:2,river_fire:1}},                  /* Lv70 */
+ {req:{shore_sardine:4,shore_rockfish:2}},                            /* Lv80 */
+ {req:{shore_seabass:2,shore_blacksea:2,shore_flounder:2}},           /* Lv90 */
+ {req:{shore_croaker:2,shore_cutlass:2}},                             /* Lv100 */
+ {req:{shore_puffer:1,shore_octopus:2,shore_mackerel:2}},             /* Lv110 */
+ {req:{shore_redbream:1,shore_ribbon:1,shore_glowsquid:1}},           /* Lv120 */
+ {req:{deep_lantern:2,deep_redsnap:2}},                               /* Lv130 */
+ {req:{deep_tuna:2,deep_grouper:1}},                                  /* Lv140 */
+ {req:{deep_angler:1,deep_sunfish:1}},                                /* Lv150 */
+ {req:{deep_sailfish:1,deep_giant:1}},                                /* Lv160 */
+ {req:{deep_marlin:1,deep_lantern:2}},                                /* Lv170 */
+ {req:{deep_oarfish:1,deep_tuna:2}},                                  /* Lv180 */
+ {req:{deep_moonfish:1,deep_grouper:2}},                              /* Lv190 */
+ {req:{deep_shark:1}},                                                /* Lv200 */
+ {req:{deep_ghost:1,deep_angler:1}},                                  /* Lv210 */
+ {req:{deep_marlin:1,deep_sailfish:1}},                               /* Lv220 */
+ {req:{deep_shark:1,deep_moonfish:1}}                                 /* Lv230 */
+];
+const breakNeed=()=>(S.level>=lvCap()&&lvCap()<MAX_LV)?(BREAKS[S.bk]||null):null;
+const bagCount=fid=>S.bag.filter(b=>b.fishId===fid).length;
+const canBreak=()=>{const b=breakNeed();return !!b&&Object.entries(b.req).every(([id,c])=>bagCount(id)>=c);};
+function doBreak(){
+  const b=breakNeed();if(!b||!canBreak())return;
+  for(const [id,c] of Object.entries(b.req)){let left=c;
+    S.bag=S.bag.filter(x=>x.fishId===id&&left>0?(left--,false):true);}
+  S.bk++;
+  const coins=60*S.bk, pearls=1+Math.floor(S.bk/4);
+  S.coins+=coins;S.earnedCoins+=coins;S.pearls+=pearls;
+  persist();updateBadges();refreshHUD();closeModal();
+  toast(`⬆ ${T('breakOk')} +${coins} 🪙 +${pearls} 🦪`);
+}
+function showBreakModal(){
+  const b=breakNeed();if(!b)return;
+  const nextCap=Math.min(MAX_LV,(S.bk+2)*10);
+  const rows=Object.entries(b.req).map(([id,c])=>{
+    const f=FISH.find(x=>x.id===id),have=bagCount(id);
+    return`<div class="rowbet" style="margin:6px 0"><span>${tierBadgeHTML(f.needTier)}${fname(f)}</span>
+      <b style="color:${have>=c?'#6abe30':'#d63c3c'}">${have}/${c}</b></div>`;}).join('');
+  showModal(`<div class="mbox"><h2>⬆ ${T('breakthrough')} · Lv.${S.level} → ${nextCap}</h2>
+  <p class="sm" style="opacity:.7">${T('breakHint')}</p>${rows}
+  <div style="display:flex;gap:8px;margin-top:12px">
+    <button class="mbtn" style="background:#6abe30;color:#fff" ${canBreak()?'':'disabled'} onclick="doBreak()">${T('breakNow')}</button>
+    <button class="mbtn" onclick="closeModal()">${T('cancel')}</button></div></div>`);
+}
 function questProgress(req){
   switch(req.kind){
     case 'catchFish':return{cur:S.codex[req.fishId]?.count||0,max:req.count};
@@ -461,6 +537,7 @@ function toggleLang(){LANG=LANG==='zh'?'en':'zh';persist();applyI18n();if(!docum
 function refreshHUD(){
   document.getElementById('homeCoins').textContent=S.coins;
   document.getElementById('homePearls').textContent=S.pearls;
+  document.getElementById('homeLevel').textContent=S.level;
   document.getElementById('homeTotal').textContent=S.totalCaught;
   document.getElementById('gCoins').textContent=S.coins;
   document.getElementById('gPearls').textContent=S.pearls;
@@ -472,6 +549,16 @@ function refreshHUD(){
     tc.title=T('timeHint');
     document.getElementById('modeChip').after(tc);}
   tc.textContent=`${todIcon} ${T(tod)}`;
+  /* 等级徽章：到顶可点击突破 */
+  let lc=document.getElementById('levelChip');
+  if(!lc){lc=document.createElement('button');lc.id='levelChip';lc.className='hudchip';tc.after(lc);}
+  const cap=lvCap(),brk=breakNeed();
+  lc.innerHTML=S.level>=MAX_LV?`⭐ Lv.${S.level} MAX`
+    :brk?`⭐ Lv.${S.level} · <b>${T('breakthrough')}</b>`
+    :`⭐ Lv.${S.level} · ${S.xp}/${xpNeed(S.level)}`;
+  lc.style.background=brk?(canBreak()?'#6abe30':'#e9c46a'):'';
+  lc.style.color=brk?'#264653':'';
+  lc.onclick=brk?showBreakModal:null;
   const ua=unlockedAreas();
   document.getElementById('areaChips').innerHTML=AREAS.map(a=>{
     const un=ua.includes(a.id);
@@ -602,6 +689,7 @@ function finishFight(win,broke=false){
     const floor=mode==='lure'?6:(catchBaitTier>0?2:1);
     const value=Math.max(floor,Math.round(f.price*kg*(perfect?1.25:1)));
     lastCatch={fish:f,kg,perfect,value,newSpecies:!prev,newBest:!!prev&&kg>prev.best,pearl};
+    addXp(5+Math.round(value*0.5)+f.needTier*10+(perfect?10:0)); /* 钓获经验 */
     refreshHUD();
     setTimeout(()=>showCatchModal(lastCatch),350);
   }else{
@@ -945,7 +1033,7 @@ document.addEventListener('click',()=>{
 /* 初始化 */
 if(unlockedAreas().length&&areaId>=unlockedAreas().length)areaId=0;
 S.codexSeen=S.codexSeen||{};
-applyI18n();renderHome();updateBadges();
+applyI18n();renderHome();updateBadges();refreshHUD();
 </script>
 </body>
 </html>
