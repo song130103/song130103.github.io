@@ -146,7 +146,6 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     <span style="flex:1"></span>
     <span class="hudchip" style="background:#e9c46a;color:#264653">🪙 <span id="gCoins">0</span></span>
     <span class="hudchip" style="background:#a884f3">🦪 <span id="gPearls">0</span></span>
-    <button class="hudchip" onclick="toggleLang()" id="langBtn2">EN</button>
     <button class="hudchip hasdot" id="menuBtn" style="background:#f4a261;color:#264653;font-weight:900" onclick="openMenu()">☰ <span data-i18n="menu"></span></button>
   </div>
   <div class="hud" id="phaseTip"></div>
@@ -166,6 +165,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
   <div class="topbar">
     <span style="font-weight:bold;font-size:18px">☰ <span data-i18n="menu"></span></span>
     <span class="sp"></span>
+    <button class="hudchip" onclick="toggleLang()" id="langBtn2">EN</button>
     <button class="hudchip" style="background:#f4a261;color:#264653;font-weight:bold" onclick="closeMenu()"><span data-i18n="back"></span> ✕</button>
   </div>
   <div class="body">
@@ -538,12 +538,14 @@ function fishPool(areaId,branch,rodTier){
     &&(!f.time||f.time===tod));
   if(!pool.length){const all=FISH.filter(f=>f.area===areaId&&(f.branch==='both'||f.branch===branch));const m=Math.min(...all.map(f=>f.needTier));pool=all.filter(f=>f.needTier===m);}
   return pool;}
-function rollFish(areaId,branch,rodTier,luck,dist){
+function rollFish(areaId,branch,rodTier,luck,dist,baitTier){
   const pool=fishPool(areaId,branch,rodTier);
   /* 抛得越远，高 needTier 鱼权重越高；贴岸(dist≈0)时高级鱼权重×0.3，低级鱼不变 */
   const w=pool.map(f=>{
     const tierFactor=f.needTier===0?1:(0.3+dist*1.4);
-    return f.baseRate*(1+(luck+dist)*f.difficulty)*tierFactor;});
+    /* 饵料保底：低于饵料等级的鱼权重×0.02，等于/高于饵料等级的鱼×3 */
+    const baitFactor=baitTier>0?(f.needTier>=baitTier?3:0.02):1;
+    return f.baseRate*(1+(luck+dist)*f.difficulty)*tierFactor*baitFactor;});
   let r=Math.random()*w.reduce((a,b)=>a+b,0);
   for(let i=0;i<pool.length;i++){r-=w[i];if(r<=0)return pool[i];}
   return pool[pool.length-1];}
@@ -655,8 +657,8 @@ function showCatchModal(r){
   <h2>${T('caught')}</h2>
   ${r.perfect?`<div style="color:#f4a261;font-weight:bold;font-size:13px">✨ ${T('perfectCatch')}</div>`:''}
   <svg viewBox="0 0 120 60" style="width:160px;margin:6px auto;display:block">
-    <ellipse cx="56" cy="30" rx="40" ry="18" fill="hsl(${r.fish.hue} 60% 55%)"/>
-    <path d="M16 30 L0 16 L0 44 Z" fill="hsl(${r.fish.hue} 60% 45%)"/>
+    <ellipse cx="56" cy="30" rx="40" ry="18" fill="${TIER_COLORS[r.fish.needTier]}"/>
+    <path d="M16 30 L0 16 L0 44 Z" fill="${TIER_COLORS[r.fish.needTier]}" opacity="0.75"/>
     <circle cx="76" cy="24" r="4" fill="#fff"/><circle cx="77" cy="24" r="2" fill="#264653"/>
   </svg>
   <div style="font-weight:bold;font-size:18px">${fname(r.fish)}</div>
@@ -716,7 +718,7 @@ function releaseCast(){
   finished=false;
   distBonus=castPower*0.35;
   bobX=320+castPower*480;bobY=waterY+14;
-  targetFish=rollFish(areaId,mode,rod().tier,bait().luck,distBonus);
+  targetFish=rollFish(areaId,mode,rod().tier,bait().luck,distBonus,catchBaitTier);
   waitTime=(2+Math.random()*4.5)/bait().biteRate;
   biteTimer=0;phase='waiting';updatePhaseUI();refreshHUD();
 }
@@ -995,7 +997,9 @@ function loop(now){
       ctx.beginPath();ctx.moveTo(fx-26,fy);ctx.lineTo(fx-40,fy-8);ctx.lineTo(fx-40,fy+8);ctx.closePath();ctx.fill();}
     if(phase==='fight'&&mode==='lure'&&targetFish){
       const fx=320+distance*480+fishDir*Math.sin(time*6)*10, fy=bobY+40;
-      ctx.fillStyle=`hsla(${targetFish.hue} 60% 30% / .5)`;
+      /* 鱼身颜色挂钩品质等级 */
+    const tierCol=TIER_COLORS[targetFish.needTier];
+    ctx.fillStyle=tierCol+'88';
       ctx.save();ctx.translate(fx,fy);ctx.scale(fishDir,1);
       ctx.beginPath();ctx.ellipse(0,0,26,9,0,0,7);ctx.fill();
       ctx.beginPath();ctx.moveTo(-26,0);ctx.lineTo(-40,-8);ctx.lineTo(-40,8);ctx.closePath();ctx.fill();
@@ -1045,7 +1049,7 @@ function loop(now){
         const zy=by+(zoneY-zh/2)*barH;
         ctx.fillStyle='rgba(106,190,48,.75)';ctx.fillRect(bx,zy,barW,zh*barH);
         const fy=by+fishY*barH;
-        ctx.fillStyle=`hsl(${targetFish.hue} 60% 60%)`;
+        ctx.fillStyle=TIER_COLORS[targetFish.needTier];
         ctx.beginPath();ctx.ellipse(bx+barW/2,fy,18,9,0,0,7);ctx.fill();
         ctx.beginPath();ctx.moveTo(bx+barW/2-16,fy);ctx.lineTo(bx+barW/2-28,fy-8);ctx.lineTo(bx+barW/2-28,fy+8);ctx.closePath();ctx.fill();
         ctx.fillStyle='rgba(245,240,225,.2)';ctx.fillRect(bx+barW+26,by,14,barH);
@@ -1055,7 +1059,7 @@ function loop(now){
         /* 路亚沉浸 HUD */
         ctx.textAlign='center';
         ctx.fillStyle='#f5f0e1';ctx.font='bold 20px sans-serif';
-        ctx.fillText(fname(targetFish),LW/2,64);
+        ctx.fillText(`${fname(targetFish)} [${T(TIER_KEYS[targetFish.needTier])}]`,LW/2,64);
         ctx.font='bold 30px sans-serif';
         ctx.fillStyle=distance<0.25?'#6abe30':'#f5f0e1';
         ctx.fillText(`${(distance*60).toFixed(1)} m`,LW/2,98);
