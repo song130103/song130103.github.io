@@ -420,6 +420,8 @@ let S=(()=>{try{const r=localStorage.getItem(SAVE_KEY);if(!r)return defaultSave(
 if(S.level==null){S.level=Math.min(120,1+S.totalCaught);S.bk=Math.min(23,Math.floor(S.level/10));S.xp=0;}
 /* 装备奖励改为双模式成对后，清除旧记录防止重复领取 */
 ['q2','q3','qf2','qf4','qf5','qf6','ql2','ql4','ql5','ql6'].forEach(id=>delete S.quests[id]);
+/* 金币曾被小数扣费污染，取整修复 */
+S.coins=Math.floor(S.coins);
 LANG=S.lang||'zh';
 function persist(){try{S.lang=LANG;localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}}
 const speciesCount=()=>Object.keys(S.codex).length;
@@ -519,14 +521,14 @@ function updateBadges(){
 }
 /* 昼夜时段：游戏内时间（可变速）6-10 清晨 / 10-17 白天 / 17-21 黄昏 / 21-6 夜晚 */
 let gameMin=new Date().getHours()*60+new Date().getMinutes(); /* 游戏内分钟 0-1440 */
-let timeRate=1; /* 1/2/4/8 倍速 */
-const RATE_COST={1:0,2:0,4:0.3,8:1}; /* 每游戏分钟金币花费：×4=18币/小时，×8=60币/小时 */
+let timeRate=1; /* 1/2/4/8 倍速，不存档，每次进入游戏重置为 1 */
+const RATE_COST={1:0,2:0,4:0.3,8:1}; /* 每游戏分钟金币花费（扣费时向上取整）：×4=18币/游戏小时，×8=60币/游戏小时 */
 function timeOfDay(){const h=Math.floor(gameMin/60)%24;
   if(h>=6&&h<10)return'dawn';if(h>=10&&h<17)return'day';if(h>=17&&h<21)return'dusk';return'night';}
 function cycleTimeRate(){
   const order=[1,2,4,8];let r=order[(order.indexOf(timeRate)+1)%4];
-  const c=RATE_COST[r];
-  if(c>0&&S.coins<c){toast(T('notEnough'));return;}
+  /* 付费档位要求至少 1 枚完整金币，防止小数余额白嫖加速 */
+  if(r>2&&S.coins<1){toast(T('notEnough'));return;}
   timeRate=r;refreshHUD();
 }
 let coinTick=0, lastMinQ=-1;
@@ -585,11 +587,11 @@ function applyI18n(){document.querySelectorAll('[data-i18n]').forEach(el=>{el.te
   refreshHUD();renderHome();}
 function toggleLang(){LANG=LANG==='zh'?'en':'zh';persist();applyI18n();if(!document.getElementById('menu').classList.contains('hidden'))renderMenu();}
 function refreshHUD(){
-  document.getElementById('homeCoins').textContent=S.coins;
+  document.getElementById('homeCoins').textContent=Math.floor(S.coins);
   document.getElementById('homePearls').textContent=S.pearls;
   document.getElementById('homeLevel').textContent=S.level;
   document.getElementById('homeTotal').textContent=S.totalCaught;
-  document.getElementById('gCoins').textContent=S.coins;
+  document.getElementById('gCoins').textContent=Math.floor(S.coins);
   document.getElementById('gPearls').textContent=S.pearls;
   document.getElementById('modeChip').textContent=mode==='lure'?`🎣 ${T('lureBranch')}`:`🎋 ${T('floatBranch')}`;
   const tod=timeOfDay();
@@ -908,14 +910,16 @@ function loop(now){
   const inGame=!document.getElementById('game').classList.contains('hidden');
 
   if(inGame){
-    /* 游戏内时间流逝：基础 1 现实秒=24 游戏分钟（1 小时≈2.5 秒），可加速；4/8 倍速按经过的游戏分钟扣金币，钱不够自动降回免费档 */
-    const advMin=dt*24*timeRate;
+    /* 游戏内时间流逝：8 现实秒 = 1 游戏分钟，可加速；4/8 倍速按经过的游戏分钟扣金币，钱不够自动降回免费档 */
+    const advMin=dt/8*timeRate;
     gameMin=(gameMin+advMin)%1440;
     if(timeRate>1){
       coinTick+=advMin;
-      if(coinTick>=1){const whole=Math.floor(coinTick),cost=whole*RATE_COST[timeRate];
-        if(S.coins>=cost){S.coins-=cost;coinTick-=whole;refreshHUD();}
+      if(coinTick>=1){const whole=Math.floor(coinTick),cost=Math.ceil(whole*RATE_COST[timeRate]);
+        if(S.coins-cost>=1){S.coins=Math.round((S.coins-cost)*100)/100;coinTick-=whole;refreshHUD();}
         else{timeRate=2;coinTick=0;refreshHUD();}}
+      /* 保底巡检：余额不足 1 币时立刻降回免费档 */
+      if(S.coins<1&&timeRate>2){timeRate=2;coinTick=0;refreshHUD();}
     }
     if(Math.floor(gameMin*4)!==lastMinQ){lastMinQ=Math.floor(gameMin*4);refreshHUD();}
     /* 逻辑 */
