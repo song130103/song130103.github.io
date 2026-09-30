@@ -223,6 +223,8 @@ tension:['张力','Tension'],fishDistance:['距离','Distance'],
 lureFightHint:['逆着鱼的方向拉杆耗体力，按住「拉线」收近；张力爆红会断线！','Steer against the fish, hold Reel to pull in — max tension breaks the line!'],
 floatFightHint:['按住/触摸抬升，松开下降，让鱼保持在绿色区间内','Hold to raise, release to drop. Keep the fish in the green zone'],
 stamina:['体力','Stamina'],areaUnlockHint:['等级 ≥','Lv. ≥'],
+timeSpeed:['时间流速','Time speed'],speedCost:['每分钟花费','Cost per min'],
+tooHeavy:['鱼太重了，竿线拉不住，直接脱钩！','Too heavy for your tackle — it broke free instantly!'],
 level:['等级','Level'],breakthrough:['突破','Breakthrough'],breakNow:['进行突破','Break through'],
 breakHint:['消耗鱼篓中的特定鱼类作为祭品，突破等级上限','Offer specific fish from your bag to raise the level cap'],
 breakOk:['突破成功！','Breakthrough success!'],lvCapHint:['已达当前等级上限，需要突破才能继续升级','Level cap reached — breakthrough required to keep leveling'],
@@ -230,7 +232,7 @@ levelUp:['升级！','Level up!'],
 daily:['每日任务','Daily Quests'],mainline:['主线任务','Main Quests'],
 refreshIn:['每日任务每天自动刷新','Daily quests refresh automatically every day'],
 dawn:['清晨','Dawn'],day:['白天','Day'],dusk:['黄昏','Dusk'],night:['夜晚','Night'],
-timeHint:['不同时段出没的鱼不同','Different fish appear at different times'],
+timeHint:['不同时段出没的鱼不同；点击可加速时间（4倍/8倍需花费金币）','Different fish appear at different times; click to speed up time (×4/×8 costs coins)'],
 };
 let LANG='zh';
 const T=k=>DICT[k][LANG==='zh'?0:1];
@@ -321,21 +323,54 @@ const QUESTS=[
 {id:'q2',zh:'池塘常客',en:'Pond Regular',req:{kind:'catchArea',area:0,count:5},rewards:[{kind:'gear',gearId:'rod_float_1'},{kind:'gear',gearId:'rod_lure_1'}]},
 {id:'q3',zh:'小有收获',en:'Small Harvest',req:{kind:'species',count:4},rewards:[{kind:'gear',gearId:'line_float_1'},{kind:'gear',gearId:'line_lure_1'},{kind:'coins',count:100}]},
 {id:'qf1',zh:'台钓·鲫鱼三连',en:'Float: Crucian ×3',req:{kind:'catchFish',fishId:'pond_crucian',count:3},rewards:[{kind:'bait',gearId:'bait_float_1',count:8}]},
-{id:'qf2',zh:'台钓·大物初体验',en:'Float: First Big One',req:{kind:'catchTier',tier:1,count:3},rewards:[{kind:'gear',gearId:'rod_float_2'},{kind:'gear',gearId:'line_float_2'}]},
+{id:'qf2',zh:'台钓·大物初体验',en:'Float: First Big One',req:{kind:'catchTier',tier:1,count:3},rewards:[{kind:'gear',gearId:'rod_float_2'},{kind:'gear',gearId:'rod_lure_2'}]},
 {id:'qf3',zh:'台钓·溪流猎手',en:'Float: Creek Hunter',req:{kind:'catchArea',area:1,count:6},rewards:[{kind:'bait',gearId:'bait_float_2',count:6},{kind:'pearls',count:2}]},
-{id:'qf4',zh:'台钓·紫气东来',en:'Float: Rising Epic',req:{kind:'catchTier',tier:2,count:5},rewards:[{kind:'gear',gearId:'rod_float_3'},{kind:'gear',gearId:'line_float_3'}]},
-{id:'qf5',zh:'台钓·海湾征服者',en:'Float: Bay Conqueror',req:{kind:'catchArea',area:2,count:8},rewards:[{kind:'gear',gearId:'rod_float_4'},{kind:'gear',gearId:'line_float_4'},{kind:'pearls',count:5}]},
-{id:'qf6',zh:'台钓·深海之约',en:'Float: Deep Sea Pact',req:{kind:'catchArea',area:3,count:6},rewards:[{kind:'gear',gearId:'rod_float_5'},{kind:'gear',gearId:'line_float_5'},{kind:'pearls',count:10}]},
+{id:'qf4',zh:'台钓·紫气东来',en:'Float: Rising Epic',req:{kind:'catchTier',tier:2,count:5},rewards:[{kind:'gear',gearId:'rod_float_3'},{kind:'gear',gearId:'rod_lure_3'}]},
+{id:'qf5',zh:'台钓·海湾征服者',en:'Float: Bay Conqueror',req:{kind:'catchArea',area:2,count:8},rewards:[{kind:'gear',gearId:'rod_float_4'},{kind:'gear',gearId:'rod_lure_4'},{kind:'pearls',count:5}]},
+{id:'qf6',zh:'台钓·深海之约',en:'Float: Deep Sea Pact',req:{kind:'catchArea',area:3,count:6},rewards:[{kind:'gear',gearId:'rod_float_5'},{kind:'gear',gearId:'rod_lure_5'},{kind:'pearls',count:10}]},
 {id:'ql1',zh:'路亚·白条入门',en:'Lure: Culter ×3',req:{kind:'catchFish',fishId:'pond_topmouth',count:3},rewards:[{kind:'bait',gearId:'bait_lure_1',count:8}]},
-{id:'ql2',zh:'路亚·凶猛掠食者',en:'Lure: Fierce Predator',req:{kind:'catchTier',tier:1,count:3},rewards:[{kind:'gear',gearId:'rod_lure_2'},{kind:'gear',gearId:'line_lure_2'}]},
+{id:'ql2',zh:'路亚·凶猛掠食者',en:'Lure: Fierce Predator',req:{kind:'catchTier',tier:1,count:3},rewards:[{kind:'gear',gearId:'line_lure_2'},{kind:'gear',gearId:'line_float_2'}]},
 {id:'ql3',zh:'路亚·溪流快枪手',en:'Lure: Creek Gunslinger',req:{kind:'catchArea',area:1,count:6},rewards:[{kind:'bait',gearId:'bait_lure_2',count:6},{kind:'pearls',count:2}]},
-{id:'ql4',zh:'路亚·幻影一击',en:'Lure: Phantom Strike',req:{kind:'catchTier',tier:2,count:5},rewards:[{kind:'gear',gearId:'rod_lure_3'},{kind:'gear',gearId:'line_lure_3'}]},
-{id:'ql5',zh:'路亚·海狼传说',en:'Lure: Sea Wolf Legend',req:{kind:'catchArea',area:2,count:8},rewards:[{kind:'gear',gearId:'rod_lure_4'},{kind:'gear',gearId:'line_lure_4'},{kind:'pearls',count:5}]},
-{id:'ql6',zh:'路亚·远海斗神',en:'Lure: Ocean Champion',req:{kind:'catchArea',area:3,count:6},rewards:[{kind:'gear',gearId:'rod_lure_5'},{kind:'gear',gearId:'line_lure_5'},{kind:'pearls',count:10}]},
+{id:'ql4',zh:'路亚·幻影一击',en:'Lure: Phantom Strike',req:{kind:'catchTier',tier:2,count:5},rewards:[{kind:'gear',gearId:'line_lure_3'},{kind:'gear',gearId:'line_float_3'}]},
+{id:'ql5',zh:'路亚·海狼传说',en:'Lure: Sea Wolf Legend',req:{kind:'catchArea',area:2,count:8},rewards:[{kind:'gear',gearId:'line_lure_4'},{kind:'gear',gearId:'line_float_4'},{kind:'pearls',count:5}]},
+{id:'ql6',zh:'路亚·远海斗神',en:'Lure: Ocean Champion',req:{kind:'catchArea',area:3,count:6},rewards:[{kind:'gear',gearId:'line_lure_5'},{kind:'gear',gearId:'line_float_5'},{kind:'pearls',count:10}]},
 {id:'qg1',zh:'图鉴收藏家',en:'Codex Collector',req:{kind:'species',count:15},rewards:[{kind:'pearls',count:8},{kind:'coins',count:500}]},
 {id:'qg2',zh:'渔夫富翁',en:'Rich Angler',req:{kind:'earnCoins',count:3000},rewards:[{kind:'pearls',count:12}]},
-{id:'qg3',zh:'钓鱼大师',en:'Master Angler',req:{kind:'species',count:30},rewards:[{kind:'pearls',count:20},{kind:'bait',gearId:'bait_lure_5',count:3},{kind:'bait',gearId:'bait_float_5',count:3}]}];
+{id:'qg3',zh:'钓鱼大师',en:'Master Angler',req:{kind:'species',count:30},rewards:[{kind:'pearls',count:20},{kind:'bait',gearId:'bait_lure_5',count:3},{kind:'bait',gearId:'bait_float_5',count:3}]},
+/* —— 等级之路 —— */
+{id:'qv1',zh:'初出茅庐 Lv.10',en:'Rookie Lv.10',req:{kind:'level',count:10},rewards:[{kind:'coins',count:100}]},
+{id:'qv2',zh:'进阶钓手 Lv.20',en:'Skilled Lv.20',req:{kind:'level',count:20},rewards:[{kind:'coins',count:200},{kind:'pearls',count:2}]},
+{id:'qv3',zh:'老练渔夫 Lv.40',en:'Veteran Lv.40',req:{kind:'level',count:40},rewards:[{kind:'coins',count:400},{kind:'pearls',count:3}]},
+{id:'qv4',zh:'海湾常客 Lv.60',en:'Bay Regular Lv.60',req:{kind:'level',count:60},rewards:[{kind:'coins',count:800},{kind:'pearls',count:5}]},
+{id:'qv5',zh:'远海行者 Lv.90',en:'Offshore Walker Lv.90',req:{kind:'level',count:90},rewards:[{kind:'coins',count:1500},{kind:'pearls',count:8}]},
+{id:'qv6',zh:'深海领主 Lv.120',en:'Deep Lord Lv.120',req:{kind:'level',count:120},rewards:[{kind:'coins',count:3000},{kind:'pearls',count:12}]},
+{id:'qv7',zh:'渔歌传说 Lv.180',en:'Fishing Legend Lv.180',req:{kind:'level',count:180},rewards:[{kind:'coins',count:6000},{kind:'pearls',count:20}]},
+{id:'qv8',zh:'渔神降临 Lv.240',en:'Fishing God Lv.240',req:{kind:'level',count:240},rewards:[{kind:'coins',count:20000},{kind:'pearls',count:50}]},
+/* —— 图鉴阶梯 —— */
+{id:'qc1',zh:'图鉴入门 ×8',en:'Codex ×8',req:{kind:'species',count:8},rewards:[{kind:'coins',count:150}]},
+{id:'qc2',zh:'图鉴行家 ×20',en:'Codex ×20',req:{kind:'species',count:20},rewards:[{kind:'coins',count:500},{kind:'pearls',count:4}]},
+{id:'qc3',zh:'图鉴权威 ×40',en:'Codex ×40',req:{kind:'species',count:40},rewards:[{kind:'coins',count:1500},{kind:'pearls',count:10}]},
+{id:'qc4',zh:'全图鉴达成！',en:'Full Codex!',req:{kind:'species',count:51},rewards:[{kind:'coins',count:5000},{kind:'pearls',count:30}]},
+/* —— 财富与勤奋 —— */
+{id:'qe1',zh:'第一桶金 500',en:'First 500 Coins',req:{kind:'earnCoins',count:500},rewards:[{kind:'coins',count:100}]},
+{id:'qe2',zh:'万元户 10000',en:'10K Coins',req:{kind:'earnCoins',count:10000},rewards:[{kind:'pearls',count:10},{kind:'coins',count:1000}]},
+{id:'qe3',zh:'腰缠万贯 50000',en:'50K Coins',req:{kind:'earnCoins',count:50000},rewards:[{kind:'pearls',count:25},{kind:'coins',count:5000}]},
+{id:'qt1',zh:'百钓不厌 ×50',en:'50 Catches',req:{kind:'catchTotal',count:50},rewards:[{kind:'coins',count:300}]},
+{id:'qt2',zh:'垂钓不倦 ×200',en:'200 Catches',req:{kind:'catchTotal',count:200},rewards:[{kind:'coins',count:1200},{kind:'pearls',count:6}]},
+{id:'qt3',zh:'人竿合一 ×500',en:'500 Catches',req:{kind:'catchTotal',count:500},rewards:[{kind:'coins',count:4000},{kind:'pearls',count:15}]},
+/* —— 时段限定挑战 —— */
+{id:'qd1',zh:'夜钓蛙鸣',en:'Night Frog',req:{kind:'catchFish',fishId:'pond_frog',count:1},rewards:[{kind:'coins',count:120}]},
+{id:'qd2',zh:'金鱼晨曦',en:'Dawn Goldfish',req:{kind:'catchFish',fishId:'pond_goldfish',count:1},rewards:[{kind:'coins',count:150}]},
+{id:'qd3',zh:'火尾黄昏',en:'Dusk Firetail',req:{kind:'catchFish',fishId:'river_fire',count:1},rewards:[{kind:'coins',count:200},{kind:'pearls',count:2}]},
+{id:'qd4',zh:'荧光之夜',en:'Glow Night',req:{kind:'catchFish',fishId:'shore_glowsquid',count:1},rewards:[{kind:'coins',count:350},{kind:'pearls',count:3}]},
+{id:'qd5',zh:'鮟鱇深渊',en:'Abyss Angler',req:{kind:'catchFish',fishId:'deep_angler',count:1},rewards:[{kind:'coins',count:800},{kind:'pearls',count:5}]},
+/* —— 珍珠鱼猎手 —— */
+{id:'qp1',zh:'珠光乍现',en:'First Pearl',req:{kind:'pearlFish',count:1},rewards:[{kind:'coins',count:200}]},
+{id:'qp2',zh:'珍珠收藏家 ×5',en:'Pearl Fish ×5',req:{kind:'pearlFish',count:5},rewards:[{kind:'pearls',count:6},{kind:'coins',count:500}]},
+{id:'qp3',zh:'深海幽灵',en:'Ghost of Deep',req:{kind:'catchFish',fishId:'deep_ghost',count:1},rewards:[{kind:'coins',count:2000},{kind:'pearls',count:10}]}];
 QUESTS.forEach(q=>{q.branch=q.id.startsWith('qf')?'float':q.id.startsWith('ql')?'lure':'both';});
+/* qv/qc/qe/qt/qd/qp 均为通用任务，显式标注 both */
+QUESTS.forEach(q=>{if(/^q[vcewtdp]/.test(q.id))q.branch='both';});
 
 /* ==================== 每日任务 ==================== */
 function seededRand(seed){let s=seed;return()=>{s=(s*1103515245+12345)&0x7fffffff;return s/0x7fffffff;};}
@@ -383,6 +418,8 @@ codex:{},codexSeen:{},bag:[],quests:{},totalCaught:0,earnedCoins:0,playMinutes:0
 let S=(()=>{try{const r=localStorage.getItem(SAVE_KEY);if(!r)return defaultSave();const d=JSON.parse(r);if(d.version!==1)return defaultSave();return Object.assign(defaultSave(),d);}catch(e){return defaultSave();}})();
 /* 旧存档迁移：按历史钓获估算等级 */
 if(S.level==null){S.level=Math.min(120,1+S.totalCaught);S.bk=Math.min(23,Math.floor(S.level/10));S.xp=0;}
+/* 装备奖励改为双模式成对后，清除旧记录防止重复领取 */
+['q2','q3','qf2','qf4','qf5','qf6','ql2','ql4','ql5','ql6'].forEach(id=>delete S.quests[id]);
 LANG=S.lang||'zh';
 function persist(){try{S.lang=LANG;localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}}
 const speciesCount=()=>Object.keys(S.codex).length;
@@ -463,7 +500,10 @@ function questProgress(req){
     case 'catchArea':return{cur:FISH.filter(f=>f.area===req.area).reduce((s,f)=>s+(S.codex[f.id]?.count||0),0),max:req.count};
     case 'species':return{cur:speciesCount(),max:req.count};
     case 'earnCoins':return{cur:Math.floor(S.earnedCoins),max:req.count};
-    case 'catchBranch':return{cur:(S.branchCaught&&S.branchCaught[req.branch])||0,max:req.count};}}
+    case 'catchBranch':return{cur:(S.branchCaught&&S.branchCaught[req.branch])||0,max:req.count};
+    case 'level':return{cur:S.level||1,max:req.count};
+    case 'catchTotal':return{cur:S.totalCaught,max:req.count};
+    case 'pearlFish':return{cur:S.pearlFish||0,max:req.count};}}
 const questDone=q=>{const p=questProgress(q.req);return p.cur>=p.max;};
 
 /* 红点提示 */
@@ -477,9 +517,19 @@ function updateBadges(){
   const menuBtn=document.getElementById('menuBtn');
   if(menuBtn)setDot(menuBtn,Object.values(dots).some(v=>v));
 }
-/* 昼夜时段：6-10 清晨 / 10-17 白天 / 17-21 黄昏 / 21-6 夜晚 */
-function timeOfDay(){const h=new Date().getHours();
+/* 昼夜时段：游戏内时间（可变速）6-10 清晨 / 10-17 白天 / 17-21 黄昏 / 21-6 夜晚 */
+let gameMin=new Date().getHours()*60+new Date().getMinutes(); /* 游戏内分钟 0-1440 */
+let timeRate=1; /* 1/2/4/8 倍速 */
+const RATE_COST={1:0,2:0,4:0.3,8:1}; /* 每游戏分钟金币花费：×4=18币/小时，×8=60币/小时 */
+function timeOfDay(){const h=Math.floor(gameMin/60)%24;
   if(h>=6&&h<10)return'dawn';if(h>=10&&h<17)return'day';if(h>=17&&h<21)return'dusk';return'night';}
+function cycleTimeRate(){
+  const order=[1,2,4,8];let r=order[(order.indexOf(timeRate)+1)%4];
+  const c=RATE_COST[r];
+  if(c>0&&S.coins<c){toast(T('notEnough'));return;}
+  timeRate=r;refreshHUD();
+}
+let coinTick=0, lastMinQ=-1;
 function fishPool(areaId,branch,rodTier){
   const tod=timeOfDay();
   let pool=FISH.filter(f=>f.area===areaId&&(f.branch==='both'||f.branch===branch)&&f.needTier<=rodTier
@@ -545,10 +595,13 @@ function refreshHUD(){
   const tod=timeOfDay();
   const todIcon={dawn:'🌅',day:'☀️',dusk:'🌇',night:'🌙'}[tod];
   let tc=document.getElementById('timeChip');
-  if(!tc){tc=document.createElement('span');tc.id='timeChip';tc.className='hudchip';
+  if(!tc){tc=document.createElement('button');tc.id='timeChip';tc.className='hudchip';
     tc.title=T('timeHint');
     document.getElementById('modeChip').after(tc);}
-  tc.textContent=`${todIcon} ${T(tod)}`;
+  const hh=String(Math.floor(gameMin/60)%24).padStart(2,'0'),mm=String(Math.floor(gameMin%60)).padStart(2,'0');
+  tc.innerHTML=`${todIcon} ${T(tod)} ${hh}:${mm}${timeRate>1?` ⚡×${timeRate}`:''}`;
+  tc.style.background=timeRate>1?'#4d9be6':'';
+  tc.onclick=cycleTimeRate;
   /* 等级徽章：到顶可点击突破 */
   let lc=document.getElementById('levelChip');
   if(!lc){lc=document.createElement('button');lc.id='levelChip';lc.className='hudchip';tc.after(lc);}
@@ -668,8 +721,15 @@ function releaseCast(){
 function beginFight(){
   perfect=true;
   if(mode==='float'){fishY=0.5;zoneY=0.7;progress=0.35;outTime=0;}
-  else{stamina=1;distance=castPower;tension=0;fishDir=Math.random()<0.5?-1:1;dirTimer=0;}
+  else{stamina=1;distance=castPower;tension=0;fishDir=Math.random()<0.5?-1:1;dirTimer=0;
+    /* 重量级大鱼近岸挣扎：体重越大越容易突然外冲几十米 */
+    const hw=(targetFish.maxKg+targetFish.minKg)/2;
+    if(hw>=15&&Math.random()<0.35+hw/200)distance=Math.min(1.2,distance+0.2+Math.min(0.5,hw/80));}
   phase='fight';updatePhaseUI();
+  /* 装备碾压判定：橙色/红色高级鱼，竿或线品质不足时战斗开始 1 秒内直接脱钩 */
+  if(targetFish.needTier>=4&&(rod().tier<targetFish.needTier||line().tier<targetFish.needTier)){
+    setTimeout(()=>{if(phase==='fight'){toast(T('tooHeavy'));finishFight(false,true);}},800);
+  }
 }
 function finishFight(win,broke=false){
   if(finished)return;finished=true;
@@ -680,6 +740,7 @@ function finishFight(win,broke=false){
     const prev=S.codex[f.id];
     const pearl=Math.random()<f.pearlChance+(perfect?0.05:0);
     if(pearl)S.pearls++;
+    if(pearl)S.pearlFish=(S.pearlFish||0)+1;
     S.totalCaught++;
     S.branchCaught=S.branchCaught||{lure:0,float:0};
     S.branchCaught[mode]++;
@@ -847,6 +908,16 @@ function loop(now){
   const inGame=!document.getElementById('game').classList.contains('hidden');
 
   if(inGame){
+    /* 游戏内时间流逝：基础 1 现实秒=24 游戏分钟（1 小时≈2.5 秒），可加速；4/8 倍速按经过的游戏分钟扣金币，钱不够自动降回免费档 */
+    const advMin=dt*24*timeRate;
+    gameMin=(gameMin+advMin)%1440;
+    if(timeRate>1){
+      coinTick+=advMin;
+      if(coinTick>=1){const whole=Math.floor(coinTick),cost=whole*RATE_COST[timeRate];
+        if(S.coins>=cost){S.coins-=cost;coinTick-=whole;refreshHUD();}
+        else{timeRate=2;coinTick=0;refreshHUD();}}
+    }
+    if(Math.floor(gameMin*4)!==lastMinQ){lastMinQ=Math.floor(gameMin*4);refreshHUD();}
     /* 逻辑 */
     if(phase==='charging'){castPower+=castDir*dt*1.4;
       if(castPower>1){castPower=1;castDir=-1;}if(castPower<0){castPower=0;castDir=1;}}
