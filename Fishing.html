@@ -290,6 +290,9 @@ F('shore_puffer','河豚','Pufferfish',2,'both',2,1.2,0.3,2,150,0.08,6,40),
 F('shore_redbream','真鲷','Red Seabream',2,'float',3,1.6,1,5,130,0.1,5,5),
 F('shore_sardine','沙丁鱼','Sardine',2,'float',0,0.4,0.05,0.2,30,0,20,210),
 F('deep_tuna','金枪鱼','Tuna',3,'lure',3,1.8,10,60,55,0.1,7,210),
+F('deep_krill','磷虾','Krill',3,'both',0,0.4,0.02,0.1,35,0,18,10),
+F('deep_squid','萤火鱿','Firefly Squid',3,'both',1,0.8,0.1,0.5,70,0.03,12,340),
+F('deep_cuttle','深海墨鱼','Deep Cuttlefish',3,'both',2,1.1,0.3,2,90,0.05,9,290),
 F('deep_sailfish','旗鱼','Sailfish',3,'lure',4,2.0,15,80,60,0.14,5,200),
 F('deep_marlin','马林鱼','Marlin',3,'lure',4,2.1,20,120,55,0.15,4,230),
 F('deep_grouper','石斑鱼','Grouper',3,'both',3,1.6,3,25,60,0.1,6,25),
@@ -546,8 +549,9 @@ function rollFish(areaId,branch,rodTier,luck,dist,baitTier){
   /* 抛得越远，高 needTier 鱼权重越高；贴岸(dist≈0)时高级鱼权重×0.3，低级鱼不变 */
   const w=pool.map(f=>{
     const tierFactor=f.needTier===0?1:(0.3+dist*1.4);
-    /* 饵料保底：低于饵料等级的鱼权重×0.02，等于/高于饵料等级的鱼×3 */
-    const baitFactor=baitTier>0?(f.needTier>=baitTier?3:0.02):1;
+    /* 饵与鱼等级相对：饵等级为中心，同级大概率、相邻等级次之、跨两级罕见 */
+    const dd=Math.abs(f.needTier-baitTier);
+    const baitFactor=[1,0.3,0.04,0.006,0.0015,0.0004][Math.min(5,dd)];
     return f.baseRate*(1+(luck+dist)*f.difficulty)*tierFactor*baitFactor;});
   let r=Math.random()*w.reduce((a,b)=>a+b,0);
   for(let i=0;i<pool.length;i++){r-=w[i];if(r<=0)return pool[i];}
@@ -573,7 +577,7 @@ let targetFish=null, distBonus=0, finished=false;
 /* 台钓 */
 let fishY=0.5, fishVy=0, zoneY=0.7, progress=0.35, outTime=0, perfect=true;
 /* 路亚 */
-let stamina=1, distance=1, tension=0, fishDir=1, dirTimer=0, steer=0, reeling=false;
+let stamina=1, distance=1, tension=0, fishDir=1, dirTimer=0, steer=0, reeling=false, tiredTimer=0;
 
 const eq=()=>S.equipped[mode];
 const rod=()=>gearById(eq().rod), line=()=>gearById(eq().line), bait=()=>gearById(eq().bait);
@@ -728,7 +732,7 @@ function releaseCast(){
 function beginFight(){
   perfect=true;
   if(mode==='float'){fishY=0.5;zoneY=0.7;progress=0.35;outTime=0;}
-  else{stamina=1;distance=castPower;tension=0;fishDir=Math.random()<0.5?-1:1;dirTimer=0;
+  else{stamina=1;distance=castPower;tension=0;fishDir=Math.random()<0.5?-1:1;dirTimer=0;tiredTimer=0;
     /* 重量级大鱼近岸挣扎：体重越大越容易突然外冲几十米 */
     const hw=(targetFish.maxKg+targetFish.minKg)/2;
     if(hw>=15&&Math.random()<0.35+hw/200)distance=Math.min(1.2,distance+0.2+Math.min(0.5,hw/80));}
@@ -935,34 +939,55 @@ function loop(now){
     else if(phase==='bite'){biteTimer+=dt;if(biteTimer>1.8)finishFight(false);}
     else if(phase==='fight'){
       const f=targetFish;
+      /* 鱼线博弈：鱼等级相对线等级的压制差，正=鱼压线，负=线碾压鱼 */
+      const fd=f.needTier-line().tier;
       if(mode==='float'){
-        fishVy+=(Math.random()-0.5)*f.difficulty*dt*6;
-        fishVy+=Math.sin(time*(1.5+f.difficulty))*f.difficulty*dt*1.6;
+        /* 鱼压线时挣扎更凶 */
+        fishVy+=(Math.random()-0.5)*f.difficulty*dt*6*(1+Math.max(0,fd)*0.3);
+        fishVy+=Math.sin(time*(1.5+f.difficulty))*f.difficulty*dt*1.6*(1+Math.max(0,fd)*0.3);
         fishVy*=0.94;
         fishY+=fishVy*dt*(0.5+f.difficulty*0.35);
         fishY=Math.max(0.02,Math.min(0.98,fishY));
         zoneY+=(holding?-0.9:0.9)*dt;
-        const zh=0.16+line().strength*0.5;
+        /* 线碾压鱼则区间大幅加宽，同级不变，鱼压线则区间收窄 */
+        const zh=Math.max(0.05,0.16+line().strength*0.5-Math.max(0,fd)*0.035+Math.max(0,-fd)*0.045);
         zoneY=Math.max(zh/2,Math.min(1-zh/2,zoneY));
         const inZone=Math.abs(fishY-zoneY)<zh/2+0.03;
         if(inZone){progress+=dt*rod().power*0.16;outTime=0;}
         else{progress-=dt*0.10;outTime+=dt;perfect=false;
-          if(outTime>1.2+line().strength*4&&Math.random()<dt*(0.9-line().strength))finishFight(false,true);}
+          /* 同级：比原宽容度略大；鱼压线：断线风险激增 */
+          if(outTime>1.6+line().strength*4&&Math.random()<dt*(0.8-line().strength+Math.max(0,fd)*0.45))finishFight(false,true);}
         if(phase==='fight'){if(progress>=1)finishFight(true);else if(progress<=0)finishFight(false);}
       }else{
+        /* 鱼线博弈模型：mp=鱼压线级差，mm=线碾压级差，mpc=压级惩罚(封顶1.5) */
+        const mp=Math.max(0,fd),mm=Math.max(0,-fd),mpc=Math.min(mp,1.5);
         dirTimer-=dt;
-        if(dirTimer<=0){fishDir=Math.random()<0.5?-1:1;dirTimer=0.5+Math.random()*(1.6-f.difficulty*0.4);}
+        /* 变向冲刺：瞬时张力冲击，鱼体力越足冲得越狠；压线更频繁更猛，碾压大幅减弱 */
+        if(dirTimer<=0){fishDir=Math.random()<0.5?-1:1;
+          dirTimer=(0.5+Math.random()*(1.6-f.difficulty*0.4))/(1+mpc*1.13);
+          tension+=Math.max(0.01,0.088+f.difficulty*0.082+mpc*0.084+mpc*mpc*0.023-mm*0.047)*(0.6+0.8*stamina);}
         const counter=steer===-fishDir;
-        if(counter)stamina-=dt*rod().power*0.55;else stamina=Math.min(1,stamina+dt*0.18);
-        if(reeling){distance-=dt*rod().power*0.14*(1+(1-stamina)*0.8);
-          tension+=dt*(0.3+stamina*f.difficulty*0.45+(counter?0:0.2));}
-        else tension-=dt*(0.7+line().strength*0.6);
+        if(counter)stamina-=dt*rod().power*0.55;else stamina=Math.min(1,stamina+dt*0.3);
+        /* 力竭后短暂喘息会二次爆发，别把红线当安全区 */
+        if(stamina<=0){tiredTimer+=dt;
+          if(tiredTimer>1.83){stamina=0.368;tiredTimer=0;tension+=0.258*(1+mpc*0.5);}}
+        else tiredTimer=0;
+        /* 张力基准：压线越高基准越高；松线时快速向基准回落 */
+        const base=0.345+mpc*0.259+f.difficulty*0.056;
+        if(reeling){
+          const eff=0.35+tension*0.9;
+          distance-=dt*rod().power*0.095*eff*(0.4+(1-stamina)*0.6);
+          tension+=dt*(0.5+stamina*0.392)*(1+f.difficulty*0.201);
+        }else{tension+=dt*(base-tension)*4.0;}
+        /* 鱼发力期间的持续张力压力 */
+        tension+=dt*stamina*f.difficulty*0.195*mpc;
         tension=Math.max(0,tension);
         if(stamina>0.3)distance+=dt*0.045*f.difficulty*stamina;
         stamina=Math.max(0,stamina);
-        /* 张力超过 1.3 才有断线风险，红线警示从 0.95 开始 */
-        if(tension>1.3){perfect=false;
-          if(Math.random()<dt*(1.4-line().strength*4))finishFight(false,true);}
+        /* 张力超 1.15 危险区：压线逐级骤增（+2 级几乎必断），碾压逐级大减 */
+        if(tension>1.15){perfect=false;
+          const brkC=2.2*(0.5+mpc*1.5+mpc*mpc*0.4)/(1+mm*1.287);
+          if(Math.random()<dt*(tension-1.15)*brkC)finishFight(false,true);}
         if(phase==='fight'){if(distance<=0)finishFight(true);else if(distance>castPower+0.5){perfect=false;finishFight(false);}}
       }
     }
