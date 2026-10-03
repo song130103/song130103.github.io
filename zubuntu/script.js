@@ -1,4 +1,28 @@
 // 页面加载执行
+function dbGet(id, cb) {
+    const request = indexedDB.open("Zhubuntu", 1);
+    request.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains("main")) {
+            db.createObjectStore("main", { keyPath: "id" });
+        }
+    };
+    request.onsuccess = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains("main")) {
+            cb(null);
+            return;
+        }
+        const tx = db.transaction("main");
+        const store = tx.objectStore("main");
+        const query = store.get(id);
+        query.onsuccess = () => cb(query.result?.data ?? null);
+    };
+    request.onerror = (err) => {
+        console.error("dbGet 数据库打开失败", err);
+        cb(null);
+    };
+}
 const appWindow={
     get full(){
         fullWindow();
@@ -22,7 +46,12 @@ let removingAppName;
 let removingAppURI;
 let removingAppIco;
 let removingAppPath;
+dbGet('/lanyue_core.js',(res)=>{
 
+    if(res){
+        window.open('app/install/boot/launch.html');
+    }
+});
 // 默认应用模板（和删除模板严格保持格式一致）
 const defaltApp = `
 <div style="width:90%;aspect-ratio: 1 / 1;background:rgba(255,255,255,0);border-radius:50%;display:flex;text-align:center;justify-content:center">
